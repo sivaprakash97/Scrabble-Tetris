@@ -1,0 +1,11 @@
+{
+  "name": "scrabble-tetris",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tetris with Scrabble letter tiles: spell words in a row to clear them.",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "build": "node scripts/build-artifact.mjs",
+    "wordlist": "node scripts/build-wordlist.mjs"
+  }
+}

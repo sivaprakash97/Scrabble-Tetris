@@ -1,0 +1,474 @@
+/* Layout: a game table. Hold, rules and controls sit left of the well; next pieces and found words sit right.
+   On phones the well keeps a narrow sidebar (hold, next) and touch controls go underneath. */
+:root {
+  --table: #0d2422;
+  --felt: #15403b;
+  --felt-deep: #0f302c;
+  --rule: #24524c;
+  --maple: #ecd3a0;
+  --maple-hi: #f8e8c6;
+  --maple-lo: #c4a066;
+  --ink: #2b1e0f;
+  --text: #e8efe9;
+  --muted: #93b3aa;
+  --accent: #e0574a;
+  --gold: #f4c64f;
+
+  --font-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --step--1: 0.75rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.25rem;
+  --step-2: 1.75rem;
+  --step-3: 2.5rem;
+
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  background: var(--table);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: 1.45;
+  overscroll-behavior: none;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: minmax(150px, 200px) auto minmax(180px, 240px);
+  grid-template-rows: auto auto auto auto 1fr;
+  grid-template-areas:
+    "stats    stats  stats"
+    "hold     well   next"
+    "settings well   recent"
+    "help     well   recent"
+    ".        well   recent";
+  column-gap: 28px;
+  row-gap: 18px;
+  justify-content: center;
+  align-items: start;
+  padding-block: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ---- stats bar --------------------------------------------------------- */
+
+.stats {
+  grid-area: stats;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+  align-items: baseline;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 12px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.label,
+.panel h2 {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.value {
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-best .value {
+  color: var(--maple);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- panels ------------------------------------------------------------ */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.panel h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hold-panel { grid-area: hold; }
+.next-panel { grid-area: next; }
+.recent-panel { grid-area: recent; }
+.help-panel { grid-area: help; }
+.settings-panel { grid-area: settings; }
+
+#hold,
+#next {
+  background: var(--felt-deep);
+  border-radius: 6px;
+  display: block;
+}
+
+/* ---- the well ---------------------------------------------------------- */
+
+.well {
+  grid-area: well;
+  position: relative;
+  line-height: 0;
+  padding: 6px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--maple-lo), #8d6a3a);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.45);
+  touch-action: none;
+}
+
+#board {
+  display: block;
+  border-radius: 5px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 6px;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(13 36 34 / 0.78);
+  border-radius: 5px;
+  line-height: 1.45;
+  backdrop-filter: blur(2px);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 30ch;
+  text-align: left;
+}
+
+.card h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-3);
+  line-height: 0.95;
+  color: var(--maple);
+  text-wrap: balance;
+}
+
+.card p {
+  margin: 0;
+  color: var(--text);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent) !important;
+}
+
+.overlay-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* The primary button is a letter tile. */
+.btn-primary {
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--maple-hi), var(--maple));
+  border: 0;
+  border-radius: 6px;
+  padding: 10px 22px;
+  box-shadow: inset 0 -4px 0 var(--maple-lo), 0 3px 0 rgb(0 0 0 / 0.35);
+}
+
+.btn-primary:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 -2px 0 var(--maple-lo), 0 1px 0 rgb(0 0 0 / 0.35);
+}
+
+.btn-ghost {
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 10px 18px;
+}
+
+/* ---- found words ------------------------------------------------------- */
+
+.recent {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recent li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.recent li.empty {
+  color: var(--muted);
+  border: 0;
+}
+
+.recent .w {
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  color: var(--maple);
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.recent .pts {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.recent .chain {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--accent);
+}
+
+.recent li.fresh .w {
+  animation: pop 500ms ease-out;
+}
+
+@keyframes pop {
+  from { color: var(--gold); transform: translateY(-3px); }
+  to { color: var(--maple); transform: none; }
+}
+
+/* ---- help and settings ------------------------------------------------- */
+
+.keys {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  margin: 0;
+  align-items: center;
+}
+
+.keys dt {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  color: var(--muted);
+  font-size: var(--step--1);
+}
+
+.keys dd {
+  margin: 0;
+}
+
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  min-width: 1.6em;
+  padding: 1px 5px;
+  text-align: center;
+  color: var(--ink);
+  background: var(--maple);
+  border-radius: 3px;
+  box-shadow: inset 0 -2px 0 var(--maple-lo);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.setting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.setting select {
+  font: inherit;
+  color: var(--text);
+  background: var(--felt-deep);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 4px 6px;
+}
+
+.setting input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--maple);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--muted);
+  max-width: 32ch;
+}
+
+/* ---- touch controls ---------------------------------------------------- */
+
+.touch {
+  grid-area: touch;
+  display: none;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.touch button {
+  min-height: 52px;
+  color: var(--text);
+  background: var(--felt);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-size: var(--step-0);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch button.on {
+  background: var(--maple);
+  color: var(--ink);
+}
+
+.touch button[data-action="drop"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ---- phones ------------------------------------------------------------ */
+
+@media (max-width: 719px) {
+  .app {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      "stats    stats"
+      "well     hold"
+      "well     next"
+      "well     ."
+      "touch    touch"
+      "recent   recent"
+      "settings settings";
+    column-gap: 12px;
+    row-gap: 12px;
+    padding-block: 10px 24px;
+  }
+
+  .stats {
+    gap: 4px 18px;
+    padding-bottom: 8px;
+  }
+
+  .value {
+    font-size: var(--step-1);
+  }
+
+  .stat-best {
+    flex: 1 1 100%;
+    flex-direction: row;
+    gap: 8px;
+    align-items: baseline;
+  }
+
+  .stat-best .value {
+    font-size: var(--step-0);
+  }
+
+  .help-panel,
+  .panel h2 kbd {
+    display: none;
+  }
+
+  .touch {
+    display: grid;
+  }
+
+  .card h1 {
+    font-size: var(--step-2);
+  }
+}
+
+@media (pointer: coarse) and (min-width: 720px) {
+  .app {
+    grid-template-areas:
+      "stats    stats  stats"
+      "hold     well   next"
+      "settings well   recent"
+      "help     well   recent"
+      ".        well   recent"
+      "touch    touch  touch";
+  }
+
+  .touch {
+    display: grid;
+    max-width: 520px;
+    width: 100%;
+    justify-self: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recent li.fresh .w {
+    animation: none;
+  }
+}
