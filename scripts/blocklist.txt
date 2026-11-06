@@ -1,0 +1,33 @@
+# Words the game never accepts, even though they're in the word list.
+# One word per line; lines starting with # are comments. Rebuild with scripts/build-wordlist.mjs.
+# Reviewed from every 3-letter word in the list after playtest 4, where words like these
+# read as abbreviations or names rather than everyday words.
+
+# Plurals of short words ("ifs and buts", "ohs and ahs")
+ifs
+ohs
+pis
+mas
+pas
+dos
+hes
+ins
+ups
+
+# Abbreviations and slang
+chi
+rev
+mod
+wiz
+wot
+
+# Mostly seen as names
+ken
+cox
+
+# Latin or archaic
+sic
+qua
+ova
+sop
+pap

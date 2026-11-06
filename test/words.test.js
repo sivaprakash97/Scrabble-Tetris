@@ -4,10 +4,17 @@ const { ST, cfg, dict, tiles } = require('./helpers');
 
 const words = (s, minLen = 3) => ST.bestWordsInRun(tiles(s), dict(), cfg, minLen).map((p) => p.display);
 
-test('dictionary holds everyday words only', () => {
-  assert.ok(dict().size > 40000, `size ${dict().size}`);
-  for (const w of ['CAT', 'CATS', 'TORT', 'AXE', 'QUIZ', 'QUA', 'SUN', 'DOG']) assert.ok(dict().set.has(w), w);
-  for (const w of ['OKE', 'PAC', 'DOL', 'GAR', 'ZAX', 'EME', 'XCATSZ']) assert.ok(!dict().set.has(w), w);
+test('dictionary holds common everyday words only', () => {
+  assert.ok(dict().size > 30000, `size ${dict().size}`);
+  for (const w of ['CAT', 'CATS', 'AXE', 'QUIZ', 'QUIT', 'SUN', 'DOG', 'DEAN', 'HAM']) assert.ok(dict().set.has(w), w);
+  // Rare Scrabble words, and words that read as abbreviations or names (playtest 4).
+  for (const w of ['OKE', 'PAC', 'DOL', 'GAR', 'ZAX', 'EME', 'EMS', 'SIS', 'SIM', 'DIS', 'POI', 'LEI', 'XCATSZ']) {
+    assert.ok(!dict().set.has(w), w);
+  }
+});
+
+test('blocklisted words never count', () => {
+  for (const w of ['IFS', 'OHS', 'COX', 'QUA', 'MOD', 'KEN']) assert.ok(!dict().set.has(w), w);
 });
 
 test('longer word beats the word inside it', () => {
@@ -29,8 +36,8 @@ test('Qu tile counts as two letters', () => {
   const run = tiles('qIZ');
   assert.equal(ST.letterLength(run), 4);
   assert.deepEqual(words('qIZ'), ['QUIZ']);
-  // QUA is 3 letters from only 2 tiles.
-  assert.deepEqual(words('qA'), ['QUA']);
+  // QUIT is 4 letters from only 3 tiles.
+  assert.deepEqual(words('XqIT'), ['QUIT']);
 });
 
 test('blank matches any letter and is shown in lowercase', () => {

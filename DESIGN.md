@@ -137,15 +137,18 @@ For **every piece**:
 
 ## Dictionary: everyday words
 
-Only everyday English words count. Rare words that are legal only in Scrabble don't.
-- **The list:** ENABLE1 ∩ SCOWL size 50, with US + UK spellings. That's 58,771 words of 3–12 letters.
+Only common everyday English words count. Rare Scrabble words don't, and neither do words that read as abbreviations or names.
+- **The list (v0.9):** ENABLE1 ∩ SCOWL size 35, with US + UK spellings, minus `scripts/blocklist.txt`. That's 38,528 words of 3–12 letters.
   - **ENABLE1** is a public-domain Scrabble-style list. It contributes clean, lowercase entries with no names or abbreviations.
-  - **SCOWL** is the list behind standard spell-checkers. Size 50 is its "medium" dictionary, so it filters ENABLE1 down to words people actually use.
-- **Why it changed:** v0.1–0.2 used all of ENABLE1 (152k words), which accepted words like OKE (a Turkish unit of weight), PAC (a winter boot) and DOL (a unit of pain).
+  - **SCOWL** is the list behind standard spell-checkers. Size 35 is its "small" dictionary of common words.
+  - **The blocklist** holds 21 words that pass both lists but read as abbreviations, names, plurals of short words, or Latin: IFS, OHS, COX, MOD, QUA and others. Each group has a comment explaining why. Add to it whenever a word like that slips through.
+- **History:**
+  - **v0.1–0.2** used all of ENABLE1 (152k words). It accepted OKE (a Turkish unit of weight), PAC (a winter boot) and DOL (a unit of pain).
+  - **v0.3–0.8** used SCOWL size 50 (58,771 words). In playtest 4 it still let through EMS, SIS, SIM, DIS, POI, LEI, ERE, BAH and FEY, almost all from SCOWL's rarest tiers (40–50).
 
 | Kept | Dropped |
 |---|---|
-| WOW, ERA, TEEN, AYE, DIE, TORT, HOG, OAT, AXE, QUIZ, QUA, CATS, TRAINS | GAR, TUT, OKE, PAC, DOL, ZAX, EME, ANA, BOXY |
+| CAT, CATS, DOG, WOW, ERA, TEEN, AYE, DIE, HOG, AXE, QUIZ, QUIT, DEAN, HAM, TRAINS | GAR, TUT, OKE, PAC, DOL, ZAX, EME, ANA, BOXY, EMS, SIS, SIM, DIS, POI, LEI, ERE, BAH, FEY, MID, TORT, OAT, PEE, IFS, OHS, COX, QUA |
 
 `data/LICENSES.md` holds the licence notices for every source. All of them allow use in a paid app as long as the notices are included.
 
@@ -160,9 +163,9 @@ Every word in the list gets its definition at build time, in this order:
 2. **WordNet 3.0 entry for the word itself.** Use the most-used sense. A noun wins when another sense is only slightly more used, so HOG and QUIZ read as nouns.
 3. **The base form.** This covers irregular forms from WordNet's exception lists (WENT → go, MICE → mouse) and suffix rules (CATS → cat, BOGGED → bog, CHALKIER → chalky, ADEPTLY → adept). When there are several candidates, the most-used sense wins, so DIES means the verb die, not dice.
 
-Coverage is 97.3% of the list. Every common word is covered, and the gaps are rare inflections such as DIALINGS. A word with no definition shows "Everyday word, no short definition yet."
+Coverage is 98.8% of the list. Every common word is covered, and the gaps are rare inflections such as DIALINGS. A word with no definition shows "Everyday word, no short definition yet."
 
-Glosses are cut at WordNet's example sentences and trimmed to 100 characters. `data/definitions.js` is about 2.5 MB, because each distinct definition text is stored only once.
+Glosses are cut at WordNet's example sentences and trimmed to 100 characters. `data/definitions.js` is about 1.7 MB, because each distinct definition text is stored only once.
 
 ## Benchmark
 
@@ -239,6 +242,13 @@ One game on a phone. Words were read across and down, and gaps closed after ever
 
 **Change (v0.7):** vertical words removed. Gaps still close, and full rows still clear. The control buttons were also swapped: Rotate alone on the left, and Down wide under Left and Right.
 
+## Playtest 4 (v0.8 rules, 10 × 10 board, 6 Nov 2026)
+
+- **Result:** 147 pieces, 69 words, 20,456 points, level 7.
+- **Words that felt wrong.** Several words read as abbreviations or names: EMS ("a quad with a square body"), SIS, SIM, DIS, POI, LEI, OHS, IFS and COX.
+  - **Change (v0.9):** stricter word list plus blocklist (see Dictionary).
+- **Letters that felt too random.** The player wrote a spec for a weighted letter system: English-frequency weights plus recent-letter balancing. It's being tried on a separate branch, `experiment/letter-frequency`, with its own playable link, so the two can be compared.
+
 ## Playtest 3 (v0.7 rules, 6 Nov 2026)
 
 On v0.7, words counted across only, gaps closed after each clear, and the landing shadow showed letters.
@@ -257,6 +267,6 @@ The computer player can't judge this. It clears 3.98 of the 4 tiles each piece a
   - Before bringing it back, decide how to keep the two visibly separate. One idea: Rotate changes only the shape and the letters always keep their reading order, while Cycle is the only thing that changes letter order. It would also need its own button style and animation.
 - Scrabble premium squares (DL / TL / DW / TW) fixed into the well.
 - Earning a blank by spelling a word of 6+ letters.
-- A profanity filter for the word list. SCOWL size 50 still contains some vulgar words.
+- A profanity filter for the word list. SCOWL size 35 still contains some vulgar words; `scripts/blocklist.txt` is the place to add them.
 - An optional "Scrabble expert" mode that accepts the full ENABLE list.
 - Sound, daily seeded runs, and a high-score table.

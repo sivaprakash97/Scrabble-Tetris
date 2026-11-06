@@ -7,7 +7,7 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 
 - The board is 10 × 10 tiles.
 - Spell words **left to right in any row**. Words reading down a column don't count.
-- Any everyday English word of 3 or more letters vanishes, and every tile drops to fill the gaps below, so buried gaps don't build up. Drops that spell new words score chain bonuses.
+- Any common everyday English word of 3 or more letters vanishes (38,528 words; abbreviation-like words such as EMS or SIS don't count), and every tile drops to fill the gaps below, so buried gaps don't build up. Drops that spell new words score chain bonuses.
 - A completely full row also clears, but only words score.
 - Letters use Scrabble values, and longer words multiply steeply.
 - "Words found", below the board, shows each word with a short definition.
@@ -53,7 +53,7 @@ Hand-written definitions for words WordNet lacks are in `scripts/supplement-defs
 
 ## Credits
 
-- **Word list:** ENABLE1 (public domain), filtered with SCOWL by Kevin Atkinson.
+- **Word list:** ENABLE1 (public domain), filtered with SCOWL by Kevin Atkinson. Words to leave out by hand go in `scripts/blocklist.txt`.
 - **Definitions:** WordNet 3.0, © 2006 Princeton University.
 
 Full notices are in [data/LICENSES.md](data/LICENSES.md).
