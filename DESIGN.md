@@ -13,6 +13,7 @@ The layout follows the player's own sketch (v0.6), which had Down alone on the l
 - Every button uses the same set of line icons, and none of them is an emoji.
 - **Down is the only way to drop.** Holding it makes the piece fall fast, and the piece locks 0.5 s after it lands. There's no hard drop.
 - Down doesn't carry over: if you keep holding it after a piece locks, the next piece still falls at normal speed until you press Down again.
+- **The landing shadow shows the letters.** Each outline holds the letter that will land there, drawn lighter than a real tile, so you can see the word you'll make before the piece drops (v0.7).
 - There's no Hold and no preview of upcoming pieces. Both were removed in v0.3 because they weren't used, and removing them gave the board more room.
 
 ## Core loop

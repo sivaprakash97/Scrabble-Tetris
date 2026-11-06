@@ -96,6 +96,20 @@
     ctx.fill();
   }
 
+  // The letter (or blank star) of a tile in a w-wide box, in the current fill colour.
+  function drawGlyph(ctx, tile, x, y, w, cx) {
+    if (tile.ch === '*') {
+      ctx.globalAlpha *= 0.55;
+      drawStar(ctx, x + w / 2, y + w * 0.47, w * 0.26);
+      return;
+    }
+    const qu = tile.ch === 'QU';
+    ctx.font = `${Math.round(w * (qu ? 0.44 : 0.58))}px ${TILE_FONT}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(qu ? 'Qu' : tile.ch, x + w * cx, y + w * 0.5);
+  }
+
   // A Scrabble-style tile: maple face, bevelled lower edge, letter and value.
   function drawTile(ctx, px, py, s, tile, o = {}) {
     const inset = Math.max(1, s * 0.045);
@@ -107,12 +121,16 @@
     ctx.save();
     ctx.globalAlpha = o.alpha == null ? 1 : o.alpha;
 
+    // Landing shadow: an outline with the letter inside, so you can read what lands where.
     if (o.ghost) {
       roundRect(ctx, x + 0.5, y + 0.5, w - 1, w - 1, r);
       ctx.strokeStyle = COLOR.maple;
-      ctx.globalAlpha = 0.35;
+      ctx.globalAlpha = 0.45;
       ctx.lineWidth = 1.5;
       ctx.stroke();
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = COLOR.maple;
+      drawGlyph(ctx, tile, x, y, w, 0.5);
       ctx.restore();
       return;
     }
@@ -136,21 +154,12 @@
     }
 
     ctx.fillStyle = COLOR.ink;
-    if (tile.ch === '*') {
-      ctx.globalAlpha *= 0.55;
-      drawStar(ctx, x + w / 2, y + w * 0.47, w * 0.26);
-    } else {
-      const qu = tile.ch === 'QU';
-      ctx.font = `${Math.round(w * (qu ? 0.44 : 0.58))}px ${TILE_FONT}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(qu ? 'Qu' : tile.ch, x + w * 0.46, y + w * 0.5);
-      if (w >= 14) {
-        ctx.font = `700 ${Math.max(7, Math.round(w * 0.22))}px ${NUM_FONT}`;
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillText(String(tile.value), x + w - w * 0.08, y + w - w * 0.12);
-      }
+    drawGlyph(ctx, tile, x, y, w, 0.46);
+    if (tile.ch !== '*' && w >= 14) {
+      ctx.font = `700 ${Math.max(7, Math.round(w * 0.22))}px ${NUM_FONT}`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(String(tile.value), x + w - w * 0.08, y + w - w * 0.12);
     }
     ctx.restore();
   }
