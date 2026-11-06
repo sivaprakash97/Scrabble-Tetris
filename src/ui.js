@@ -180,14 +180,15 @@
     for (let y = 1; y < cfg.ROWS; y++) { ctx.moveTo(0, y * cell + 0.5); ctx.lineTo(W, y * cell + 0.5); }
     ctx.stroke();
 
-    // Warn when the stack reaches the top four rows.
+    // Warn when the stack reaches the top fifth of the board (2 rows on a 10-row board).
     const grid = game.board.grid;
-    if (grid.slice(0, 4).some((row) => row.some(Boolean))) {
-      const g = ctx.createLinearGradient(0, 0, 0, cell * 5);
+    const warnRows = Math.max(2, Math.round(cfg.ROWS / 5));
+    if (grid.slice(0, warnRows).some((row) => row.some(Boolean))) {
+      const g = ctx.createLinearGradient(0, 0, 0, cell * (warnRows + 1));
       g.addColorStop(0, 'rgba(224,87,74,0.35)');
       g.addColorStop(1, 'rgba(224,87,74,0)');
       ctx.fillStyle = g;
-      ctx.fillRect(0, 0, W, cell * 5);
+      ctx.fillRect(0, 0, W, cell * (warnRows + 1));
     }
 
     // Word tiles flash gold; tiles cleared only because their row was full fade out grey.

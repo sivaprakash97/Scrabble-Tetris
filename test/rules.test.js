@@ -17,7 +17,7 @@ test('a word down a column counts only when vertical words are on', () => {
   assert.equal(resolve(game({ vertical: false }), rows), null);
   const c = resolve(game({ vertical: true }), rows);
   assert.deepEqual(c.found.map((w) => [w.word, w.dir]), [['CAT', 'down']]);
-  assert.deepEqual(c.cells.map((p) => p.y), [17, 18, 19]);
+  assert.deepEqual(c.cells.map((p) => p.y), [cfg.ROWS - 3, cfg.ROWS - 2, cfg.ROWS - 1]);
 });
 
 test('vertical words are off by default, even if an old saved setting turns them on', () => {
@@ -139,6 +139,15 @@ test('the session record keeps how each piece was played', () => {
 
   g.gameOver();
   assert.equal(g.sessionRecord().status, 'over');
+});
+
+test('a game saved on a board of another size starts fresh instead of loading', () => {
+  const g = game();
+  const oldSnapshot = { grid: Array.from({ length: cfg.ROWS + 10 }, () => Array(cfg.COLS).fill('A')), score: 999, state: 'playing' };
+  assert.equal(g.restore(oldSnapshot), false);
+  assert.ok(g.board.isEmpty());
+  assert.equal(g.board.grid.length, cfg.ROWS);
+  assert.equal(g.score, 0);
 });
 
 test('the game log records every piece and word', () => {

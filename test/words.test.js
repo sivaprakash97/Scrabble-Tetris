@@ -58,5 +58,6 @@ test('findWords scans each row and reports cells', () => {
   const found = ST.findWords(g.board.grid, dict(), cfg, 3);
   assert.deepEqual(found.map((w) => w.word).sort(), ['CAT', 'DOG', 'SUN']);
   const cat = found.find((w) => w.word === 'CAT');
-  assert.deepEqual(cat.cells, [{ x: 2, y: 18 }, { x: 3, y: 18 }, { x: 4, y: 18 }]);
+  const y = cfg.ROWS - 2; // second row from the bottom
+  assert.deepEqual(cat.cells, [{ x: 2, y }, { x: 3, y }, { x: 4, y }]);
 });

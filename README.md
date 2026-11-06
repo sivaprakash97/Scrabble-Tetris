@@ -5,6 +5,7 @@ it's a tetris game but instead of tetris blocks, they would be alphabet scrabble
 
 This is a **mobile game**, planned for release as a phone app. Open `index.html` on a phone, or in a browser's phone view. There's no build step and no server needed.
 
+- The board is 10 × 10 tiles.
 - Spell words **left to right in any row**. Words reading down a column don't count.
 - Any everyday English word of 3 or more letters vanishes, and every tile drops to fill the gaps below, so buried gaps don't build up. Drops that spell new words score chain bonuses.
 - A completely full row also clears, but only words score.

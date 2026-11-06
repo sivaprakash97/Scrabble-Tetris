@@ -13,8 +13,9 @@ test('clearing a word drops only the tiles above it and keeps holes', () => {
     '.....H...B',
     'ZCATZ....B',
   ]);
-  g.board.clearCells([{ x: 1, y: 19 }, { x: 2, y: 19 }, { x: 3, y: 19 }]);
-  // Column 3's hole (row 18) moved down with the Y above it.
+  const bottom = cfg.ROWS - 1;
+  g.board.clearCells([{ x: 1, y: bottom }, { x: 2, y: bottom }, { x: 3, y: bottom }]);
+  // Column 3's hole (one row up) moved down with the Y above it.
   assert.deepEqual(show(g, 4), [
     '..........',
     '...X.....B',

@@ -324,7 +324,8 @@
     }
 
     restore(data) {
-      if (!data || !Array.isArray(data.grid)) return false;
+      // A game saved on a board of another size (an older version) can't be resumed.
+      if (!data || !Array.isArray(data.grid) || data.grid.length !== this.cfg.ROWS) return false;
       this.board.grid = data.grid.map((row) => row.map((ch) => (ch ? ST.makeTile(ch, this.cfg) : null)));
       Object.assign(this, {
         score: data.score || 0,

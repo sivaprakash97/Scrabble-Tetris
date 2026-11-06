@@ -4,7 +4,7 @@
 
   ST.CONFIG = {
     COLS: 10,
-    ROWS: 20,
+    ROWS: 10, // halved after playtest 3: at 20 rows the stack rarely passed row 4
 
     // Scrabble face values. 'QU' is a single tile; '*' is the blank wildcard.
     LETTER_VALUES: {

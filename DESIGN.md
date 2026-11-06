@@ -18,6 +18,7 @@ The layout follows the player's own sketch (v0.6), which had Down alone on the l
 
 ## Core loop
 
+- **The board is 10 × 10 (v0.8).** It was 10 wide by 20 tall until playtest 3, when the stack rarely got past the fourth row.
 - The 7 classic tetrominoes fall, each carrying 4 letter tiles.
 - Rotating a piece rotates its letters with it, so an I-piece flipped 180° reads backwards.
 - **Word clear.** When a piece locks, every row is read left to right. Any word of 3 or more letters inside a run of touching tiles disappears. Rows don't need to be full.
@@ -237,6 +238,14 @@ One game on a phone. Words were read across and down, and gaps closed after ever
 - The game ended when the middle columns grew into a tower (the board's top rows held ITCS and EI in columns 3–6), while the sides stayed low.
 
 **Change (v0.7):** vertical words removed. Gaps still close, and full rows still clear. The control buttons were also swapped: Rotate alone on the left, and Down wide under Left and Right.
+
+## Playtest 3 (v0.7 rules, 6 Nov 2026)
+
+On v0.7, words counted across only, gaps closed after each clear, and the landing shadow showed letters.
+- **Verdict:** still too easy. Clearing kept the stack so low that it rarely got past the fourth row of the 20, so most of the board went unused.
+- **Change (v0.8):** the board is 10 rows tall instead of 20. Less room means mistakes matter sooner.
+
+The computer player can't judge this. It clears 3.98 of the 4 tiles each piece adds and reached the 400-piece cap in all 40 games at 20, 12 and 10 rows. Human playtests are the measure from here.
 
 ## Later-phase ideas
 
