@@ -69,6 +69,48 @@ Letters are picked when a piece spawns, so the adaptive nudge and the helper let
 
 Paste it into a conversation to look at what came up.
 
+## Saved sessions (playtesting)
+
+On the hosted page, every game is saved to the page's own database (`src/sessions.js`), so a session a person played can be reviewed afterwards.
+
+**What's saved, one document per game.** `Game.sessionRecord()` builds it.
+
+The game as a whole:
+- the settings and the seed;
+- score, level, words and longest chain;
+- play time, not counting pauses;
+- the number of pauses;
+- the final board.
+
+For **every piece**:
+
+| Field | What it records |
+|---|---|
+| `letters` | The piece's letters |
+| `helper` | The helper letter swapped in, if any |
+| `offered` | The letters that would have finished a word at that moment |
+| `x`, `y`, `rot` | Where it landed and its net rotation |
+| `moves`, `rotations` | How many moves and rotations the player made |
+| `thinkMs` | Time from spawn to lock |
+| `softCells` | Cells soft-dropped |
+| `words` | The words it made, with direction, points and chain |
+| `junkRows` | Full rows it cleared |
+| `board` | The board after everything settled |
+
+**When it's saved:**
+- when a game starts;
+- every 10 pieces;
+- on pause, including leaving the app;
+- at game over.
+
+**Where it's saved:** `sessions/<player id>/games/<game id>`, plus `sessions/<player id>` = `{ lastGame, lastPlayedAt }` so players can be listed.
+
+**Who can read and write it.** The database rules let each player write only their own subtree. Only the page's owner and its editors can read everyone's sessions. The Rules panel says this to players.
+
+**Size.** A 100-piece game is about 50 KB. The cap is 256 KB per document; above it, boards are kept for every 5th piece only.
+
+**When nothing is saved.** With no database (a local file, or a signed-out viewer), nothing is saved and the game plays normally.
+
 ## Points
 
 - **Letter values are Scrabble's:** A1 B3 C3 D2 E1 F4 G2 H4 I1 J8 K5 L1 M3 N1 O1 P3 Qu10 R1 S1 T1 U1 V4 W4 X8 Y4 Z10, and ✦0.

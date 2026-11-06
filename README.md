@@ -11,6 +11,7 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 - Letters use Scrabble values, and longer words multiply steeply.
 - "Words found", below the board, shows each word with a short definition.
 - After a game, "Copy game log" copies every piece's letters and the final board, so a tricky game can be shared and looked at.
+- On the hosted page, every game is also saved automatically for review. This covers each piece's letters, where it went, how long it took and what it spelled. See "Saved sessions" in DESIGN.md.
 - See [DESIGN.md](DESIGN.md) for the letter rules, the dictionary, the scoring and the benchmark.
 
 | Control | Action |

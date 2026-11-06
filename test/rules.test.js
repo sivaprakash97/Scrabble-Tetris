@@ -70,6 +70,36 @@ test('finishing letters: with vertical words, the top of a column counts', () =>
   assert.ok(ST.finishingLetters(g.board.grid, dict(), 3, true).T > 0); // T + OP = TOP
 });
 
+test('the session record keeps how each piece was played', () => {
+  const g = game();
+  g.start();
+  g.move(-1);
+  g.move(-1);
+  g.rotate(1);
+  const first = g.current;
+  g.softDropping = true;
+  for (let i = 0; i < 200 && g.current === first; i++) g.update(50);
+  while (g.state === 'clearing') g.update(cfg.CLEAR_FLASH + 1);
+
+  const rec = g.sessionRecord();
+  const p = rec.pieces[0];
+  assert.equal(rec.status, 'in progress');
+  assert.equal(p.n, 1);
+  assert.equal(p.letters.length, 4);
+  assert.equal(p.moves, 2);
+  assert.equal(p.rotations, 1);
+  assert.equal(p.rot, 1);
+  assert.ok(p.softCells > 0);
+  assert.ok(p.thinkMs > 0);
+  assert.equal(typeof p.x, 'number');
+  assert.equal(p.board.length, cfg.ROWS); // board after the piece settled
+  assert.ok(rec.pieces.length === 2 && !rec.pieces[1].board); // the next piece is in play
+  assert.ok(JSON.stringify(rec).length < 5000);
+
+  g.gameOver();
+  assert.equal(g.sessionRecord().status, 'over');
+});
+
 test('the game log records every piece and word', () => {
   const g = game();
   g.start();

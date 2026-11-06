@@ -38,7 +38,20 @@
       this.lockResets = 0;
       this.state = 'ready';
       this.pausedFrom = null;
-      this.log = { pieces: [], words: [] }; // what came up this game, for "Copy game log"
+      this.seed = seed;
+      this.sessionId = null; // set by the page when it starts saving this game
+      this.clock = 0; // ms of play (paused time excluded)
+      // What happened this game, piece by piece: for "Copy game log" and saved sessions.
+      this.log = { pieces: [], words: [], pauses: 0 };
+    }
+
+    // The log entry for the piece in play (or the one that just locked).
+    get pieceLog() {
+      return this.log.pieces[this.log.pieces.length - 1] || null;
+    }
+
+    boardRows() {
+      return this.board.grid.map((row) => row.map((t) => (t ? (t.ch === 'QU' ? 'q' : t.ch) : '.')).join(''));
     }
 
     // ---- piece supply -------------------------------------------------
@@ -51,7 +64,21 @@
       const helpers = ST.finishingLetters(this.board.grid, this.dict, this.settings.minLen, this.settings.vertical);
       const piece = ST.makePiece(this.shapes.draw(), this.director.nextLetters(4, share, helpers), this.cfg);
       const letters = piece.grid.flat().filter(Boolean).map((t) => (t.ch === 'QU' ? 'Qu' : t.ch));
-      this.log.pieces.push({ type: piece.type, letters, helper: this.director.lastHelper });
+      const offered = Object.entries(helpers).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([ch]) => ch).join('');
+      this.log.pieces.push({
+        n: this.log.pieces.length + 1,
+        type: piece.type,
+        letters,
+        helper: this.director.lastHelper, // the letter swapped in to finish a word, or null
+        offered, // letters that would have finished a word, best first
+        spawnMs: Math.round(this.clock),
+        moves: 0,
+        rotations: 0,
+        rot: 0, // net quarter turns clockwise from how it spawned
+        softCells: 0,
+        words: [],
+        junkRows: 0,
+      });
       return piece;
     }
 
@@ -83,12 +110,16 @@
       } else if (this.state === 'playing' || this.state === 'clearing') {
         this.pausedFrom = this.state;
         this.state = 'paused';
+        this.log.pauses++;
+        this.events.push({ type: 'pause' });
       }
     }
 
     gameOver() {
       this.state = 'over';
       this.current = null;
+      const rec = this.pieceLog;
+      if (rec && !rec.board) rec.board = this.boardRows();
       this.events.push({ type: 'over' });
     }
 
@@ -98,6 +129,7 @@
     }
 
     update(dt) {
+      if (this.state === 'playing' || this.state === 'clearing') this.clock += dt;
       if (this.state === 'clearing') {
         this.clearing.timer -= dt;
         if (this.clearing.timer <= 0) this.finishClear();
@@ -113,7 +145,10 @@
         this.gravityTimer -= interval;
         if (this.board.collides(this.current, 0, 1)) { this.gravityTimer = 0; break; }
         this.current.y++;
-        if (this.softDropping) this.score += this.cfg.SOFT_DROP_POINTS;
+        if (this.softDropping) {
+          this.score += this.cfg.SOFT_DROP_POINTS;
+          if (this.pieceLog) this.pieceLog.softCells++;
+        }
       }
 
       if (this.board.collides(this.current, 0, 1)) {
@@ -141,6 +176,7 @@
     move(dx) {
       if (!this.canAct() || this.board.collides(this.current, dx, 0)) return false;
       this.current.x += dx;
+      if (this.pieceLog) this.pieceLog.moves++;
       this.touchedGround();
       return true;
     }
@@ -153,6 +189,11 @@
           this.current.grid = grid;
           this.current.x += kx;
           this.current.y += ky;
+          const rec = this.pieceLog;
+          if (rec) {
+            rec.rotations++;
+            rec.rot = (rec.rot + dir + 4) % 4;
+          }
           this.touchedGround();
           return true;
         }
@@ -176,6 +217,11 @@
     // ---- locking, words and chains -----------------------------------
 
     lockPiece() {
+      const rec = this.pieceLog;
+      if (rec) {
+        Object.assign(rec, { x: this.current.x, y: this.current.y, lockMs: Math.round(this.clock) });
+        rec.thinkMs = rec.lockMs - rec.spawnMs;
+      }
       const ok = this.board.lock(this.current);
       this.current = null;
       this.events.push({ type: 'lock' });
@@ -200,11 +246,16 @@
         row.forEach((_, x) => { if (!wordCells.has(x + ',' + y)) junkCells.push({ x, y }); });
       });
 
+      const rec = this.pieceLog;
       if (found.length === 0 && junkCells.length === 0) {
+        // The piece and everything it set off have settled.
+        if (rec && !rec.board) rec.board = this.boardRows();
+        this.events.push({ type: 'settled', piece: rec ? rec.n : 0 });
         this.state = 'playing';
         this.spawnNext();
         return;
       }
+      if (rec && fullRows && junkCells.length) rec.junkRows += fullRows;
 
       if (found.length) {
         this.chain++;
@@ -219,6 +270,7 @@
           }
           this.recent.unshift({ display: w.display, points: w.points, chain: this.chain, dir: w.dir });
           this.log.words.push(`${w.display} ${w.dir} +${w.points}`);
+          if (rec) rec.words.push({ word: w.display, dir: w.dir, points: w.points, chain: this.chain });
         }
         this.recent.length = Math.min(this.recent.length, 12);
         this.score += points;
@@ -261,6 +313,10 @@
         recent: this.recent,
         settings: this.settings,
         state: this.state,
+        seed: this.seed,
+        clock: this.clock,
+        log: this.log,
+        sessionId: this.sessionId,
       };
     }
 
@@ -274,6 +330,10 @@
         bestWord: data.bestWord || null,
         maxChain: data.maxChain || 0,
         recent: data.recent || [],
+        seed: data.seed || this.seed,
+        clock: data.clock || 0,
+        log: data.log && Array.isArray(data.log.pieces) ? data.log : this.log,
+        sessionId: data.sessionId || null,
       });
       Object.assign(this.settings, data.settings || {});
       if (data.state === 'playing' || data.state === 'clearing' || data.state === 'paused') {
@@ -296,7 +356,7 @@
         });
         return `${String(i + 1).padStart(3)}. ${p.type}  ${letters.join(' ')}`;
       });
-      const board = this.board.grid.map((row) => row.map((t) => (t ? (t.ch === 'QU' ? 'q' : t.ch) : '.')).join(''));
+      const board = this.boardRows();
       return [
         `Scrabble-Tetris game log: score ${this.score}, ${this.words} words, level ${this.level}`,
         `Rules: shortest word ${minLen}, words read ${vertical ? 'across and down' : 'across only'}`,
@@ -310,6 +370,29 @@
         'Board at the end (q = Qu):',
         ...board.map((r) => `  ${r}`),
       ].join('\n');
+    }
+
+    // Everything worth keeping about this game, as one plain-JSON document, so a session
+    // can be reviewed later: every piece's letters, where it went, how long it took,
+    // what it spelled, and the board after it settled.
+    sessionRecord() {
+      const { minLen, vertical } = this.settings;
+      return {
+        v: 1,
+        status: this.state === 'over' ? 'over' : 'in progress',
+        seed: this.seed,
+        settings: { minLen, vertical },
+        score: this.score,
+        level: this.level,
+        words: this.words,
+        maxChain: this.maxChain,
+        bestWord: this.bestWord,
+        playMs: Math.round(this.clock),
+        pauses: this.log.pauses,
+        pieceCount: this.log.pieces.length,
+        pieces: this.log.pieces,
+        board: this.boardRows(),
+      };
     }
 
     // Debug helper: rows like '..CAT.....' laid onto the bottom of the well.

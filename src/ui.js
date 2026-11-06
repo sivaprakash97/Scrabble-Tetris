@@ -352,11 +352,14 @@
       o.text.textContent = `${game.words} words, level ${game.level}.${bw}${ch} Your best score: ${fmt(best)}.`;
       o.primary.textContent = 'Play again';
     }
+    showSaveStatus();
   }
 
   function primaryAction() {
-    if (game.state === 'ready') game.start();
-    else if (game.state === 'paused') game.togglePause();
+    if (game.state === 'ready') {
+      game.start();
+      saver.begin(game);
+    } else if (game.state === 'paused') game.togglePause();
     else if (game.state === 'over') restart();
   }
 
@@ -365,7 +368,29 @@
     effects.length = 0;
     renderRecent(0);
     game.start();
+    saver.begin(game);
   }
+
+  // ---- saved sessions ------------------------------------------------------
+
+  const saveStatusEl = $('save-status');
+  const historyNoteEl = $('history-note');
+  let saveState = 'off';
+  const SAVE_TEXT = {
+    saving: 'Saving this game for review…',
+    saved: 'This game is saved for review.',
+    error: 'This game could not be saved.',
+  };
+  function showSaveStatus() {
+    const text = game.state === 'over' && game.sessionId ? SAVE_TEXT[saveState] : null;
+    saveStatusEl.hidden = !text;
+    if (text) saveStatusEl.textContent = text;
+  }
+  const saver = ST.createSessionSaver((state) => {
+    saveState = state === 'ready' ? saveState : state;
+    if (state === 'ready') historyNoteEl.hidden = false;
+    showSaveStatus();
+  });
 
   overlay.primary.addEventListener('click', primaryAction);
   overlay.secondary.addEventListener('click', restart);
@@ -390,6 +415,7 @@
 
   function drainEvents(now) {
     for (const e of game.events) {
+      saver.onEvent(game, e);
       if (e.type === 'words') {
         for (const w of e.found) {
           const xs = w.cells.map((c) => c.x);
@@ -468,8 +494,11 @@
   }
 
   window.addEventListener('blur', () => [...held.keys(), 'down'].forEach(release));
+  // Leaving the app pauses the game and saves it right away (the frame loop stops while hidden).
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden && (game.state === 'playing' || game.state === 'clearing')) game.togglePause();
+    if (!document.hidden) return;
+    if (game.state === 'playing' || game.state === 'clearing') game.togglePause();
+    if (game.state === 'paused') saver.save(game);
   });
 
   for (const btn of document.querySelectorAll('button[data-action]')) {

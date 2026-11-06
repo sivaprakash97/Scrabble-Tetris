@@ -41,6 +41,7 @@
           <button type="button" id="overlay-log" class="btn-ghost" hidden>Copy game log</button>
         </div>
         <textarea id="log-text" class="log-text" readonly hidden aria-label="Game log"></textarea>
+        <p id="save-status" class="save-status" role="status" hidden></p>
       </div>
     </div>
   </section>
@@ -93,6 +94,10 @@
       <svg class="glyph" viewBox="0 0 24 24" aria-label="star"><path d="M12 3 14.4 9.6 21 12 14.4 14.4 12 21 9.6 14.4 3 12 9.6 9.6Z"/></svg>
       is a blank that can be any letter. Hold Down to drop faster.
     </p>
+    <p class="hint" id="history-note" hidden>
+      Every game you play here is saved for review: each piece's letters, where it went, how long it took, and the words it made.
+      Only you and people you make editors of this page can read it.
+    </p>
     <p class="hint">Word list from ENABLE and SCOWL. Definitions from WordNet 3.0, © 2006 Princeton University.</p>
   </section>
 </main>
@@ -105,6 +110,7 @@
 <script src="src/game.js"></script>
 <script src="data/words.js"></script>
 <script src="data/definitions.js"></script>
+<script src="src/sessions.js"></script>
 <script src="src/ui.js"></script>
 <!-- /build:artifact-body -->
 </body>
