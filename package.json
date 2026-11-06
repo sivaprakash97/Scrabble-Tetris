@@ -7,6 +7,7 @@
     "test": "node --test test/*.test.js",
     "build": "node scripts/build-artifact.mjs",
     "wordlist": "node scripts/build-wordlist.mjs",
-    "benchmark": "node scripts/benchmark.mjs"
+    "benchmark": "node scripts/benchmark.mjs",
+    "letters": "node scripts/letter-sim.mjs"
   }
 }

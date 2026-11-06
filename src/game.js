@@ -21,7 +21,11 @@
       const cfg = this.cfg;
       this.rng = ST.mulberry32(seed);
       this.board = new ST.Board(cfg.COLS, cfg.ROWS);
-      this.director = new ST.TileDirector(cfg, this.rng);
+      // Where letters come from: the weighted generator (src/letters.js) or the shuffle-bag
+      // director (src/tiles.js). Both hand out a piece's letters through nextLetters().
+      this.director = cfg.LETTER_SYSTEM === 'weighted'
+        ? new ST.WeightedLetters(cfg.LETTER_GENERATION, this.rng)
+        : new ST.TileDirector(cfg, this.rng);
       this.shapes = new ST.ShuffleBag(Object.fromEntries(ST.PIECE_TYPES.map((t) => [t, 1])), this.rng);
       this.current = null;
       this.score = 0;
@@ -57,12 +61,13 @@
 
     // ---- piece supply -------------------------------------------------
 
-    // Letters are picked at spawn time, so the vowel nudge and helper letters see the
-    // stack as it is right now.
+    // Letters are picked at spawn time. The bag system looks at the board first (vowel
+    // nudge, helper letters); the weighted system ignores the board entirely.
     newPiece() {
       const { ADAPTIVE, VOWELS } = this.cfg;
-      const share = this.board.vowelShare(ADAPTIVE.ROWS, ADAPTIVE.MIN_TILES, VOWELS);
-      const helpers = ST.finishingLetters(this.board.grid, this.dict, this.settings.minLen, this.settings.vertical);
+      const bags = this.cfg.LETTER_SYSTEM !== 'weighted';
+      const share = bags ? this.board.vowelShare(ADAPTIVE.ROWS, ADAPTIVE.MIN_TILES, VOWELS) : null;
+      const helpers = bags ? ST.finishingLetters(this.board.grid, this.dict, this.settings.minLen, this.settings.vertical) : {};
       const piece = ST.makePiece(this.shapes.draw(), this.director.nextLetters(4, share, helpers), this.cfg);
       const letters = piece.grid.flat().filter(Boolean).map((t) => (t.ch === 'QU' ? 'Qu' : t.ch));
       const offered = Object.entries(helpers).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([ch]) => ch).join('');
@@ -388,7 +393,7 @@
         v: 1,
         status: this.state === 'over' ? 'over' : 'in progress',
         seed: this.seed,
-        settings: { minLen, vertical, closeGaps: !!this.cfg.CLOSE_GAPS },
+        settings: { minLen, vertical, closeGaps: !!this.cfg.CLOSE_GAPS, letterSystem: this.cfg.LETTER_SYSTEM || 'bags' },
         score: this.score,
         level: this.level,
         words: this.words,

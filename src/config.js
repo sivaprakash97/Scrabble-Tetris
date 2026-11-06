@@ -13,6 +13,39 @@
       '*': 0,
     },
 
+    // =====================================================================================
+    // LETTER GENERATION: which letters the falling pieces carry.
+    //
+    // 'weighted' (this experiment) draws every tile from LETTER_GENERATION below: English
+    //            letter-frequency weights plus recent-letter balancing. See src/letters.js
+    //            and docs/letter-generation.md.
+    // 'bags'     (the main game, v0.4–0.9) uses the shuffle bags, vowel quota, helper letters
+    //            and other safeguards further down, in src/tiles.js.
+    // =====================================================================================
+    LETTER_SYSTEM: 'weighted',
+
+    LETTER_GENERATION: {
+      // Relative weights, not percentages: each letter's chance is its weight divided by the
+      // sum of all weights (98.9 for this table). Q is drawn as Q and arrives as a Qu tile.
+      WEIGHTS: {
+        E: 12, T: 9, A: 8, O: 8, I: 7, N: 7, S: 6, H: 6, R: 6,
+        D: 4, L: 4, C: 3, U: 3,
+        M: 2, W: 2, F: 2, G: 2, Y: 2, P: 2,
+        B: 1.5, V: 1, K: 0.8, J: 0.2, X: 0.2, Q: 0.1, Z: 0.1,
+      },
+      // How many of the most recently generated letters are remembered (across pieces).
+      RECENT_WINDOW: 5,
+      // A letter counts as uncommon when its weight is at or below this (V K J X Q Z).
+      RARE_MAX_WEIGHT: 1,
+      // When this many uncommon letters are among the remembered ones, balancing switches on.
+      RARE_THRESHOLD: 2,
+      // While balancing is on, every uncommon letter's weight is multiplied by this.
+      // 1 turns balancing off; values near 0 almost (never fully) stop uncommon letters.
+      RARE_DAMPING: 0.3,
+    },
+
+    // ---- 'bags' system settings (not used while LETTER_SYSTEM is 'weighted') ----------
+
     // Shuffle-bag contents per 200 tiles, in proportion to how often each letter appears
     // in the 3-5 letter words of data/words.js. Scrabble's counts suit a game where you
     // place every tile; here they over-supplied Qu, J, X, Z and I and starved S.

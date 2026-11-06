@@ -39,6 +39,15 @@ The layout follows the player's own sketch (v0.6), which had Down alone on the l
 - Tiles that drop can form new words, which starts another **chain wave**. Waves repeat until nothing clears, and then the next piece spawns.
 - The game ends when a new piece can't spawn, or a piece locks above the top.
 
+## Letter system on this branch: weighted letters (experiment)
+
+On `experiment/letter-frequency`, `LETTER_SYSTEM` is `'weighted'`, set in `src/config.js`.
+- Every tile is drawn from English letter-frequency weights, plus recent-letter balancing (`src/letters.js`).
+- The bag system below, along with its vowel quota, vowel nudge, rare caps, blanks and helper letters, is switched off.
+- The full explanation and simulation results are in [docs/letter-generation.md](docs/letter-generation.md). Run `npm run letters` to simulate.
+
+The bag system below is what the main game (`prototype/word-tetris`) uses.
+
 ## Letter rules (the Tile Director, `src/tiles.js`)
 
 The aim is randomness that still feels fair.

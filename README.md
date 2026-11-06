@@ -5,6 +5,7 @@ it's a tetris game but instead of tetris blocks, they would be alphabet scrabble
 
 This is a **mobile game**, planned for release as a phone app. Open `index.html` on a phone, or in a browser's phone view. There's no build step and no server needed.
 
+- **This branch (`experiment/letter-frequency`) tries weighted letters:** English letter frequency plus recent-letter balancing. See [docs/letter-generation.md](docs/letter-generation.md).
 - The board is 10 × 10 tiles.
 - Spell words **left to right in any row**. Words reading down a column don't count.
 - Any common everyday English word of 3 or more letters vanishes (38,528 words; abbreviation-like words such as EMS or SIS don't count), and every tile drops to fill the gaps below, so buried gaps don't build up. Drops that spell new words score chain bonuses.
@@ -28,6 +29,7 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 npm test             # unit tests (Node 22+, no dependencies)
 npm run build        # dist/scrabble-tetris.html, a single self-contained page
 npm run benchmark    # a computer player measures how playable the rules are
+npm run letters      # simulate 10,000 letters from the weighted letter generator
 npm run benchmark -- --keep-gaps --games 20
 ```
 

@@ -343,7 +343,7 @@
     o.log.textContent = 'Copy game log';
     o.logText.hidden = true;
     if (game.state === 'ready') {
-      o.eyebrow.textContent = 'Prototype';
+      o.eyebrow.textContent = cfg.LETTER_SYSTEM === 'weighted' ? 'Weighted letters' : 'Prototype';
       o.title.textContent = 'Scrabble-Tetris';
       o.text.textContent = rulesLine();
       o.primary.textContent = 'Start';

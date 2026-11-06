@@ -1,5 +1,5 @@
 // Loads the browser scripts into Node's global ST namespace.
-for (const f of ['config', 'tiles', 'pieces', 'words', 'board', 'game']) require(`../src/${f}.js`);
+for (const f of ['config', 'tiles', 'letters', 'pieces', 'words', 'board', 'game']) require(`../src/${f}.js`);
 require('../data/words.js');
 require('../data/definitions.js');
 
