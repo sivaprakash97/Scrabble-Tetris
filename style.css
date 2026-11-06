@@ -295,7 +295,7 @@ select:focus-visible {
   gap: 16px;
 }
 
-.touch .pad-down {
+.touch .pad-solo {
   width: 76px;
   min-height: 84px;
 }
@@ -306,7 +306,7 @@ select:focus-visible {
   gap: 8px;
 }
 
-.pad-group .pad-rotate {
+.pad-group .pad-wide {
   grid-column: 1 / -1;
 }
 

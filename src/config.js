@@ -48,7 +48,9 @@
     CLOSE_GAPS: true,
 
     // Words
-    VERTICAL_WORDS: true, // also read columns top to bottom (a Rules switch)
+    // Also read columns top to bottom. Removed after playtest 2 made the game too easy
+    // (48% of words were down words); the code is kept behind this flag.
+    VERTICAL_WORDS: false,
     MIN_WORD_LEN: 3,
     MAX_WORD_LEN: 12,
     MAX_BLANKS_PER_WORD: 2,

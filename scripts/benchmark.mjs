@@ -20,6 +20,7 @@ const GAMES = arg('games', 40);
 const CAP = arg('cap', 400);
 const minLen = arg('min-len', cfg.MIN_WORD_LEN);
 const vertical = process.argv.includes('--no-vertical') ? false : process.argv.includes('--vertical') ? true : cfg.VERTICAL_WORDS;
+cfg.VERTICAL_WORDS = vertical; // Game reads this from the config
 if (process.argv.includes('--keep-gaps')) cfg.CLOSE_GAPS = false;
 
 const dict = new ST.Dictionary(ST.WORDS, cfg);

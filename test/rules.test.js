@@ -2,7 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { ST, cfg, dict } = require('./helpers');
 
-const game = (settings = {}) => new ST.Game({ dict: dict(), seed: 1, settings });
+// Vertical words are shelved (off in the config); tests that ask for them turn the flag on.
+const game = (settings = {}) =>
+  new ST.Game({ dict: dict(), seed: 1, cfg: { ...cfg, VERTICAL_WORDS: !!settings.vertical }, settings });
 const resolve = (g, rows) => {
   g.setRows(rows);
   g.state = 'playing';
@@ -16,6 +18,14 @@ test('a word down a column counts only when vertical words are on', () => {
   const c = resolve(game({ vertical: true }), rows);
   assert.deepEqual(c.found.map((w) => [w.word, w.dir]), [['CAT', 'down']]);
   assert.deepEqual(c.cells.map((p) => p.y), [17, 18, 19]);
+});
+
+test('vertical words are off by default, even if an old saved setting turns them on', () => {
+  assert.equal(cfg.VERTICAL_WORDS, false);
+  const g = new ST.Game({ dict: dict(), seed: 1, settings: { vertical: true } });
+  assert.equal(g.settings.vertical, false);
+  assert.equal(resolve(g, ['C.........', 'A.........', 'T.........']), null);
+  assert.deepEqual(resolve(g, ['..........', '..........', 'CAT.......']).found.map((w) => w.word), ['CAT']);
 });
 
 test('crossing words both score and their shared tile clears once', () => {

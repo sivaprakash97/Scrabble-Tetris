@@ -5,7 +5,7 @@ it's a tetris game but instead of tetris blocks, they would be alphabet scrabble
 
 This is a **mobile game**, planned for release as a phone app. Open `index.html` on a phone, or in a browser's phone view. There's no build step and no server needed.
 
-- Spell words **left to right in any row**, or **top to bottom in any column**. Columns count only when "Words read" in Rules is set to "Across and down", which is the default.
+- Spell words **left to right in any row**. Words reading down a column don't count.
 - Any everyday English word of 3 or more letters vanishes, and every tile drops to fill the gaps below, so buried gaps don't build up. Drops that spell new words score chain bonuses.
 - A completely full row also clears, but only words score.
 - Letters use Scrabble values, and longer words multiply steeply.
@@ -16,9 +16,9 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 
 | Control | Action |
 |---|---|
-| Down (alone on the left) | Hold to drop faster. The piece locks a moment after it lands. |
+| Rotate (red, alone on the left) | Turn the piece clockwise. Its letters turn with it. |
 | Left / Right (top row on the right) | Move. Hold to keep moving. |
-| Rotate (wide button under Left and Right) | Turn the piece clockwise. Its letters turn with it. |
+| Down (wide button under Left and Right) | Hold to drop faster. The piece locks a moment after it lands. |
 | Pause (top right) | Pause or resume |
 
 ## Develop
@@ -27,7 +27,7 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 npm test             # unit tests (Node 22+, no dependencies)
 npm run build        # dist/scrabble-tetris.html, a single self-contained page
 npm run benchmark    # a computer player measures how playable the rules are
-npm run benchmark -- --no-vertical --games 20
+npm run benchmark -- --keep-gaps --games 20
 ```
 
 To rebuild the word list and definitions (`data/words.js`, `data/definitions.js`), download the three sources and pass them to the script:

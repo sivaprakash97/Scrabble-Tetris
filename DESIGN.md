@@ -7,7 +7,9 @@ This doc records the rules the prototype uses and why. Every number in it lives 
 
 ## Controls
 
-Under the board, **Down sits alone on the left**, so it isn't pressed by accident while moving or rotating. On the right, Left and Right share a row, with one wide Rotate button underneath. The layout follows the player's own sketch (v0.6). Pause is a small button in the top-right corner of the score strip.
+Under the board, **Rotate sits alone on the left, in red**. On the right, Left and Right share a row, with one wide Down button underneath. Pause is a small button in the top-right corner of the score strip.
+
+The layout follows the player's own sketch (v0.6), which had Down alone on the left. v0.7 swapped Down and Rotate because the two kept getting confused.
 - Every button uses the same set of line icons, and none of them is an emoji.
 - **Down is the only way to drop.** Holding it makes the piece fall fast, and the piece locks 0.5 s after it lands. There's no hard drop.
 - Down doesn't carry over: if you keep holding it after a piece locks, the next piece still falls at normal speed until you press Down again.
@@ -18,10 +20,10 @@ Under the board, **Down sits alone on the left**, so it isn't pressed by acciden
 - The 7 classic tetrominoes fall, each carrying 4 letter tiles.
 - Rotating a piece rotates its letters with it, so an I-piece flipped 180° reads backwards.
 - **Word clear.** When a piece locks, every row is read left to right. Any word of 3 or more letters inside a run of touching tiles disappears. Rows don't need to be full.
-- **Vertical words (a Rules switch, on by default).**
-  - With "Words read: Across and down", columns are also read top to bottom.
-  - A tile can belong to both an across word and a down word, as in a Scrabble crossword. Both words score, and the shared tile clears once.
-  - The Words found list tags vertical words "down".
+- **Only across words count (v0.7).**
+  - Vertical words (columns read top to bottom) were added in v0.4 and removed after Playtest 2 made the game too easy.
+  - The code is kept behind `VERTICAL_WORDS` in the config.
+  - When it was on, a tile could belong to both an across word and a down word, and both scored.
 - Within a run, a small dynamic-programming pass chooses the highest-scoring set of words that don't overlap. Ties go to the set that clears more tiles. So `XCATSZ` clears CATS rather than CAT, and `CATDOG` clears both CAT and DOG.
 - **Full rows clear, but don't score.** A completely full row clears even if it holds no word. Its tiles fade out grey rather than flashing gold, and it's worth 0 points.
   - Words stay the only way to score.
@@ -58,7 +60,7 @@ The aim is randomness that still feels fair.
 
 **Helper letters.** When a piece spawns, `ST.finishingLetters` looks for open word ends a piece could reach:
 - **At either end of a run in a row:** the cell must be empty, with nothing above it, resting on the floor or on a tile.
-- **On top of a column**, when vertical words are on.
+- **On top of a column**, only when the shelved vertical words are switched on.
 
 It lists the letters that would finish a word there, giving longer words more weight. Qu, X and Z are never offered. With a 35% chance, the piece swaps one tile for one of those letters, vowel for vowel or consonant for consonant, so the vowel quota holds.
 
@@ -171,10 +173,10 @@ Every piece adds 4 tiles, so the game is sustainable only when clearing comes cl
 | v0.3: Scrabble counts, across only | 99 | 2.39 | 74 | 0/40 |
 | v0.4, across only | 400 | 3.68 | 280 | 22/40 |
 | v0.4, across and down | 170 | 3.61 | 208 (55% down) | 0/40 |
-| v0.6 (gaps close), across only | **400** | **3.98** | 317 | **40/40** |
-| v0.6 (gaps close), across and down (default) | **400** | **3.98** | 445 (49% down) | **40/40** |
+| v0.6 (gaps close), across and down | 400 | 3.98 | 445 (49% down) | 40/40 |
+| v0.7 (gaps close), across only (current) | **400** | **3.98** | 317 | **40/40** |
 
-A human clears far less than this computer player does. In Playtest 1, the player cleared 1.62 tiles per piece, against the computer player's 3.61 under the same v0.4 rules.
+A human clears far less than this computer player does. In Playtest 1, the player cleared 1.62 tiles per piece, against the computer player's 3.61 under the same v0.4 rules. The computer player can't tell "too easy" from "just right", which is what the human playtests are for.
 
 How much each v0.4 change helped, across only, measured one at a time:
 
@@ -186,7 +188,7 @@ How much each v0.4 change helped, across only, measured one at a time:
 
 **Vertical words on their own** are the biggest boost to word clears. On v0.3 rules they took the median from 99 to 134 pieces and doubled words per game. But with the full-row valve, the computer player does better across only: chasing column words leaves fewer complete rows.
 
-Vertical words stay a switch until people have played both ways. This computer player isn't a human, so treat these numbers as a comparison between rule sets, not a difficulty rating.
+Playtest 2 settled it the other way: vertical words made the game too easy for a person, so they're shelved (v0.7). This computer player isn't a human, so treat these numbers as a comparison between rule sets, not a difficulty rating.
 
 A separate random-placement bot finds only about 1.9 words per game, so words don't clear themselves by accident. A 4-letter minimum is a real "hard mode".
 
@@ -222,6 +224,19 @@ One game on a phone, words read across and down:
 - 44.6% vowels. The adaptive nudge gave 3-vowel pieces 14% of the time, against 5% by design.
 - Some odd words still count (ALB, FER, LEI, ETA).
 
+## Playtest 2 (v0.6 rules, 6 Nov 2026)
+
+One game on a phone. Words were read across and down, and gaps closed after every clear:
+- **Result:** 120 pieces, 79 words, 23,520 points, level 8.
+- **Compared with Playtest 1:** more than double the pieces, nearly 3× the words, and 8× the score.
+
+**Verdict: too easy.**
+- 38 of the 79 words (48%) read downward.
+- Down words, gaps closing and full rows clearing kept setting off chains. The biggest scores came from them: WISH +2,400, DEBT +1,120 and PaLE +800.
+- The game ended when the middle columns grew into a tower (the board's top rows held ITCS and EI in columns 3–6), while the sides stayed low.
+
+**Change (v0.7):** vertical words removed. Gaps still close, and full rows still clear. The control buttons were also swapped: Rotate alone on the left, and Down wide under Left and Right.
+
 ## Later-phase ideas
 
 - **Show words at the landing spot.** While a piece moves, its shadow would highlight the words it would spell where it lands, with the points. Playtest 1 found a word was available for 26 of the 28 pieces that made none.
@@ -231,7 +246,6 @@ One game on a phone, words read across and down:
   - The logic is still in the code: `ST.cycleLetters` and `Game.cycle()`, behind `CYCLE_LETTERS` in the config.
   - Before bringing it back, decide how to keep the two visibly separate. One idea: Rotate changes only the shape and the letters always keep their reading order, while Cycle is the only thing that changes letter order. It would also need its own button style and animation.
 - Scrabble premium squares (DL / TL / DW / TW) fixed into the well.
-- Decide the default for vertical words once people have played both ways.
 - Earning a blank by spelling a word of 6+ letters.
 - A profanity filter for the word list. SCOWL size 50 still contains some vulgar words.
 - An optional "Scrabble expert" mode that accepts the full ENABLE list.

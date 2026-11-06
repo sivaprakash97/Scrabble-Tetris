@@ -7,10 +7,11 @@
     constructor({ dict, cfg = ST.CONFIG, seed = Date.now(), settings = {} }) {
       this.dict = dict;
       this.cfg = cfg;
+      // Shelved rules come from the config, so an older saved setting can't turn them back on.
       this.settings = {
         minLen: cfg.MIN_WORD_LEN,
-        vertical: cfg.VERTICAL_WORDS,
         ...settings,
+        vertical: cfg.VERTICAL_WORDS,
         cycleEnabled: cfg.CYCLE_LETTERS,
       };
       this.reset(seed);
@@ -337,7 +338,10 @@
         log: data.log && Array.isArray(data.log.pieces) ? data.log : this.log,
         sessionId: data.sessionId || null,
       });
-      Object.assign(this.settings, data.settings || {});
+      Object.assign(this.settings, data.settings || {}, {
+        vertical: this.cfg.VERTICAL_WORDS,
+        cycleEnabled: this.cfg.CYCLE_LETTERS,
+      });
       if (data.state === 'playing' || data.state === 'clearing' || data.state === 'paused') {
         this.state = 'playing';
         this.spawnNext();

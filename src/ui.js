@@ -439,19 +439,14 @@
   // ---- settings ----------------------------------------------------------
 
   const minLenEl = $('min-len');
-  const wordsReadEl = $('words-read');
   function syncSettings() {
     minLenEl.value = String(game.settings.minLen);
-    wordsReadEl.value = game.settings.vertical ? 'down' : 'across';
   }
-  function saveSettings() {
+  minLenEl.addEventListener('change', () => {
     game.settings.minLen = Number(minLenEl.value);
-    game.settings.vertical = wordsReadEl.value === 'down';
-    store.set('settings', { minLen: game.settings.minLen, vertical: game.settings.vertical });
+    store.set('settings', { minLen: game.settings.minLen });
     updateOverlay(true);
-  }
-  minLenEl.addEventListener('change', saveSettings);
-  wordsReadEl.addEventListener('change', saveSettings);
+  });
 
   // ---- input: the on-screen control pad ------------------------------------
 
