@@ -3,11 +3,19 @@
 Tetris where every block cell is a Scrabble-style letter tile, and you clear lines by spelling words.
 This doc records the rules the prototype uses and why. Every number in it lives in `src/config.js`.
 
+**Platform:** mobile only, for a future phone app. There's no desktop layout and no keyboard controls. On a computer the page shows the phone layout, and the buttons work with a mouse.
+
+## Controls
+
+There are six on-screen buttons: Hold, Rotate, Pause, Left, Down and Right.
+- Every button uses the same set of line icons, and none of them is an emoji.
+- **Down is the only way to drop.** Holding it makes the piece fall fast, and the piece locks 0.5 s after it lands. There's no hard drop.
+- Down doesn't carry over: if you keep holding it after a piece locks, the next piece still falls at normal speed until you press Down again.
+
 ## Core loop
 
 - The 7 classic tetrominoes fall, each carrying 4 letter tiles.
 - Rotating a piece rotates its letters with it, so an I-piece flipped 180° reads backwards.
-- **Cycle letters** (`A`) keeps the shape and shifts every letter one step along the piece's reading order (ABCD → DABC). This is the main tool for spelling on purpose.
 - **Word clear.** When a piece locks, every row is read left to right. Any word of 3 or more letters inside a run of touching tiles disappears. Rows don't need to be full.
 - Within a run, a small dynamic-programming pass chooses the highest-scoring set of words that don't overlap. Ties go to the set that clears more tiles. So `XCATSZ` clears CATS rather than CAT, and `CATDOG` clears both CAT and DOG.
 - **Gravity.** In each column, everything above a cleared cell drops by one, holes included. Holes elsewhere stay holes, as in classic Tetris.
@@ -46,7 +54,7 @@ The preview queue shows the next 3 pieces, so the adaptive nudge acts about 3 pi
 - **Examples:** CAT 50, QUIZ 420, TRAINS 300.
 - **Chain:** the n-th wave of a cascade scores ×n.
 - **Level:** every word is also multiplied by the level. The level goes up every 10 words, and each level makes pieces fall 15% faster.
-- **Drops:** soft drop scores +1 per cell and hard drop +2 per cell.
+- **Drops:** holding Down scores +1 per cell.
 
 ## Feasibility check
 
@@ -56,10 +64,14 @@ A bot that drops pieces at random columns and rotations survives about 21 pieces
 
 ## Later-phase ideas
 
+- **Letter cycle.** This would keep the shape and shift each letter one step along the piece (ABCD → DABC).
+  - It was tried in v0.1, but it was too easy to confuse with Rotate, because both move letters around. It's shelved for now.
+  - The logic is still in the code: `ST.cycleLetters` and `Game.cycle()`, behind `CYCLE_LETTERS` in the config.
+  - Before bringing it back, decide how to keep the two visibly separate. One idea: Rotate changes only the shape and the letters always keep their reading order, while Cycle is the only thing that changes letter order. It would also need its own button style and animation.
 - Vertical words (top → bottom).
 - Scrabble premium squares (DL / TL / DW / TW) fixed into the well.
 - A helper Director that sometimes feeds the one letter that would finish a near-word on the surface.
-- Earning a blank by spelling a word of 6+ letters, plus a limited number of letter cycles per piece.
+- Earning a blank by spelling a word of 6+ letters.
 - A common-word dictionary mode. ENABLE accepts obscure words like EME and ANA.
 - A profanity filter for the found-words list.
 - Sound, daily seeded runs, and a high-score table.

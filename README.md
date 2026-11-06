@@ -3,22 +3,20 @@ it's a tetris game but instead of tetris blocks, they would be alphabet scrabble
 
 ## Play
 
-Open `index.html` in a browser. There's no build step and no server needed.
+This is a **mobile game**, planned for release as a phone app. Open `index.html` on a phone, or in a browser's phone view. There's no build step and no server needed.
 
 - Spell words **left to right in any row**. Any word of 3 or more letters vanishes, and the tiles above it drop. Drops that spell new words score chain bonuses.
 - Letters use Scrabble values, and longer words multiply steeply. See [DESIGN.md](DESIGN.md) for the letter rules and the scoring.
 
-| Key | Action |
-|---|---|
-| ← → | Move |
-| ↑ / X, Z | Rotate clockwise / counter-clockwise (letters rotate with the piece) |
-| A | Cycle the letters within the piece |
-| ↓ | Soft drop |
-| Space | Hard drop |
-| C | Hold |
-| P | Pause |
+The control pad sits under the board:
 
-On phones, use the touch buttons under the board.
+| Button | Action |
+|---|---|
+| Hold | Put the piece aside and swap it back later (once per piece) |
+| Rotate | Turn the piece clockwise. Its letters turn with it. |
+| Pause | Pause or resume |
+| Left / Right | Move. Hold to keep moving. |
+| Down | Hold to drop faster. The piece locks a moment after it lands. |
 
 ## Develop
 
@@ -35,4 +33,4 @@ npm run wordlist         # rebuild data/words.js from ENABLE1
 | `src/words.js` | Word finding and scoring |
 | `src/board.js` | The grid and gravity |
 | `src/game.js` | Rules and state |
-| `src/ui.js` | Canvas rendering and input |
+| `src/ui.js` | Canvas rendering and touch input |

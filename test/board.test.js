@@ -78,13 +78,36 @@ test('letter cycle shifts letters along reading order', () => {
   assert.equal(c.grid.map((r) => r.map(Boolean).join()).join('|'), p.grid.map((r) => r.map(Boolean).join()).join('|'));
 });
 
-test('hard drop locks, and a blocked spawn ends the game', () => {
+test('soft drop falls fast, then the piece locks after the lock delay', () => {
   const g = new ST.Game({ dict: dict(), seed: 7 });
   g.start();
-  assert.equal(g.state, 'playing');
-  for (let i = 0; i < 60 && g.state !== 'over'; i++) {
-    g.hardDrop();
-    while (g.state === 'clearing') g.update(cfg.CLEAR_FLASH + 1);
+  const first = g.current;
+  g.softDropping = true;
+  for (let t = 0; t < 1000 && !g.board.collides(first, 0, 1); t += 10) g.update(10);
+  assert.ok(g.board.collides(first, 0, 1), 'piece reached the floor within a second');
+  assert.ok(g.score > 0, 'soft drop scores points');
+
+  g.update(cfg.LOCK_DELAY - 20);
+  assert.equal(g.current, first, 'still waiting out the lock delay');
+  g.update(40);
+  while (g.state === 'clearing') g.update(cfg.CLEAR_FLASH + 1);
+  assert.ok(g.current && g.current !== first, 'locked, and the next piece spawned');
+});
+
+test('a held Down does not carry into the next piece', () => {
+  const g = new ST.Game({ dict: dict(), seed: 3 });
+  g.start();
+  g.softDropping = true;
+  g.spawnNext();
+  assert.equal(g.softDropping, false);
+});
+
+test('pieces pile up until a blocked spawn ends the game', () => {
+  const g = new ST.Game({ dict: dict(), seed: 7 });
+  g.start();
+  for (let t = 0; t < 600000 && g.state !== 'over'; t += 50) {
+    g.softDropping = true;
+    g.update(50);
   }
   assert.equal(g.state, 'over');
   assert.ok(g.score > 0);

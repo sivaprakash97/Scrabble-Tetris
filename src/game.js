@@ -7,7 +7,7 @@
     constructor({ dict, cfg = ST.CONFIG, seed = Date.now(), settings = {} }) {
       this.dict = dict;
       this.cfg = cfg;
-      this.settings = { minLen: cfg.MIN_WORD_LEN, cycleEnabled: true, ...settings };
+      this.settings = { minLen: cfg.MIN_WORD_LEN, ...settings, cycleEnabled: cfg.CYCLE_LETTERS };
       this.reset(seed);
     }
 
@@ -59,6 +59,8 @@
       this.gravityTimer = 0;
       this.lockTimer = 0;
       this.lockResets = 0;
+      // A held Down button doesn't carry over: press it again to speed up the new piece.
+      this.softDropping = false;
       if (this.board.collides(piece)) this.gameOver();
     }
 
@@ -172,14 +174,6 @@
       let d = 0;
       while (!this.board.collides(this.current, 0, d + 1)) d++;
       return d;
-    }
-
-    hardDrop() {
-      if (!this.canAct()) return;
-      const d = this.dropDistance();
-      this.current.y += d;
-      this.score += d * this.cfg.HARD_DROP_POINTS;
-      this.lockPiece();
     }
 
     hold() {

@@ -49,8 +49,10 @@
     LENGTH_MULT: { 3: 1, 4: 2, 5: 3, 6: 5, 7: 8 }, // 8+ uses LENGTH_MULT_MAX
     LENGTH_MULT_MAX: 12,
     SOFT_DROP_POINTS: 1,
-    HARD_DROP_POINTS: 2,
     WORDS_PER_LEVEL: 10,
+
+    // Shifting letters within a piece (ABCD -> DABC). Saved for a later phase.
+    CYCLE_LETTERS: false,
 
     // Timing (ms)
     GRAVITY_START: 900,

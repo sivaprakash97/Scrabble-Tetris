@@ -1,4 +1,4 @@
-// Rendering, input and HUD. Talks to ST.Game; holds no game rules of its own.
+// Rendering, touch input and HUD for the phone layout. Talks to ST.Game; holds no game rules of its own.
 (function () {
   const ST = window.ST;
   const cfg = ST.CONFIG;
@@ -38,9 +38,11 @@
   const holdEl = $('hold');
   const nextEl = $('next');
   let bctx, hctx, nctx;
-  let cell = 30;
-  let mini = 20;
+  let cell = 26;
+  const mini = 16;
   const SLOT_PAD = 6;
+  const GAP = 12;
+  const WELL_PAD = 12; // frame around the board, both sides together
 
   function setupCanvas(canvas, w, h) {
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
@@ -57,15 +59,24 @@
     return { w: 4 * mini + 2 * SLOT_PAD, h: 2 * mini + 2 * SLOT_PAD };
   }
 
+  // Sizes the board so the score strip, board and control pad fit on one phone screen.
   function fit() {
-    const phone = innerWidth < 720;
-    const coarse = matchMedia('(pointer: coarse)').matches;
-    const reservedW = phone ? 32 + 12 + 80 : 32 + 200 + 240 + 56;
-    const reservedH = phone ? 250 : coarse ? 300 : 160;
-    const byW = (innerWidth - reservedW) / cfg.COLS;
-    const byH = (innerHeight - reservedH) / cfg.ROWS;
-    cell = Math.max(14, Math.min(38, Math.floor(Math.min(byW, byH))));
-    mini = phone ? 16 : Math.max(16, Math.round(cell * 0.62));
+    const app = $('app');
+    const appStyle = getComputedStyle(app);
+    const rootStyle = getComputedStyle(document.documentElement);
+    const px = (s, prop) => parseFloat(s[prop]) || 0;
+    const viewH = window.visualViewport ? window.visualViewport.height : innerHeight;
+
+    const innerW = app.clientWidth - px(appStyle, 'paddingLeft') - px(appStyle, 'paddingRight');
+    const sideW = slotSize().w;
+    const byW = (innerW - GAP - sideW - WELL_PAD) / cfg.COLS;
+
+    const chrome =
+      $('stats').offsetHeight + $('touch').offsetHeight + 2 * GAP + WELL_PAD +
+      px(appStyle, 'paddingTop') + px(rootStyle, 'paddingTop') + px(rootStyle, 'paddingBottom') + 8;
+    const byH = (viewH - chrome) / cfg.ROWS;
+
+    cell = Math.max(14, Math.min(34, Math.floor(Math.min(byW, byH))));
     bctx = setupCanvas(boardEl, cell * cfg.COLS, cell * cfg.ROWS);
     const s = slotSize();
     hctx = setupCanvas(holdEl, s.w, s.h);
@@ -346,8 +357,6 @@
       o.text.textContent = `${game.words} words, level ${game.level}.${bw}${ch} Your best score: ${fmt(best)}.`;
       o.primary.textContent = 'Play again';
     }
-    if (!o.root.hidden) o.primary.focus({ preventScroll: true });
-    else if (o.root.contains(document.activeElement)) document.activeElement.blur();
   }
 
   function primaryAction() {
@@ -386,42 +395,22 @@
   // ---- settings ----------------------------------------------------------
 
   const minLenEl = $('min-len');
-  const cycleEl = $('cycle-enabled');
-  const cycleBtn = document.querySelector('[data-action="cycle"]');
   function syncSettings() {
     minLenEl.value = String(game.settings.minLen);
-    cycleEl.checked = game.settings.cycleEnabled;
-    cycleBtn.disabled = !game.settings.cycleEnabled;
   }
   minLenEl.addEventListener('change', () => {
     game.settings.minLen = Number(minLenEl.value);
-    store.set('settings', game.settings);
+    store.set('settings', { minLen: game.settings.minLen });
     updateOverlay(true);
   });
-  cycleEl.addEventListener('change', () => {
-    game.settings.cycleEnabled = cycleEl.checked;
-    store.set('settings', game.settings);
-    syncSettings();
-  });
 
-  // ---- input -------------------------------------------------------------
+  // ---- input: the on-screen control pad ------------------------------------
 
-  const KEYS = {
-    ArrowLeft: 'left', ArrowRight: 'right', ArrowDown: 'down', ArrowUp: 'rotate',
-    x: 'rotate', X: 'rotate', z: 'rotateCCW', Z: 'rotateCCW', ' ': 'drop',
-    c: 'hold', C: 'hold', Shift: 'hold', a: 'cycle', A: 'cycle',
-    p: 'pause', P: 'pause', Escape: 'pause', r: 'restart', R: 'restart',
-  };
   const held = new Map();
   let lastDir = null;
 
   function press(action) {
-    if (game.state === 'ready' || game.state === 'over') {
-      if (action === 'drop') primaryAction();
-      return;
-    }
     if (action === 'pause') { game.togglePause(); return; }
-    if (action === 'restart') { if (game.state === 'paused') restart(); return; }
     switch (action) {
       case 'left':
       case 'right':
@@ -431,9 +420,6 @@
         break;
       case 'down': game.softDropping = true; break;
       case 'rotate': game.rotate(1); break;
-      case 'rotateCCW': game.rotate(-1); break;
-      case 'cycle': game.cycle(); break;
-      case 'drop': game.hardDrop(); break;
       case 'hold': game.hold(); break;
     }
   }
@@ -459,20 +445,6 @@
     while (h.t >= cfg.ARR) { h.t -= cfg.ARR; game.move(dx); }
   }
 
-  window.addEventListener('keydown', (e) => {
-    if (e.target.closest && e.target.closest('select, input')) return;
-    // A focused overlay button handles Enter and Space itself.
-    if (!overlay.root.hidden && e.target.tagName === 'BUTTON' && (e.key === 'Enter' || e.key === ' ')) return;
-    const action = KEYS[e.key];
-    if (!action) return;
-    e.preventDefault();
-    if (e.repeat) return;
-    press(action);
-  });
-  window.addEventListener('keyup', (e) => {
-    const action = KEYS[e.key];
-    if (action) release(action);
-  });
   window.addEventListener('blur', () => [...held.keys(), 'down'].forEach(release));
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && (game.state === 'playing' || game.state === 'clearing')) game.togglePause();
