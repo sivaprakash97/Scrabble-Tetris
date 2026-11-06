@@ -5,10 +5,13 @@ it's a tetris game but instead of tetris blocks, they would be alphabet scrabble
 
 This is a **mobile game**, planned for release as a phone app. Open `index.html` on a phone, or in a browser's phone view. There's no build step and no server needed.
 
-- Spell words **left to right in any row**. Any everyday English word of 3 or more letters vanishes, and the tiles above it drop. Drops that spell new words score chain bonuses.
+- Spell words **left to right in any row**, or **top to bottom in any column**. Columns count only when "Words read" in Rules is set to "Across and down", which is the default.
+- Any everyday English word of 3 or more letters vanishes, and the tiles above it drop. Drops that spell new words score chain bonuses.
+- A completely full row also clears, but only words score.
 - Letters use Scrabble values, and longer words multiply steeply.
 - "Words found", below the board, shows each word with a short definition.
-- See [DESIGN.md](DESIGN.md) for the letter rules, the dictionary and the scoring.
+- After a game, "Copy game log" copies every piece's letters and the final board, so a tricky game can be shared and looked at.
+- See [DESIGN.md](DESIGN.md) for the letter rules, the dictionary, the scoring and the benchmark.
 
 | Control | Action |
 |---|---|
@@ -20,8 +23,10 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 ## Develop
 
 ```sh
-npm test         # unit tests (Node 22+, no dependencies)
-npm run build    # dist/scrabble-tetris.html, a single self-contained page
+npm test             # unit tests (Node 22+, no dependencies)
+npm run build        # dist/scrabble-tetris.html, a single self-contained page
+npm run benchmark    # a computer player measures how playable the rules are
+npm run benchmark -- --no-vertical --games 20
 ```
 
 To rebuild the word list and definitions (`data/words.js`, `data/definitions.js`), download the three sources and pass them to the script:

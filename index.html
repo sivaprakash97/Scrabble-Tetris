@@ -34,11 +34,13 @@
       <div class="card">
         <p class="eyebrow" id="overlay-eyebrow">Prototype</p>
         <h1 id="overlay-title">Scrabble-Tetris</h1>
-        <p id="overlay-text">Spell words left to right in any row. Any word of 3 or more letters disappears, and the tiles above it drop. Chains score more.</p>
+        <p id="overlay-text">Spell words left to right in any row, or top to bottom in any column. Any word of 3 or more letters disappears, and the tiles above it drop. A full row also clears, but only words score.</p>
         <div class="overlay-actions">
           <button type="button" id="overlay-primary" class="btn-primary">Start</button>
           <button type="button" id="overlay-secondary" class="btn-ghost" hidden>Restart</button>
+          <button type="button" id="overlay-log" class="btn-ghost" hidden>Copy game log</button>
         </div>
+        <textarea id="log-text" class="log-text" readonly hidden aria-label="Game log"></textarea>
       </div>
     </div>
   </section>
@@ -76,8 +78,17 @@
         <option value="4">4 letters</option>
       </select>
     </label>
+    <label class="setting" for="words-read">
+      <span>Words read</span>
+      <select id="words-read">
+        <option value="down">Across and down</option>
+        <option value="across">Across only</option>
+      </select>
+    </label>
     <p class="hint">
       Everyday English words count; rare Scrabble-only words don't.
+      A full row also clears, but only words score.
+      Some pieces carry a letter that finishes a word already on the board.
       Vowels come in 1–3 per piece. Q arrives as Qu. A tile marked
       <svg class="glyph" viewBox="0 0 24 24" aria-label="star"><path d="M12 3 14.4 9.6 21 12 14.4 14.4 12 21 9.6 14.4 3 12 9.6 9.6Z"/></svg>
       is a blank that can be any letter. Hold Down to drop faster.

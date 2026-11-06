@@ -10,10 +10,33 @@ function sample(n, vowelShare = null, seed = 42) {
   return Array.from({ length: n }, () => d.nextLetters(4, vowelShare));
 }
 
-test('overall vowel share lands between 42% and 50%', () => {
+test('overall vowel share lands between 37% and 43%', () => {
   const tiles = sample(10000).flat().filter((t) => t !== '*');
   const share = tiles.filter(isVowel).length / tiles.length;
-  assert.ok(share >= 0.42 && share <= 0.5, `vowel share ${share.toFixed(3)}`);
+  assert.ok(share >= 0.37 && share <= 0.43, `vowel share ${share.toFixed(3)}`);
+});
+
+test('letters follow everyday words: S is the most common consonant, hard letters are rare', () => {
+  const tiles = sample(10000).flat();
+  const count = {};
+  for (const t of tiles) count[t] = (count[t] || 0) + 1;
+  const consonants = Object.keys(count).filter((t) => !isVowel(t) && t !== '*');
+  const top = consonants.sort((a, b) => count[b] - count[a])[0];
+  assert.equal(top, 'S');
+  const hard = ['QU', 'J', 'X', 'Z'].reduce((s, t) => s + (count[t] || 0), 0) / tiles.length;
+  assert.ok(hard < 0.03, `Qu+J+X+Z share ${hard.toFixed(3)}`);
+});
+
+test('helper letters: with a 100% chance every piece carries one of the offered letters', () => {
+  const d = new ST.TileDirector({ ...cfg, HELPER_CHANCE: 1 }, ST.mulberry32(3));
+  for (let i = 0; i < 200; i++) {
+    const p = d.nextLetters(4, null, { T: 3, N: 1 });
+    assert.ok(p.includes('T') || p.includes('N'), p.join(','));
+  }
+  // No offered letters, or a 0% chance, leaves pieces alone.
+  const plain = new ST.TileDirector({ ...cfg, HELPER_CHANCE: 0 }, ST.mulberry32(3));
+  const same = new ST.TileDirector({ ...cfg, HELPER_CHANCE: 0 }, ST.mulberry32(3));
+  assert.deepEqual(plain.nextLetters(4, null, { T: 1 }), same.nextLetters(4, null));
 });
 
 test('every piece has 1 to 3 vowels', () => {

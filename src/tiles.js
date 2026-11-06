@@ -81,7 +81,8 @@
 
     // Returns `size` letter tokens ('A'..'Z', 'QU', '*') in random order.
     // `vowelShare` is the vowel ratio near the top of the stack, or null.
-    nextLetters(size, vowelShare) {
+    // `helpers` (optional) maps letters that would finish a word on the board to weights.
+    nextLetters(size, vowelShare, helpers) {
       const nVowels = Math.min(this.pickVowelCount(vowelShare), size - 1);
       const letters = [];
       for (let i = 0; i < nVowels; i++) letters.push(this.vowels.draw());
@@ -106,8 +107,33 @@
         letters[idx] = '*';
       }
 
+      this.lastHelper = null;
+      if (helpers) hasRare = this.addHelper(letters, helpers, hasRare);
+
       this.lastHadRare = hasRare;
       return shuffle(letters, this.rng);
+    }
+
+    // Sometimes swaps one tile for a letter that would finish a word on the board.
+    // `helpers` maps letter -> weight. Vowels replace vowels and consonants replace
+    // consonants, so the vowel quota holds; blanks are never replaced.
+    addHelper(letters, helpers, hasRare) {
+      const blockRare = hasRare || this.lastHadRare;
+      const offer = Object.entries(helpers).filter(([ch, w]) => w > 0 && !(blockRare && this.rare.has(ch)));
+      if (!offer.length || !(this.cfg.HELPER_CHANCE > 0) || this.rng() >= this.cfg.HELPER_CHANCE) return hasRare;
+
+      let r = this.rng() * offer.reduce((s, [, w]) => s + w, 0);
+      let pick = offer[0][0];
+      for (const [ch, w] of offer) if ((r -= w) < 0) { pick = ch; break; }
+
+      const isVowel = (t) => this.cfg.VOWELS.includes(t);
+      const slots = letters.map((t, i) => i).filter((i) => letters[i] !== '*' && isVowel(letters[i]) === isVowel(pick));
+      if (!slots.length || letters.includes(pick)) return hasRare;
+      const i = slots[Math.floor(this.rng() * slots.length)];
+      (isVowel(letters[i]) ? this.vowels : this.consonants).putBack(letters[i]);
+      letters[i] = pick;
+      this.lastHelper = pick;
+      return letters.some((t) => this.rare.has(t));
     }
   }
 

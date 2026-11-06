@@ -7,7 +7,12 @@
     constructor({ dict, cfg = ST.CONFIG, seed = Date.now(), settings = {} }) {
       this.dict = dict;
       this.cfg = cfg;
-      this.settings = { minLen: cfg.MIN_WORD_LEN, ...settings, cycleEnabled: cfg.CYCLE_LETTERS };
+      this.settings = {
+        minLen: cfg.MIN_WORD_LEN,
+        vertical: cfg.VERTICAL_WORDS,
+        ...settings,
+        cycleEnabled: cfg.CYCLE_LETTERS,
+      };
       this.reset(seed);
     }
 
@@ -33,16 +38,21 @@
       this.lockResets = 0;
       this.state = 'ready';
       this.pausedFrom = null;
+      this.log = { pieces: [], words: [] }; // what came up this game, for "Copy game log"
     }
 
     // ---- piece supply -------------------------------------------------
 
-    // Letters are picked at spawn time, so the vowel nudge sees the current stack.
+    // Letters are picked at spawn time, so the vowel nudge and helper letters see the
+    // stack as it is right now.
     newPiece() {
-      const share = this.board.vowelShare(
-        this.cfg.ADAPTIVE.ROWS, this.cfg.ADAPTIVE.MIN_TILES, this.cfg.VOWELS
-      );
-      return ST.makePiece(this.shapes.draw(), this.director.nextLetters(4, share), this.cfg);
+      const { ADAPTIVE, VOWELS } = this.cfg;
+      const share = this.board.vowelShare(ADAPTIVE.ROWS, ADAPTIVE.MIN_TILES, VOWELS);
+      const helpers = ST.finishingLetters(this.board.grid, this.dict, this.settings.minLen, this.settings.vertical);
+      const piece = ST.makePiece(this.shapes.draw(), this.director.nextLetters(4, share, helpers), this.cfg);
+      const letters = piece.grid.flat().filter(Boolean).map((t) => (t.ch === 'QU' ? 'Qu' : t.ch));
+      this.log.pieces.push({ type: piece.type, letters, helper: this.director.lastHelper });
+      return piece;
     }
 
     spawnNext() {
@@ -174,32 +184,53 @@
       this.resolveWords();
     }
 
+    // Clears every word on the board (across, and down when that's switched on), plus any
+    // completely full row. Full rows score nothing: only words score, and only waves
+    // with words count toward the chain.
     resolveWords() {
-      const found = ST.findWords(this.board.grid, this.dict, this.cfg, this.settings.minLen);
-      if (found.length === 0) {
+      const { minLen, vertical } = this.settings;
+      const found = ST.findAllWords(this.board.grid, this.dict, this.cfg, minLen, vertical);
+      const wordCells = new Map();
+      for (const w of found) for (const c of w.cells) wordCells.set(c.x + ',' + c.y, c);
+      const junkCells = [];
+      let fullRows = 0;
+      this.board.grid.forEach((row, y) => {
+        if (!row.every(Boolean)) return;
+        fullRows++;
+        row.forEach((_, x) => { if (!wordCells.has(x + ',' + y)) junkCells.push({ x, y }); });
+      });
+
+      if (found.length === 0 && junkCells.length === 0) {
         this.state = 'playing';
         this.spawnNext();
         return;
       }
-      this.chain++;
-      this.maxChain = Math.max(this.maxChain, this.chain);
-      const mult = this.chain * this.level;
-      let points = 0;
-      for (const w of found) {
-        w.points = w.score * mult;
-        points += w.points;
-        if (!this.bestWord || w.points > this.bestWord.points) {
-          this.bestWord = { display: w.display, points: w.points };
+
+      if (found.length) {
+        this.chain++;
+        this.maxChain = Math.max(this.maxChain, this.chain);
+        const mult = this.chain * this.level;
+        let points = 0;
+        for (const w of found) {
+          w.points = w.score * mult;
+          points += w.points;
+          if (!this.bestWord || w.points > this.bestWord.points) {
+            this.bestWord = { display: w.display, points: w.points };
+          }
+          this.recent.unshift({ display: w.display, points: w.points, chain: this.chain, dir: w.dir });
+          this.log.words.push(`${w.display} ${w.dir} +${w.points}`);
         }
-        this.recent.unshift({ display: w.display, points: w.points, chain: this.chain });
+        this.recent.length = Math.min(this.recent.length, 12);
+        this.score += points;
+        this.words += found.length;
+        this.events.push({ type: 'words', found, chain: this.chain, level: this.level, points });
       }
-      this.recent.length = Math.min(this.recent.length, 12);
-      this.score += points;
-      this.words += found.length;
-      this.events.push({ type: 'words', found, chain: this.chain, level: this.level, points });
+      if (junkCells.length) this.events.push({ type: 'rows', count: fullRows });
+
       this.clearing = {
         found,
-        cells: found.flatMap((w) => w.cells),
+        cells: [...wordCells.values(), ...junkCells],
+        junkCells,
         timer: this.cfg.CLEAR_FLASH,
       };
       this.state = 'clearing';
@@ -251,6 +282,34 @@
         if (this.state === 'playing') this.togglePause();
       }
       return true;
+    }
+
+    // Plain-text summary of this game: settings, every piece's letters, the words found,
+    // and the board. [x] marks a helper letter; * is a blank.
+    logText() {
+      const { minLen, vertical } = this.settings;
+      const pieces = this.log.pieces.map((p, i) => {
+        let helped = false;
+        const letters = p.letters.map((l) => {
+          if (!helped && p.helper && l.toUpperCase() === p.helper) { helped = true; return `[${l}]`; }
+          return l;
+        });
+        return `${String(i + 1).padStart(3)}. ${p.type}  ${letters.join(' ')}`;
+      });
+      const board = this.board.grid.map((row) => row.map((t) => (t ? (t.ch === 'QU' ? 'q' : t.ch) : '.')).join(''));
+      return [
+        `Scrabble-Tetris game log: score ${this.score}, ${this.words} words, level ${this.level}`,
+        `Rules: shortest word ${minLen}, words read ${vertical ? 'across and down' : 'across only'}`,
+        '',
+        `Pieces (${this.log.pieces.length}, letters in reading order; [x] = helper letter, * = blank, q = Qu):`,
+        ...pieces,
+        '',
+        `Words found (${this.log.words.length}):`,
+        ...this.log.words.map((w) => `  ${w}`),
+        '',
+        'Board at the end (q = Qu):',
+        ...board.map((r) => `  ${r}`),
+      ].join('\n');
     }
 
     // Debug helper: rows like '..CAT.....' laid onto the bottom of the well.

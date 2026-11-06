@@ -8,7 +8,8 @@
   const COLOR = {
     felt: token('--felt'), feltDeep: token('--felt-deep'), maple: token('--maple'),
     mapleHi: token('--maple-hi'), mapleLo: token('--maple-lo'), ink: token('--ink'),
-    accent: token('--accent'), gold: token('--gold'), text: token('--text'),
+    accent: token('--accent'), gold: token('--gold'), text: token('--text'), muted: token('--muted'),
+    table: token('--table'),
   };
   const TILE_FONT = '"Archivo Black", "Arial Black", Impact, sans-serif';
   const NUM_FONT = '"Archivo", "Helvetica Neue", Arial, sans-serif';
@@ -126,6 +127,13 @@
     roundRect(ctx, x, y, w, w - Math.max(1.5, w * 0.08), r);
     ctx.fillStyle = g;
     ctx.fill();
+    if (o.dim) {
+      roundRect(ctx, x, y, w, w, r);
+      ctx.fillStyle = COLOR.table;
+      ctx.globalAlpha *= 0.55;
+      ctx.fill();
+      ctx.globalAlpha /= 0.55;
+    }
 
     ctx.fillStyle = COLOR.ink;
     if (tile.ch === '*') {
@@ -173,10 +181,13 @@
       ctx.fillRect(0, 0, W, cell * 5);
     }
 
+    // Word tiles flash gold; tiles cleared only because their row was full fade out grey.
     const flash = new Set();
+    const junk = new Set();
     let p = 0;
     if (game.clearing) {
-      game.clearing.cells.forEach(({ x, y }) => flash.add(x + ',' + y));
+      game.clearing.found.forEach((w) => w.cells.forEach(({ x, y }) => flash.add(x + ',' + y)));
+      game.clearing.junkCells.forEach(({ x, y }) => junk.add(x + ',' + y));
       p = 1 - Math.max(0, game.clearing.timer) / cfg.CLEAR_FLASH;
     }
 
@@ -184,9 +195,12 @@
       for (let x = 0; x < cfg.COLS; x++) {
         const t = grid[y][x];
         if (!t) continue;
-        if (flash.has(x + ',' + y)) {
+        const key = x + ',' + y;
+        if (flash.has(key)) {
           const scale = reduceMotion ? 1 : 1 + 0.1 * Math.sin(p * Math.PI);
           drawTile(ctx, x * cell, y * cell, cell, t, { flash: true, scale, alpha: 1 - Math.pow(p, 4) });
+        } else if (junk.has(key)) {
+          drawTile(ctx, x * cell, y * cell, cell, t, { dim: true, scale: reduceMotion ? 1 : 1 - 0.2 * p, alpha: 1 - p });
         } else {
           drawTile(ctx, x * cell, y * cell, cell, t);
         }
@@ -287,6 +301,7 @@
       const li = el('li', i < freshCount ? 'fresh' : '');
       const row = el('div', 'row');
       row.append(el('span', 'w', r.display));
+      if (r.dir === 'down') row.append(el('span', 'tag', 'down'));
       if (r.chain > 1) row.append(el('span', 'chain', `chain ×${r.chain}`));
       row.append(el('span', 'pts', '+' + fmt(r.points)));
       li.append(row, definitionLine(r.display));
@@ -297,11 +312,15 @@
   const overlay = {
     root: $('overlay'), eyebrow: $('overlay-eyebrow'), title: $('overlay-title'),
     text: $('overlay-text'), primary: $('overlay-primary'), secondary: $('overlay-secondary'),
+    log: $('overlay-log'), logText: $('log-text'),
   };
   let overlayState = null;
 
   function rulesLine() {
-    return `Spell words left to right in any row. Any word of ${game.settings.minLen} or more letters disappears, and the tiles above it drop. Chains score more.`;
+    const where = game.settings.vertical
+      ? 'left to right in any row, or top to bottom in any column'
+      : 'left to right in any row';
+    return `Spell words ${where}. Any word of ${game.settings.minLen} or more letters disappears, and the tiles above it drop. A full row also clears, but only words score.`;
   }
 
   function updateOverlay(force) {
@@ -310,6 +329,9 @@
     const o = overlay;
     o.root.hidden = game.state === 'playing' || game.state === 'clearing';
     o.secondary.hidden = game.state !== 'paused';
+    o.log.hidden = game.state !== 'over';
+    o.log.textContent = 'Copy game log';
+    o.logText.hidden = true;
     if (game.state === 'ready') {
       o.eyebrow.textContent = 'Prototype';
       o.title.textContent = 'Scrabble-Tetris';
@@ -348,16 +370,39 @@
   overlay.primary.addEventListener('click', primaryAction);
   overlay.secondary.addEventListener('click', restart);
 
+  // Copies a text summary of the game, so a tricky run can be shared and looked at.
+  // If the clipboard is blocked, the text appears in a box to select by hand.
+  overlay.log.addEventListener('click', () => {
+    const text = game.logText();
+    const showBox = () => {
+      overlay.logText.value = text;
+      overlay.logText.hidden = false;
+      overlay.logText.focus();
+      overlay.logText.select();
+      overlay.log.textContent = 'Select the text below to copy';
+    };
+    try {
+      navigator.clipboard.writeText(text).then(() => { overlay.log.textContent = 'Copied'; }, showBox);
+    } catch {
+      showBox();
+    }
+  });
+
   function drainEvents(now) {
     for (const e of game.events) {
       if (e.type === 'words') {
         for (const w of e.found) {
           const xs = w.cells.map((c) => c.x);
-          const cx = ((Math.min(...xs) + Math.max(...xs) + 1) / 2) * cell;
-          effects.push({ kind: 'word', text: '+' + fmt(w.points), sub: w.display, x: cx, y: w.y * cell, born: now, life: 1300 });
+          const ys = w.cells.map((c) => c.y);
+          const mid = ((Math.min(...xs) + Math.max(...xs) + 1) / 2) * cell;
+          const cx = Math.min(Math.max(mid, cell * 1.4), cell * (cfg.COLS - 1.4)); // keep text on the board
+          const cy = ((Math.min(...ys) + Math.max(...ys)) / 2) * cell;
+          effects.push({ kind: 'word', text: '+' + fmt(w.points), sub: w.display, x: cx, y: cy, born: now, life: 1300 });
         }
         if (e.chain > 1) effects.push({ kind: 'banner', text: `CHAIN ×${e.chain}`, color: COLOR.accent, born: now, life: 1200 });
         renderRecent(e.found.length);
+      } else if (e.type === 'rows') {
+        effects.push({ kind: 'banner', text: e.count > 1 ? `${e.count} ROWS CLEARED` : 'ROW CLEARED', color: COLOR.muted, born: now, life: 1000 });
       } else if (e.type === 'level') {
         effects.push({ kind: 'banner', text: `LEVEL ${e.level}`, color: COLOR.gold, born: now, life: 1400 });
       }
@@ -368,14 +413,19 @@
   // ---- settings ----------------------------------------------------------
 
   const minLenEl = $('min-len');
+  const wordsReadEl = $('words-read');
   function syncSettings() {
     minLenEl.value = String(game.settings.minLen);
+    wordsReadEl.value = game.settings.vertical ? 'down' : 'across';
   }
-  minLenEl.addEventListener('change', () => {
+  function saveSettings() {
     game.settings.minLen = Number(minLenEl.value);
-    store.set('settings', { minLen: game.settings.minLen });
+    game.settings.vertical = wordsReadEl.value === 'down';
+    store.set('settings', { minLen: game.settings.minLen, vertical: game.settings.vertical });
     updateOverlay(true);
-  });
+  }
+  minLenEl.addEventListener('change', saveSettings);
+  wordsReadEl.addEventListener('change', saveSettings);
 
   // ---- input: the on-screen control pad ------------------------------------
 

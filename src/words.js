@@ -104,6 +104,68 @@
     return found;
   }
 
+  // Words across every row, plus (when `vertical`) down every column, read top to bottom.
+  // Each word gets `dir`; a tile can belong to both an across and a down word.
+  function findAllWords(grid, dict, cfg, minLen, vertical) {
+    const across = findWords(grid, dict, cfg, minLen).map((w) => ({ ...w, dir: 'across' }));
+    if (!vertical) return across;
+    const columns = grid[0].map((_, x) => grid.map((row) => row[x]));
+    const down = findWords(columns, dict, cfg, minLen).map((w) => {
+      const cells = w.cells.map(({ x, y }) => ({ x: y, y: x }));
+      return { ...w, dir: 'down', y: cells[0].y, cells };
+    });
+    return across.concat(down);
+  }
+
+  // Letters a falling piece could add to finish a word already on the board, as
+  // letter -> weight (longer finished words weigh more). A cell counts only if a piece
+  // can land in it: empty, nothing above it, and resting on the floor or a tile.
+  const HELPER_LETTERS = 'ABCDEFGHIJKLMNOPRSTUVWY'.split(''); // no Qu, X or Z
+  function finishingLetters(grid, dict, minLen, vertical) {
+    const rows = grid.length;
+    const cols = grid[0].length;
+    const top = grid[0].map((_, x) => {
+      let y = 0;
+      while (y < rows && !grid[y][x]) y++;
+      return y;
+    });
+    const open = (x, y) => x >= 0 && x < cols && y === top[x] - 1;
+    const out = {};
+    const tryEnd = (tokens, atStart) => {
+      for (const ch of HELPER_LETTERS) {
+        for (let k = Math.min(tokens.length, 7); k >= 1; k--) {
+          const part = atStart ? tokens.slice(0, k) : tokens.slice(-k);
+          const word = atStart ? [ch, ...part] : [...part, ch];
+          if (word.join('').length < minLen || !dict.match(word)) continue;
+          out[ch] = (out[ch] || 0) + k;
+          break;
+        }
+      }
+    };
+
+    grid.forEach((row, y) => {
+      let x = 0;
+      while (x < cols) {
+        if (!row[x]) { x++; continue; }
+        const x0 = x;
+        while (x < cols && row[x]) x++;
+        const tokens = row.slice(x0, x).map((t) => t.ch);
+        if (open(x, y)) tryEnd(tokens, false);
+        if (open(x0 - 1, y)) tryEnd(tokens, true);
+      }
+    });
+
+    if (vertical) {
+      for (let x = 0; x < cols; x++) {
+        if (top[x] === 0 || top[x] === rows) continue;
+        const tokens = [];
+        for (let y = top[x]; y < rows && grid[y][x]; y++) tokens.push(grid[y][x].ch);
+        tryEnd(tokens, true);
+      }
+    }
+    return out;
+  }
+
   // Short definitions come from data/definitions.js (WordNet 3.0 plus a hand-written supplement).
   const POS_NAMES = { n: 'noun', v: 'verb', a: 'adjective', r: 'adverb' };
   let defIndex = null;
@@ -134,6 +196,8 @@
   ST.wordScore = wordScore;
   ST.bestWordsInRun = bestWordsInRun;
   ST.findWords = findWords;
+  ST.findAllWords = findAllWords;
+  ST.finishingLetters = finishingLetters;
 
   if (typeof module !== 'undefined' && module.exports) module.exports = ST;
 })(typeof window !== 'undefined' ? window : globalThis);

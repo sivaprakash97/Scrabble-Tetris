@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "build": "node scripts/build-artifact.mjs",
-    "wordlist": "node scripts/build-wordlist.mjs"
+    "wordlist": "node scripts/build-wordlist.mjs",
+    "benchmark": "node scripts/benchmark.mjs"
   }
 }

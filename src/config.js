@@ -13,19 +13,21 @@
       '*': 0,
     },
 
-    // Shuffle-bag contents (real Scrabble tile counts, Q replaced by a Qu tile).
-    VOWEL_BAG: { A: 9, E: 12, I: 9, O: 8, U: 4 },
+    // Shuffle-bag contents per 200 tiles, in proportion to how often each letter appears
+    // in the 3-5 letter words of data/words.js. Scrabble's counts suit a game where you
+    // place every tile; here they over-supplied Qu, J, X, Z and I and starved S.
+    VOWEL_BAG: { A: 17, E: 21, I: 11, O: 14, U: 7 },
     CONSONANT_BAG: {
-      B: 2, C: 2, D: 4, F: 2, G: 3, H: 2, J: 1, K: 1, L: 4, M: 2, N: 6,
-      P: 2, QU: 1, R: 6, S: 4, T: 6, V: 2, W: 2, X: 1, Y: 2, Z: 1,
+      B: 5, C: 6, D: 9, F: 4, G: 5, H: 6, J: 1, K: 4, L: 11, M: 6, N: 9,
+      P: 7, QU: 1, R: 12, S: 21, T: 11, V: 2, W: 4, X: 1, Y: 5, Z: 1,
     },
     VOWELS: ['A', 'E', 'I', 'O', 'U'],
 
-    // How many of a piece's 4 tiles are vowels, and how often.
+    // How many of a piece's 4 tiles are vowels, and how often (about 40% vowels overall).
     VOWEL_QUOTA: [
-      { count: 1, weight: 30 },
-      { count: 2, weight: 55 },
-      { count: 3, weight: 15 },
+      { count: 1, weight: 45 },
+      { count: 2, weight: 50 },
+      { count: 3, weight: 5 },
     ],
     MIN_VOWELS: 1,
     MAX_VOWELS: 3,
@@ -39,7 +41,11 @@
 
     BLANK_CHANCE: 0.05, // chance a piece swaps one consonant for a blank
 
+    // Chance a piece carries one letter that would finish a word already on the board.
+    HELPER_CHANCE: 0.35,
+
     // Words
+    VERTICAL_WORDS: true, // also read columns top to bottom (a Rules switch)
     MIN_WORD_LEN: 3,
     MAX_WORD_LEN: 12,
     MAX_BLANKS_PER_WORD: 2,
