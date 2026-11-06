@@ -35,12 +35,8 @@
   // ---- canvas setup ---------------------------------------------------
 
   const boardEl = $('board');
-  const holdEl = $('hold');
-  const nextEl = $('next');
-  let bctx, hctx, nctx;
+  let bctx;
   let cell = 26;
-  const mini = 16;
-  const SLOT_PAD = 6;
   const GAP = 12;
   const WELL_PAD = 12; // frame around the board, both sides together
 
@@ -55,10 +51,6 @@
     return ctx;
   }
 
-  function slotSize() {
-    return { w: 4 * mini + 2 * SLOT_PAD, h: 2 * mini + 2 * SLOT_PAD };
-  }
-
   // Sizes the board so the score strip, board and control pad fit on one phone screen.
   function fit() {
     const app = $('app');
@@ -68,19 +60,15 @@
     const viewH = window.visualViewport ? window.visualViewport.height : innerHeight;
 
     const innerW = app.clientWidth - px(appStyle, 'paddingLeft') - px(appStyle, 'paddingRight');
-    const sideW = slotSize().w;
-    const byW = (innerW - GAP - sideW - WELL_PAD) / cfg.COLS;
+    const byW = (innerW - WELL_PAD) / cfg.COLS;
 
     const chrome =
-      $('stats').offsetHeight + $('touch').offsetHeight + 2 * GAP + WELL_PAD +
-      px(appStyle, 'paddingTop') + px(rootStyle, 'paddingTop') + px(rootStyle, 'paddingBottom') + 8;
+      $('top').offsetHeight + $('touch').offsetHeight + 2 * GAP + WELL_PAD +
+      px(appStyle, 'paddingTop') + px(rootStyle, 'paddingTop') + px(rootStyle, 'paddingBottom') + 20;
     const byH = (viewH - chrome) / cfg.ROWS;
 
-    cell = Math.max(14, Math.min(34, Math.floor(Math.min(byW, byH))));
+    cell = Math.max(14, Math.min(40, Math.floor(Math.min(byW, byH))));
     bctx = setupCanvas(boardEl, cell * cfg.COLS, cell * cfg.ROWS);
-    const s = slotSize();
-    hctx = setupCanvas(holdEl, s.w, s.h);
-    nctx = setupCanvas(nextEl, s.w, s.h * cfg.NEXT_COUNT);
   }
 
   // ---- drawing ----------------------------------------------------------
@@ -157,20 +145,6 @@
       }
     }
     ctx.restore();
-  }
-
-  // Draws a piece centred in a slot, shrinking tiles if a rotated piece is tall.
-  function drawPieceInSlot(ctx, piece, sx, sy, sw, sh, alpha) {
-    const cells = [];
-    piece.grid.forEach((row, r) => row.forEach((t, c) => t && cells.push({ r, c, t })));
-    const minR = Math.min(...cells.map((k) => k.r));
-    const minC = Math.min(...cells.map((k) => k.c));
-    const bw = Math.max(...cells.map((k) => k.c)) - minC + 1;
-    const bh = Math.max(...cells.map((k) => k.r)) - minR + 1;
-    const s = Math.min(mini, (sw - 2 * SLOT_PAD) / bw, (sh - 2 * SLOT_PAD) / bh);
-    const ox = sx + (sw - bw * s) / 2;
-    const oy = sy + (sh - bh * s) / 2;
-    for (const k of cells) drawTile(ctx, ox + (k.c - minC) * s, oy + (k.r - minR) * s, s, k.t, { alpha });
   }
 
   const effects = [];
@@ -267,14 +241,6 @@
     }
   }
 
-  function renderSide() {
-    const s = slotSize();
-    hctx.clearRect(0, 0, s.w, s.h);
-    if (game.held) drawPieceInSlot(hctx, game.held, 0, 0, s.w, s.h, game.holdUsed ? 0.45 : 1);
-    nctx.clearRect(0, 0, s.w, s.h * cfg.NEXT_COUNT);
-    game.queue.forEach((piece, i) => drawPieceInSlot(nctx, piece, 0, i * s.h, s.w, s.h, i === 0 ? 1 : 0.7));
-  }
-
   // ---- HUD, overlay and word list --------------------------------------
 
   const hud = { score: $('score'), level: $('level'), words: $('words'), best: $('best') };
@@ -291,32 +257,39 @@
   }
 
   const recentEl = $('recent');
+  const el = (tag, className, text) => {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = text;
+    return node;
+  };
+
+  // "cat · noun" and the gloss; the base form only shows when it differs (CATS -> cat).
+  function definitionLine(display) {
+    const word = display.toLowerCase(); // blanks are shown in lowercase; the filled-in word is what counts
+    const d = ST.lookupDefinition(word);
+    const p = el('p', 'def');
+    if (!d) {
+      p.textContent = 'Everyday word, no short definition yet.';
+      return p;
+    }
+    p.append(el('span', 'pos', `${d.lemma !== word ? d.lemma + ' · ' : ''}${d.pos}`), ` ${d.gloss}`);
+    return p;
+  }
+
   function renderRecent(freshCount) {
     recentEl.replaceChildren();
     if (game.recent.length === 0) {
-      const li = document.createElement('li');
-      li.className = 'empty';
-      li.textContent = 'Your words show up here.';
-      recentEl.append(li);
+      recentEl.append(el('li', 'empty', 'Your words show up here, with what they mean.'));
       return;
     }
     game.recent.forEach((r, i) => {
-      const li = document.createElement('li');
-      if (i < freshCount) li.className = 'fresh';
-      const w = document.createElement('span');
-      w.className = 'w';
-      w.textContent = r.display;
-      li.append(w);
-      if (r.chain > 1) {
-        const c = document.createElement('span');
-        c.className = 'chain';
-        c.textContent = `chain ×${r.chain}`;
-        li.append(c);
-      }
-      const pts = document.createElement('span');
-      pts.className = 'pts';
-      pts.textContent = '+' + fmt(r.points);
-      li.append(pts);
+      const li = el('li', i < freshCount ? 'fresh' : '');
+      const row = el('div', 'row');
+      row.append(el('span', 'w', r.display));
+      if (r.chain > 1) row.append(el('span', 'chain', `chain ×${r.chain}`));
+      row.append(el('span', 'pts', '+' + fmt(r.points)));
+      li.append(row, definitionLine(r.display));
       recentEl.append(li);
     });
   }
@@ -420,7 +393,6 @@
         break;
       case 'down': game.softDropping = true; break;
       case 'rotate': game.rotate(1); break;
-      case 'hold': game.hold(); break;
     }
   }
 
@@ -450,7 +422,7 @@
     if (document.hidden && (game.state === 'playing' || game.state === 'clearing')) game.togglePause();
   });
 
-  for (const btn of document.querySelectorAll('.touch [data-action]')) {
+  for (const btn of document.querySelectorAll('button[data-action]')) {
     const action = btn.dataset.action;
     const up = () => { btn.classList.remove('on'); release(action); };
     btn.addEventListener('pointerdown', (e) => {
@@ -475,7 +447,6 @@
     game.update(dt);
     drainEvents(now);
     renderBoard(now);
-    renderSide();
     updateHud();
     updateOverlay(false);
     requestAnimationFrame(frame);

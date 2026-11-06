@@ -64,8 +64,6 @@
     CLEAR_FLASH: 420,
     DAS: 160,
     ARR: 45,
-
-    NEXT_COUNT: 3,
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = ST;

@@ -17,10 +17,7 @@
       this.board = new ST.Board(cfg.COLS, cfg.ROWS);
       this.director = new ST.TileDirector(cfg, this.rng);
       this.shapes = new ST.ShuffleBag(Object.fromEntries(ST.PIECE_TYPES.map((t) => [t, 1])), this.rng);
-      this.queue = [];
       this.current = null;
-      this.held = null;
-      this.holdUsed = false;
       this.score = 0;
       this.level = 1;
       this.words = 0;
@@ -36,11 +33,11 @@
       this.lockResets = 0;
       this.state = 'ready';
       this.pausedFrom = null;
-      this.fillQueue();
     }
 
     // ---- piece supply -------------------------------------------------
 
+    // Letters are picked at spawn time, so the vowel nudge sees the current stack.
     newPiece() {
       const share = this.board.vowelShare(
         this.cfg.ADAPTIVE.ROWS, this.cfg.ADAPTIVE.MIN_TILES, this.cfg.VOWELS
@@ -48,11 +45,8 @@
       return ST.makePiece(this.shapes.draw(), this.director.nextLetters(4, share), this.cfg);
     }
 
-    fillQueue() {
-      while (this.queue.length < this.cfg.NEXT_COUNT) this.queue.push(this.newPiece());
-    }
-
-    spawn(piece) {
+    spawnNext() {
+      const piece = this.newPiece();
       piece.x = Math.floor((this.cfg.COLS - piece.grid.length) / 2);
       piece.y = -ST.pieceTopRow(piece);
       this.current = piece;
@@ -62,13 +56,6 @@
       // A held Down button doesn't carry over: press it again to speed up the new piece.
       this.softDropping = false;
       if (this.board.collides(piece)) this.gameOver();
-    }
-
-    spawnNext() {
-      const piece = this.queue.shift();
-      this.fillQueue();
-      this.holdUsed = false;
-      this.spawn(piece);
     }
 
     // ---- lifecycle ----------------------------------------------------
@@ -174,21 +161,6 @@
       let d = 0;
       while (!this.board.collides(this.current, 0, d + 1)) d++;
       return d;
-    }
-
-    hold() {
-      if (!this.canAct() || this.holdUsed) return false;
-      const piece = this.current;
-      if (this.held) {
-        const swap = this.held;
-        this.held = piece;
-        this.spawn(swap);
-      } else {
-        this.held = piece;
-        this.spawnNext();
-      }
-      this.holdUsed = true;
-      return true;
     }
 
     // ---- locking, words and chains -----------------------------------

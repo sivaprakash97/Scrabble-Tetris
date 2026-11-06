@@ -104,6 +104,30 @@
     return found;
   }
 
+  // Short definitions come from data/definitions.js (WordNet 3.0 plus a hand-written supplement).
+  const POS_NAMES = { n: 'noun', v: 'verb', a: 'adjective', r: 'adverb' };
+  let defIndex = null;
+
+  // Returns { lemma, pos, gloss } for a word, or null when there's no definition.
+  // `lemma` is the base form when it differs (CATS -> cat).
+  function lookupDefinition(word) {
+    if (!ST.DEF_INDEX || !ST.GLOSSES) return null;
+    if (!defIndex) {
+      defIndex = new Map();
+      for (const entry of ST.DEF_INDEX.split(',')) {
+        const [w, i, lemma] = entry.split(':');
+        defIndex.set(w, [Number(i), lemma || w]);
+      }
+    }
+    const hit = defIndex.get(word.toLowerCase());
+    if (!hit) return null;
+    const text = ST.GLOSSES[hit[0]];
+    const bar = text.indexOf('|');
+    const pos = text.slice(0, bar);
+    return { lemma: hit[1], pos: POS_NAMES[pos] || pos, gloss: text.slice(bar + 1) };
+  }
+
+  ST.lookupDefinition = lookupDefinition;
   ST.Dictionary = Dictionary;
   ST.letterLength = letterLength;
   ST.lengthMultiplier = lengthMultiplier;

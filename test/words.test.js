@@ -4,10 +4,10 @@ const { ST, cfg, dict, tiles } = require('./helpers');
 
 const words = (s, minLen = 3) => ST.bestWordsInRun(tiles(s), dict(), cfg, minLen).map((p) => p.display);
 
-test('dictionary loads ENABLE words', () => {
-  assert.ok(dict().size > 100000);
-  assert.ok(dict().set.has('CAT'));
-  assert.ok(!dict().set.has('XCATSZ'));
+test('dictionary holds everyday words only', () => {
+  assert.ok(dict().size > 40000, `size ${dict().size}`);
+  for (const w of ['CAT', 'CATS', 'TORT', 'AXE', 'QUIZ', 'QUA', 'SUN', 'DOG']) assert.ok(dict().set.has(w), w);
+  for (const w of ['OKE', 'PAC', 'DOL', 'GAR', 'ZAX', 'EME', 'XCATSZ']) assert.ok(!dict().set.has(w), w);
 });
 
 test('longer word beats the word inside it', () => {

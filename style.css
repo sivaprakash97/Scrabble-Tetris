@@ -1,5 +1,5 @@
-/* Layout: one phone column. Score strip, then the well with a narrow hold/next rail beside it,
-   then the control pad. Found words and rules sit below, under the fold. */
+/* Layout: one phone column. Score strip with a pause button, then the well at full width,
+   then a one-row control pad. Found words (with definitions) and rules sit below the fold. */
 :root {
   --table: #0d2422;
   --felt: #15403b;
@@ -56,8 +56,8 @@ body {
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 
-.stats,
-.play,
+.top,
+.well,
 .touch {
   user-select: none;
   -webkit-user-select: none;
@@ -66,13 +66,51 @@ body {
 
 /* ---- score strip ------------------------------------------------------- */
 
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gap);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 8px;
+}
+
 .stats {
   display: flex;
   flex-wrap: wrap;
   gap: 2px 18px;
   align-items: baseline;
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 8px;
+  min-width: 0;
+}
+
+.icon-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--text);
+  background: var(--felt);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  touch-action: none;
+}
+
+.icon-btn.on {
+  color: var(--ink);
+  background: var(--maple);
+  border-color: var(--maple);
+}
+
+.icon-btn svg,
+.touch svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .stat {
@@ -114,20 +152,7 @@ body {
   white-space: nowrap;
 }
 
-/* ---- well and side rail ------------------------------------------------ */
-
-.play {
-  display: flex;
-  gap: var(--gap);
-  align-items: flex-start;
-  justify-content: center;
-}
-
-.side {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap);
-}
+/* ---- well -------------------------------------------------------------- */
 
 .panel {
   display: flex;
@@ -140,14 +165,8 @@ body {
   margin: 0;
 }
 
-#hold,
-#next {
-  display: block;
-  background: var(--felt-deep);
-  border-radius: 6px;
-}
-
 .well {
+  align-self: center;
   position: relative;
   line-height: 0;
   padding: 6px;
@@ -250,7 +269,7 @@ select:focus-visible {
 
 .touch {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 
@@ -271,16 +290,6 @@ select:focus-visible {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   touch-action: none;
-}
-
-.touch svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 
 .touch button.on {
@@ -313,15 +322,33 @@ select:focus-visible {
 
 .recent li {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding-bottom: 6px;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--rule);
 }
 
 .recent li.empty {
   color: var(--muted);
   border: 0;
+}
+
+.recent .row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.recent .def {
+  margin: 0;
+  font-size: var(--step--1);
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.recent .def .pos {
+  font-family: var(--font-mono);
+  color: var(--text);
 }
 
 .recent .w {

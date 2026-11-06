@@ -7,10 +7,11 @@ This doc records the rules the prototype uses and why. Every number in it lives 
 
 ## Controls
 
-There are six on-screen buttons: Hold, Rotate, Pause, Left, Down and Right.
+The control pad under the board is one row of four buttons: Left, Down, Right and Rotate. Pause is a small button in the top-right corner of the score strip.
 - Every button uses the same set of line icons, and none of them is an emoji.
 - **Down is the only way to drop.** Holding it makes the piece fall fast, and the piece locks 0.5 s after it lands. There's no hard drop.
 - Down doesn't carry over: if you keep holding it after a piece locks, the next piece still falls at normal speed until you press Down again.
+- There's no Hold and no preview of upcoming pieces. Both were removed in v0.3 because they weren't used, and removing them gave the board more room.
 
 ## Core loop
 
@@ -38,7 +39,7 @@ The aim is randomness that still feels fair.
 
 Tests check these rules over 10,000 generated pieces (`test/tiles.test.js`).
 
-The preview queue shows the next 3 pieces, so the adaptive nudge acts about 3 pieces late.
+Letters are picked when a piece spawns, so the adaptive nudge always reacts to the stack as it is right now.
 
 ## Points
 
@@ -56,11 +57,43 @@ The preview queue shows the next 3 pieces, so the adaptive nudge acts about 3 pi
 - **Level:** every word is also multiplied by the level. The level goes up every 10 words, and each level makes pieces fall 15% faster.
 - **Drops:** holding Down scores +1 per cell.
 
+## Dictionary: everyday words
+
+Only everyday English words count. Rare words that are legal only in Scrabble don't.
+- **The list:** ENABLE1 ∩ SCOWL size 50, with US + UK spellings. That's 58,771 words of 3–12 letters.
+  - **ENABLE1** is a public-domain Scrabble-style list. It contributes clean, lowercase entries with no names or abbreviations.
+  - **SCOWL** is the list behind standard spell-checkers. Size 50 is its "medium" dictionary, so it filters ENABLE1 down to words people actually use.
+- **Why it changed:** v0.1–0.2 used all of ENABLE1 (152k words), which accepted words like OKE (a Turkish unit of weight), PAC (a winter boot) and DOL (a unit of pain).
+
+| Kept | Dropped |
+|---|---|
+| WOW, ERA, TEEN, AYE, DIE, TORT, HOG, OAT, AXE, QUIZ, QUA, CATS, TRAINS | GAR, TUT, OKE, PAC, DOL, ZAX, EME, ANA, BOXY |
+
+`data/LICENSES.md` holds the licence notices for every source. All of them allow use in a paid app as long as the notices are included.
+
+## Definitions
+
+Each word in "Words found" shows a short definition, so players can see why a word counted.
+
+Every word in the list gets its definition at build time, in this order:
+1. **Hand-written supplement** (`scripts/supplement-defs.json`), covering about 150 words.
+   - These are function words and interjections that WordNet lacks (THE, AND, SHE, WITH, HEY).
+   - It also fixes words WordNet misreads: HIS would otherwise be the plural of "hi", WHO the World Health Organization, and US the United States.
+2. **WordNet 3.0 entry for the word itself.** Use the most-used sense. A noun wins when another sense is only slightly more used, so HOG and QUIZ read as nouns.
+3. **The base form.** This covers irregular forms from WordNet's exception lists (WENT → go, MICE → mouse) and suffix rules (CATS → cat, BOGGED → bog, CHALKIER → chalky, ADEPTLY → adept). When there are several candidates, the most-used sense wins, so DIES means the verb die, not dice.
+
+Coverage is 97.3% of the list. Every common word is covered, and the gaps are rare inflections such as DIALINGS. A word with no definition shows "Everyday word, no short definition yet."
+
+Glosses are cut at WordNet's example sentences and trimmed to 100 characters. `data/definitions.js` is about 2.5 MB, because each distinct definition text is stored only once.
+
 ## Feasibility check
 
-`ENABLE1` (152k words of 3–12 letters) is the dictionary.
+A bot drops pieces at random columns and rotations and soft-drops each one into place. With the everyday list:
+- It survives about 20 pieces.
+- At minimum length 3, it lucks into about 1.9 words per game, down from 3.1 with the full ENABLE list.
+- At minimum length 4, it finds about 0.2 words.
 
-A bot that drops pieces at random columns and rotations survives about 21 pieces. Along the way it lucks into about 3 words at minimum length 3, and about 0.3 at minimum length 4. So words don't clear themselves, and aiming matters. A 4-letter minimum is a real "hard mode".
+So words don't clear themselves, and aiming matters. A 4-letter minimum is a real "hard mode".
 
 ## Later-phase ideas
 
@@ -72,6 +105,6 @@ A bot that drops pieces at random columns and rotations survives about 21 pieces
 - Scrabble premium squares (DL / TL / DW / TW) fixed into the well.
 - A helper Director that sometimes feeds the one letter that would finish a near-word on the surface.
 - Earning a blank by spelling a word of 6+ letters.
-- A common-word dictionary mode. ENABLE accepts obscure words like EME and ANA.
-- A profanity filter for the found-words list.
+- A profanity filter for the word list. SCOWL size 50 still contains some vulgar words.
+- An optional "Scrabble expert" mode that accepts the full ENABLE list.
 - Sound, daily seeded runs, and a high-score table.
