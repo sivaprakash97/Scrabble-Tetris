@@ -53,6 +53,17 @@
       }
     }
 
+    // Drops every tile straight down onto the floor or the tile below it, closing all
+    // gaps. Each column keeps its letters in the same order.
+    compact() {
+      for (let x = 0; x < this.cols; x++) {
+        const tiles = [];
+        for (let y = 0; y < this.rows; y++) if (this.grid[y][x]) tiles.push(this.grid[y][x]);
+        const top = this.rows - tiles.length;
+        for (let y = 0; y < this.rows; y++) this.grid[y][x] = y < top ? null : tiles[y - top];
+      }
+    }
+
     // Vowel ratio among tiles in the top `rows` occupied rows, or null when
     // there are too few tiles to judge. Blanks are ignored.
     vowelShare(rows, minTiles, vowels) {

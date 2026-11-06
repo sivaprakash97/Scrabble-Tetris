@@ -320,7 +320,7 @@
     const where = game.settings.vertical
       ? 'left to right in any row, or top to bottom in any column'
       : 'left to right in any row';
-    return `Spell words ${where}. Any word of ${game.settings.minLen} or more letters disappears, and the tiles above it drop. A full row also clears, but only words score.`;
+    return `Spell words ${where}. Any word of ${game.settings.minLen} or more letters disappears, and every tile drops to fill the gaps below. A full row also clears, but only words score.`;
   }
 
   function updateOverlay(force) {

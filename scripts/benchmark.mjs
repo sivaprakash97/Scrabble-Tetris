@@ -3,7 +3,7 @@
 // the stack low. It plays the real ST.Game, so letters, helper letters and clearing
 // rules are always the current ones.
 //
-// Usage: node scripts/benchmark.mjs [--games 40] [--cap 400] [--vertical|--no-vertical] [--min-len 3]
+// Usage: node scripts/benchmark.mjs [--games 40] [--cap 400] [--vertical|--no-vertical] [--min-len 3] [--keep-gaps]
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -20,11 +20,13 @@ const GAMES = arg('games', 40);
 const CAP = arg('cap', 400);
 const minLen = arg('min-len', cfg.MIN_WORD_LEN);
 const vertical = process.argv.includes('--no-vertical') ? false : process.argv.includes('--vertical') ? true : cfg.VERTICAL_WORDS;
+if (process.argv.includes('--keep-gaps')) cfg.CLOSE_GAPS = false;
 
 const dict = new ST.Dictionary(ST.WORDS, cfg);
 const { COLS, ROWS } = cfg;
 
-// Same clearing rules as Game.resolveWords: words (across, and down if on) plus full rows.
+// Same clearing rules as Game.resolveWords and finishClear: words (across, and down if
+// on) plus full rows, then gaps close when CLOSE_GAPS is on.
 function resolve(board) {
   let tiles = 0;
   let score = 0;
@@ -37,6 +39,7 @@ function resolve(board) {
     for (const w of found) score += w.score;
     tiles += cells.size;
     board.clearCells([...cells.values()]);
+    if (cfg.CLOSE_GAPS) board.compact();
   }
   return { tiles, score };
 }
@@ -96,7 +99,7 @@ const t0 = Date.now();
 const runs = Array.from({ length: GAMES }, (_, i) => play(5000 + i));
 const sum = (k) => runs.reduce((s, r) => s + r[k], 0);
 const sorted = runs.map((r) => r.placed).sort((a, b) => a - b);
-console.log(`Rules: shortest word ${minLen}, words read ${vertical ? 'across and down' : 'across only'}`);
+console.log(`Rules: shortest word ${minLen}, words read ${vertical ? 'across and down' : 'across only'}, gaps ${cfg.CLOSE_GAPS ? 'close after a clear' : 'stay'}`);
 console.log(`${GAMES} games, capped at ${CAP} pieces (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
 console.log(`  median pieces placed     ${sorted[GAMES >> 1]}`);
 console.log(`  average pieces placed    ${(sum('placed') / GAMES).toFixed(0)}`);

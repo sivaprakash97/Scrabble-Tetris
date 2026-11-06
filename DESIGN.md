@@ -7,7 +7,7 @@ This doc records the rules the prototype uses and why. Every number in it lives 
 
 ## Controls
 
-The control pad under the board is one row of four buttons: Left, Down, Right and Rotate. Pause is a small button in the top-right corner of the score strip.
+Under the board, **Down sits alone on the left**, so it isn't pressed by accident while moving or rotating. On the right, Left and Right share a row, with one wide Rotate button underneath. The layout follows the player's own sketch (v0.6). Pause is a small button in the top-right corner of the score strip.
 - Every button uses the same set of line icons, and none of them is an emoji.
 - **Down is the only way to drop.** Holding it makes the piece fall fast, and the piece locks 0.5 s after it lands. There's no hard drop.
 - Down doesn't carry over: if you keep holding it after a piece locks, the next piece still falls at normal speed until you press Down again.
@@ -27,7 +27,11 @@ The control pad under the board is one row of four buttons: Left, Down, Right an
   - Words stay the only way to score.
   - A wave that only clears full rows doesn't advance the chain.
   - This safety valve was added in v0.4. Without it, even a strong player falls behind, because every piece adds 4 tiles and words cleared only about 2.5 of them (see Benchmark).
-- **Gravity.** In each column, everything above a cleared cell drops by one, holes included. Holes elsewhere stay holes, as in classic Tetris.
+- **Gravity: gaps close after every clear (v0.6).**
+  - When anything clears (a word or a full row), every tile on the board drops straight down to fill the empty cells beneath it.
+  - Gaps can still form when a piece lands, but the next clear closes them all.
+  - Before v0.6, only the tiles directly above a cleared cell dropped, so gaps stayed forever (see Playtest 1).
+  - `CLOSE_GAPS` in the config turns this off.
 - Tiles that drop can form new words, which starts another **chain wave**. Waves repeat until nothing clears, and then the next piece spawns.
 - The game ends when a new piece can't spawn, or a piece locks above the top.
 
@@ -165,8 +169,12 @@ Every piece adds 4 tiles, so the game is sustainable only when clearing comes cl
 | Rules | Median pieces | Tiles cleared per piece | Words per game | Games reaching 400 |
 |---|---|---|---|---|
 | v0.3: Scrabble counts, across only | 99 | 2.39 | 74 | 0/40 |
-| v0.4, across only | **400** | 3.68 | 280 | **22/40** |
-| v0.4, across and down (default) | 170 | 3.61 | 208 (55% down) | 0/40 |
+| v0.4, across only | 400 | 3.68 | 280 | 22/40 |
+| v0.4, across and down | 170 | 3.61 | 208 (55% down) | 0/40 |
+| v0.6 (gaps close), across only | **400** | **3.98** | 317 | **40/40** |
+| v0.6 (gaps close), across and down (default) | **400** | **3.98** | 445 (49% down) | **40/40** |
+
+A human clears far less than this computer player does. In Playtest 1, the player cleared 1.62 tiles per piece, against the computer player's 3.61 under the same v0.4 rules.
 
 How much each v0.4 change helped, across only, measured one at a time:
 
@@ -182,7 +190,41 @@ Vertical words stay a switch until people have played both ways. This computer p
 
 A separate random-placement bot finds only about 1.9 words per game, so words don't clear themselves by accident. A 4-letter minimum is a real "hard mode".
 
+## Playtest 1 (v0.5 rules, saved session, 6 Nov 2026)
+
+One game on a phone, words read across and down:
+- **Result:** 51 pieces in 5 min 24 s of play; 27 words; 2,903 points; level 3.
+- **Check:** replaying the saved moves reproduced the saved final board tile for tile.
+
+**What held the game back:**
+- **Gaps buried under tiles.** There were 0 at the start, 13 by piece 24 and 41 at the end, about 20% of the board.
+  - The big ones came from landings that left overhangs, at pieces 5, 24, 27, 35 and 40.
+  - With a gap in almost every row, no row ever filled, so the full-row valve never fired.
+  - The player cleared 1.62 tiles per piece, against the 4 each piece adds, and the middle columns reached the top at piece 50.
+  - **Fix:** gaps now close after every clear (v0.6).
+- **Words not spotted.** 28 of the 50 placed pieces made no word, and in 26 of those, some landing spot would have. Examples:
+  - IERO had 20 spots that made a word (ORE, RISK down).
+  - BUCG had 19 (CUB, KEG).
+  - DCEW had 12 (CORK, WET).
+  - This points to "show words at the landing spot" (below).
+
+**What worked:**
+- **Helper letters:** 5 of 10 ended up in words, including PING +280 and SILL +240.
+- **Vertical words:** 11 of 27 words were down words.
+- **Chains:** a triple on piece 10 (IMP, then VENT, then LEE).
+
+**Pace:**
+- Early pieces took 10–14 s each.
+- The average was 6.5 s.
+- With the stack high and play at level 3, the last ten pieces took 2–3 s each.
+
+**Letters:**
+- 44.6% vowels. The adaptive nudge gave 3-vowel pieces 14% of the time, against 5% by design.
+- Some odd words still count (ALB, FER, LEI, ETA).
+
 ## Later-phase ideas
+
+- **Show words at the landing spot.** While a piece moves, its shadow would highlight the words it would spell where it lands, with the points. Playtest 1 found a word was available for 26 of the 28 pieces that made none.
 
 - **Letter cycle.** This would keep the shape and shift each letter one step along the piece (ABCD → DABC).
   - It was tried in v0.1, but it was too easy to confuse with Rotate, because both move letters around. It's shelved for now.

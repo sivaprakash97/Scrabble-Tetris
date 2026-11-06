@@ -44,6 +44,9 @@
     // Chance a piece carries one letter that would finish a word already on the board.
     HELPER_CHANCE: 0.35,
 
+    // After anything clears, every tile drops to fill the gaps below it.
+    CLOSE_GAPS: true,
+
     // Words
     VERTICAL_WORDS: true, // also read columns top to bottom (a Rules switch)
     MIN_WORD_LEN: 3,

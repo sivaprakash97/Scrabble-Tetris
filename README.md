@@ -6,7 +6,7 @@ it's a tetris game but instead of tetris blocks, they would be alphabet scrabble
 This is a **mobile game**, planned for release as a phone app. Open `index.html` on a phone, or in a browser's phone view. There's no build step and no server needed.
 
 - Spell words **left to right in any row**, or **top to bottom in any column**. Columns count only when "Words read" in Rules is set to "Across and down", which is the default.
-- Any everyday English word of 3 or more letters vanishes, and the tiles above it drop. Drops that spell new words score chain bonuses.
+- Any everyday English word of 3 or more letters vanishes, and every tile drops to fill the gaps below, so buried gaps don't build up. Drops that spell new words score chain bonuses.
 - A completely full row also clears, but only words score.
 - Letters use Scrabble values, and longer words multiply steeply.
 - "Words found", below the board, shows each word with a short definition.
@@ -16,9 +16,9 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 
 | Control | Action |
 |---|---|
-| Left / Right | Move. Hold to keep moving. |
-| Down | Hold to drop faster. The piece locks a moment after it lands. |
-| Rotate | Turn the piece clockwise. Its letters turn with it. |
+| Down (alone on the left) | Hold to drop faster. The piece locks a moment after it lands. |
+| Left / Right (top row on the right) | Move. Hold to keep moving. |
+| Rotate (wide button under Left and Right) | Turn the piece clockwise. Its letters turn with it. |
 | Pause (top right) | Pause or resume |
 
 ## Develop

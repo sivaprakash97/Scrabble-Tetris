@@ -47,6 +47,37 @@ test('a full row that contains a word clears whole but scores only the word', ()
   assert.equal(g.chain, 1);
 });
 
+test('compact closes every gap and keeps each column in order', () => {
+  const g = game();
+  g.setRows(['A.C.', '.B..', 'D..E', '....']);
+  g.board.compact();
+  const rows = g.board.grid.slice(-4).map((r) => r.slice(0, 4).map((t) => (t ? t.ch : '.')).join(''));
+  assert.deepEqual(rows, ['....', '....', 'A...', 'DBCE']);
+});
+
+test('after a clear, a tile over a gap drops to the floor', () => {
+  const g = game({ vertical: true });
+  resolve(g, ['Z.........', '.CAT......', 'X.........']); // col 0: Z, gap, X
+  g.update(cfg.CLEAR_FLASH + 1);
+  const rows = g.board.grid.slice(-3).map((r) => r.map((t) => (t ? t.ch : '.')).join(''));
+  assert.deepEqual(rows, ['..........', 'Z.........', 'X.........']);
+});
+
+test('tiles that drop into a gap can spell the next chain wave', () => {
+  const rows = ['.U........', '.CAT......', 'S.N.......']; // U sits over C, with a gap under C
+  const g = game({ vertical: true });
+  assert.deepEqual(resolve(g, rows).found.map((w) => w.word), ['CAT']);
+  g.update(cfg.CLEAR_FLASH + 1);
+  assert.equal(g.chain, 2);
+  assert.deepEqual(g.clearing.found.map((w) => w.word), ['SUN']);
+
+  // With gaps kept, U only drops one row and SUN never forms.
+  const kept = new ST.Game({ dict: dict(), seed: 1, cfg: { ...cfg, CLOSE_GAPS: false }, settings: { vertical: true } });
+  resolve(kept, rows);
+  kept.update(cfg.CLEAR_FLASH + 1);
+  assert.equal(kept.clearing, null);
+});
+
 test('finishing letters: an open row end offers letters that complete a word', () => {
   const g = game({ vertical: false });
   g.setRows(['CA........']);

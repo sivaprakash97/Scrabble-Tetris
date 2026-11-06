@@ -289,9 +289,25 @@ select:focus-visible {
 /* ---- control pad ------------------------------------------------------- */
 
 .touch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.touch .pad-down {
+  width: 76px;
+  min-height: 84px;
+}
+
+.pad-group {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 84px);
   gap: 8px;
+}
+
+.pad-group .pad-rotate {
+  grid-column: 1 / -1;
 }
 
 .touch button {

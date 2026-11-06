@@ -290,6 +290,8 @@
 
     finishClear() {
       this.board.clearCells(this.clearing.cells);
+      // Close every gap on the board; tiles that land somewhere new can spell the next wave.
+      if (this.cfg.CLOSE_GAPS) this.board.compact();
       this.clearing = null;
       const level = 1 + Math.floor(this.words / this.cfg.WORDS_PER_LEVEL);
       if (level > this.level) {
@@ -381,7 +383,7 @@
         v: 1,
         status: this.state === 'over' ? 'over' : 'in progress',
         seed: this.seed,
-        settings: { minLen, vertical },
+        settings: { minLen, vertical, closeGaps: !!this.cfg.CLOSE_GAPS },
         score: this.score,
         level: this.level,
         words: this.words,
