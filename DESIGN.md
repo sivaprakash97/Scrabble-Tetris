@@ -107,7 +107,7 @@ For **every piece**:
 
 **When it's saved:**
 - when a game starts;
-- every 10 pieces;
+- every 3 pieces (10 until playtest 6, which lost a short game);
 - on pause, including leaving the app;
 - at game over.
 
@@ -242,6 +242,21 @@ One game on a phone. Words were read across and down, and gaps closed after ever
 - The game ended when the middle columns grew into a tower (the board's top rows held ITCS and EI in columns 3–6), while the sides stayed low.
 
 **Change (v0.7):** vertical words removed. Gaps still close, and full rows still clear. The control buttons were also swapped: Rotate alone on the left, and Down wide under Left and Right.
+
+## Playtest 6 (7 Nov 2026): the weighted letters ran short of vowels
+
+The player found the weighted-letters experiment had barely any vowels, and the main game played better. The saved games agree:
+
+| | Weighted experiment (6 Nov, 29 pieces) | Main game (7 Nov, 37 pieces) |
+|---|---|---|
+| Vowels among all letters | 36% | 44% |
+| Pieces with no vowel | 4 (STNR, SRCR, NTNN, RHNY) | 0 |
+| Pieces with at most one vowel | 59% | 43% |
+
+- **Why:** the experiment's weights give vowels 38% of letters and nothing guarantees one per piece, so 0.616⁴ = 14% of pieces have none. The main game's vowel quota always deals 1–3 per piece.
+- **Main game:** its letter system stays.
+- **Experiment:** gets a vowel floor (at least one vowel per piece) and will be played again; see `docs/letter-generation.md` on that branch.
+- **Saving:** a weighted game played today saved only its first piece (W L S H), because games saved every 10 pieces. Both versions now save every 3.
 
 ## Playtest 5 (6 Nov 2026): main game against the weighted-letters experiment
 
