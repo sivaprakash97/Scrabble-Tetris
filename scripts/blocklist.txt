@@ -24,6 +24,7 @@ wot
 # Mostly seen as names
 ken
 cox
+lee
 
 # Latin or archaic
 sic

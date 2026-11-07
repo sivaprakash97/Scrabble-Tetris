@@ -1,0 +1,7 @@
+# Words the game always accepts, even though the base lists leave them out.
+# One word per line; lines starting with # are comments. Rebuild with scripts/build-wordlist.mjs.
+# ENABLE (the Scrabble-style base list) drops words that dictionaries spell with a capital
+# letter, even when people use them as everyday words.
+
+# Everyday use in lowercase ("very zen"); playtest 5 expected it to count
+zen

@@ -14,7 +14,12 @@ test('dictionary holds common everyday words only', () => {
 });
 
 test('blocklisted words never count', () => {
-  for (const w of ['IFS', 'OHS', 'COX', 'QUA', 'MOD', 'KEN']) assert.ok(!dict().set.has(w), w);
+  for (const w of ['IFS', 'OHS', 'COX', 'QUA', 'MOD', 'KEN', 'LEE']) assert.ok(!dict().set.has(w), w);
+});
+
+test('allowlisted words count even though the base lists leave them out', () => {
+  assert.ok(dict().set.has('ZEN'));
+  assert.equal(ST.lookupDefinition('zen').pos, 'noun');
 });
 
 test('longer word beats the word inside it', () => {

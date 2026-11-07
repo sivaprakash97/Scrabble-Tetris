@@ -147,10 +147,11 @@ For **every piece**:
 ## Dictionary: everyday words
 
 Only common everyday English words count. Rare Scrabble words don't, and neither do words that read as abbreviations or names.
-- **The list (v0.9):** ENABLE1 ∩ SCOWL size 35, with US + UK spellings, minus `scripts/blocklist.txt`. That's 38,528 words of 3–12 letters.
+- **The list (v0.9):** ENABLE1 ∩ SCOWL size 35, with US + UK spellings, minus `scripts/blocklist.txt`, plus `scripts/allowlist.txt`. That's 38,528 words of 3–12 letters.
   - **ENABLE1** is a public-domain Scrabble-style list. It contributes clean, lowercase entries with no names or abbreviations.
   - **SCOWL** is the list behind standard spell-checkers. Size 35 is its "small" dictionary of common words.
-  - **The blocklist** holds 21 words that pass both lists but read as abbreviations, names, plurals of short words, or Latin: IFS, OHS, COX, MOD, QUA and others. Each group has a comment explaining why. Add to it whenever a word like that slips through.
+  - **The blocklist** holds 22 words that pass both lists but read as abbreviations, names, plurals of short words, or Latin: IFS, OHS, COX, LEE, MOD, QUA and others. Each group has a comment explaining why. Add to it whenever a word like that slips through.
+  - **The allowlist** adds everyday words the base lists leave out. ENABLE drops words that dictionaries capitalise, even when people use them in lowercase. It starts with ZEN ("very zen").
 - **History:**
   - **v0.1–0.2** used all of ENABLE1 (152k words). It accepted OKE (a Turkish unit of weight), PAC (a winter boot) and DOL (a unit of pain).
   - **v0.3–0.8** used SCOWL size 50 (58,771 words). In playtest 4 it still let through EMS, SIS, SIM, DIS, POI, LEI, ERE, BAH and FEY, almost all from SCOWL's rarest tiers (40–50).
@@ -250,6 +251,17 @@ One game on a phone. Words were read across and down, and gaps closed after ever
 - The game ended when the middle columns grew into a tower (the board's top rows held ITCS and EI in columns 3–6), while the sides stayed low.
 
 **Change (v0.7):** vertical words removed. Gaps still close, and full rows still clear. The control buttons were also swapped: Rotate alone on the left, and Down wide under Left and Right.
+
+## Playtest 5 (6 Nov 2026): main game against the weighted-letters experiment
+
+| Version | Pieces | Words | Score |
+|---|---|---|---|
+| Weighted-letters experiment (`experiment/letter-frequency`) | 29 | 10 | 577 |
+| Main game, stricter word list | 60 | 20 | 2,503 |
+
+- **The experiment felt better and more challenging.**
+- **LEE** was accepted but read as a name. It's now on the blocklist.
+- **ZEN** didn't count, though it lined up on row 7 (OZENEEM) after piece 48. ENABLE leaves it out because dictionaries capitalise it ("Zen"). It's now on the new allowlist, with an everyday definition.
 
 ## Playtest 4 (v0.8 rules, 10 × 10 board, 6 Nov 2026)
 
