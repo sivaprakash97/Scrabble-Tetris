@@ -53,7 +53,7 @@ Hand-written definitions for words WordNet lacks are in `scripts/supplement-defs
 
 ## Credits
 
-- **Word list:** ENABLE1 (public domain), filtered with SCOWL by Kevin Atkinson. Words to leave out by hand go in `scripts/blocklist.txt`.
+- **Word list:** ENABLE1 (public domain), filtered with SCOWL by Kevin Atkinson. Words to leave out by hand go in `scripts/blocklist.txt`, and everyday words to add go in `scripts/allowlist.txt`.
 - **Definitions:** WordNet 3.0, © 2006 Princeton University.
 
 Full notices are in [data/LICENSES.md](data/LICENSES.md).
