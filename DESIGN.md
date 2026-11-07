@@ -43,6 +43,7 @@ The layout follows the player's own sketch (v0.6), which had Down alone on the l
 
 On `experiment/letter-frequency`, `LETTER_SYSTEM` is `'weighted'`, set in `src/config.js`.
 - Every tile is drawn from English letter-frequency weights, plus recent-letter balancing (`src/letters.js`).
+- Since playtest 6, a vowel floor (`VOWEL_FLOOR: 1`) gives every piece at least one vowel: if a piece's first 3 letters have no vowel, the 4th is drawn from the vowels. Vowels rise from 38.4% to 42.0% of letters.
 - The bag system below, along with its vowel quota, vowel nudge, rare caps, blanks and helper letters, is switched off.
 - The full explanation and simulation results are in [docs/letter-generation.md](docs/letter-generation.md). Run `npm run letters` to simulate.
 
@@ -264,7 +265,7 @@ The player found the weighted-letters experiment had barely any vowels, and the 
 
 - **Why:** the experiment's weights give vowels 38% of letters and nothing guarantees one per piece, so 0.616⁴ = 14% of pieces have none. The main game's vowel quota always deals 1–3 per piece.
 - **Main game:** its letter system stays.
-- **Experiment:** gets a vowel floor (at least one vowel per piece) and will be played again; see `docs/letter-generation.md` on that branch.
+- **Experiment:** now has a vowel floor (at least one vowel per piece) and will be played again. Section 4 of `docs/letter-generation.md` explains it.
 - **Saving:** a weighted game played today saved only its first piece (W L S H), because games saved every 10 pieces. Both versions now save every 3.
 
 ## Playtest 5 (6 Nov 2026): main game against the weighted-letters experiment

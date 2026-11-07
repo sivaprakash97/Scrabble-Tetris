@@ -101,3 +101,102 @@ test('the game uses the weighted generator when LETTER_SYSTEM says so', () => {
   assert.equal(weighted.log.pieces[0].letters.length, 4);
   assert.equal(weighted.log.pieces[0].helper, null);
 });
+
+// ---- Vowel floor (playtest 6) ----------------------------------------------------------
+
+const VOWELS = new Set(LG.VOWELS);
+const vowelCount = (piece) => piece.filter((t) => VOWELS.has(t)).length;
+const vowelWeight = LG.VOWELS.reduce((s, v) => s + LG.WEIGHTS[v], 0);
+
+test('with VOWEL_FLOOR 1, no piece lacks a vowel and vowels rise to about 42%', () => {
+  assert.equal(LG.VOWEL_FLOOR, 1);
+  const gen = make({}, 21);
+  const pieces = 5000;
+  let vowels = 0;
+  for (let i = 0; i < pieces; i++) {
+    const piece = gen.nextLetters(4);
+    assert.ok(vowelCount(piece) >= 1, piece.join(''));
+    vowels += vowelCount(piece);
+  }
+  // Theory: V + (1 - V)^4 / 4, where V is the vowels' share of the weight (38 / 98.9).
+  const V = vowelWeight / total;
+  const expected = V + (1 - V) ** 4 / 4;
+  const share = vowels / (pieces * 4);
+  assert.ok(Math.abs(share - expected) < 0.012, `vowel share ${share.toFixed(4)}, expected ${expected.toFixed(4)}`);
+  assert.ok(gen.stats.forcedVowels > 0);
+});
+
+test('with VOWEL_FLOOR 0, pieces with no vowel still appear (about 14%)', () => {
+  const gen = make({ VOWEL_FLOOR: 0 }, 21);
+  let none = 0;
+  for (let i = 0; i < 5000; i++) if (vowelCount(gen.nextLetters(4)) === 0) none++;
+  const expected = (1 - vowelWeight / total) ** 4;
+  assert.ok(Math.abs(none / 5000 - expected) < 0.02, `no-vowel share ${none / 5000}, expected ${expected.toFixed(3)}`);
+  assert.equal(gen.stats.forcedVowels, 0);
+});
+
+test('a piece that already has a vowel is drawn exactly as without the floor', () => {
+  // Same seed, floor on and off: they match piece for piece until the first forced vowel.
+  const on = make({}, 3);
+  const off = make({ VOWEL_FLOOR: 0 }, 3);
+  let compared = 0;
+  for (let i = 0; i < 200; i++) {
+    const a = on.nextLetters(4);
+    const b = off.nextLetters(4);
+    if (vowelCount(b) === 0) break;
+    assert.deepEqual(a, b);
+    compared++;
+  }
+  assert.ok(compared > 0);
+});
+
+test('forced vowels land on every cell of the piece', () => {
+  // Only consonants and one vowel: every piece needs its vowel forced (the first 3 tiles
+  // can be E too, so count the pieces where E was the only vowel).
+  const gen = make({ WEIGHTS: { B: 1000, C: 1000, E: 0.001 }, RARE_MAX_WEIGHT: 0 }, 9);
+  const positions = [0, 0, 0, 0];
+  for (let i = 0; i < 2000; i++) {
+    const piece = gen.nextLetters(4);
+    assert.equal(vowelCount(piece), 1);
+    positions[piece.indexOf('E')]++;
+  }
+  for (const n of positions) assert.ok(n > 400, `positions ${positions}`);
+});
+
+test('forced vowels follow the vowel weights', () => {
+  // nextLetter(true) is the floor's draw: E 12/38, A 8/38, O 8/38, I 7/38, U 3/38.
+  const gen = make({}, 13);
+  const forced = {};
+  for (let i = 0; i < 6000; i++) {
+    const v = gen.nextLetter(true);
+    forced[v] = (forced[v] || 0) + 1;
+  }
+  for (const v of LG.VOWELS) {
+    const p = LG.WEIGHTS[v] / vowelWeight;
+    assert.ok(Math.abs(forced[v] / 6000 - p) < 0.025, `${v}: ${(forced[v] / 6000).toFixed(3)} vs ${p.toFixed(3)}`);
+  }
+  assert.ok(Object.keys(forced).every((l) => VOWELS.has(l)));
+});
+
+test('a weight table with no vowels never forces one', () => {
+  const gen = make({ WEIGHTS: { B: 1, C: 1 } }, 4);
+  for (let i = 0; i < 100; i++) assert.equal(vowelCount(gen.nextLetters(4)), 0);
+  assert.equal(gen.stats.forcedVowels, 0);
+});
+
+test('VOWEL_FLOOR 2 gives every piece at least two vowels', () => {
+  const gen = make({ VOWEL_FLOOR: 2 }, 17);
+  for (let i = 0; i < 2000; i++) assert.ok(vowelCount(gen.nextLetters(4)) >= 2);
+});
+
+test('every piece the game deals in the weighted system has a vowel', () => {
+  const g = new ST.Game({ dict: dict(), seed: 5, cfg: { ...cfg, LETTER_SYSTEM: 'weighted' } });
+  let pieces = 0;
+  for (let seed = 1; pieces < 300; seed++) {
+    g.reset(seed); // a fresh game each time (start() does nothing once a game is over)
+    g.start();
+    for (let step = 0; step < 5000 && g.state !== 'over'; step++) g.update(100);
+    for (const p of g.log.pieces) assert.ok(vowelCount(p.letters) >= 1, p.letters.join(''));
+    pieces += g.log.pieces.length;
+  }
+});

@@ -42,6 +42,11 @@
       // While balancing is on, every uncommon letter's weight is multiplied by this.
       // 1 turns balancing off; values near 0 almost (never fully) stop uncommon letters.
       RARE_DAMPING: 0.3,
+      // Vowel floor (added after playtest 6, when 1 piece in 7 had no vowel): every piece
+      // carries at least this many vowels. When the tiles left in a piece equal the vowels
+      // it still needs, the next tile is drawn from the vowels' weights only. 0 turns it off.
+      VOWEL_FLOOR: 1,
+      VOWELS: ['A', 'E', 'I', 'O', 'U'],
     },
 
     // ---- 'bags' system settings (not used while LETTER_SYSTEM is 'weighted') ----------

@@ -4,8 +4,9 @@ This is how the experiment branch (`experiment/letter-frequency`) decides which 
 
 1. Every tile is drawn **independently** from a table of **weights** based on English letter frequency.
 2. A light **recent-letter balancing** step turns uncommon letters down for a while after they've bunched up.
+3. A **vowel floor** makes sure every piece carries at least one vowel. It was added after playtest 6, when 1 piece in 7 had none.
 
-Nothing else steers the letters. The system doesn't look at the board, doesn't guarantee vowels, doesn't add helper letters and doesn't try to make words. The player still gets surprising combinations; they're just fairer on average.
+Nothing else steers the letters. The system doesn't look at the board, doesn't add helper letters and doesn't try to make words. The player still gets surprising combinations; they're just fairer on average.
 
 ---
 
@@ -83,7 +84,9 @@ for (const [letter, w] of entries) {
 
 **Two numbers that follow from the table:**
 - **Vowels** (A E I O U) carry 38 of the 98.9 weight, so they're **38.4%** of letters.
-- **A piece with no vowel at all:** each of its 4 tiles is independently a consonant with probability 0.616, so the chance is 0.616⁴ = **14.4%**, about 1 piece in 7. There's no vowel guarantee on this branch, by design.
+- **A piece with no vowel at all:** each of its 4 tiles is independently a consonant with probability 0.616, so the chance is 0.616⁴ = **14.4%**, about 1 piece in 7. The weights alone don't prevent it; the vowel floor (section 4) does.
+
+These are the probabilities **from the weights alone**. The vowel floor moves a little share from consonants to vowels; section 4 works out by how much.
 
 ## 3. Recent-letter balancing
 
@@ -110,38 +113,123 @@ Uncommon letters become about 3.3× less likely. The probability they lose goes 
 - Balancing switches off by itself as soon as the cluster scrolls out of the 5-letter memory.
 - Nothing checks whether the letters can make a word.
 
-## 4. What the simulation shows
+## 4. Vowel floor
 
-`npm run letters` runs the production generator: the same `WeightedLetters.nextLetters(4)` call the game makes for each piece. It makes 10,000 letters (2,500 pieces) with balancing on, then the same with balancing off, then a million letters each way for precision.
+**Why it's there.** In playtest 6 the weighted game "had barely any vowels", and the main game played better. The saved game agreed:
+
+| | Weighted, no floor (29 pieces) | Main game (37 pieces) |
+|---|---|---|
+| Vowels among all letters | 36% | 44% |
+| Pieces with no vowel | 4 (STNR, SRCR, NTNN, RHNY) | 0 |
+| Pieces with at most one vowel | 59% | 43% |
+
+Four pieces out of 29 is 14%: exactly the 0.616⁴ = 14.4% that section 2 predicts. The weights were working as designed; the design just let too many pieces arrive with nothing to build a word around. The main game deals 1–3 vowels to every piece.
+
+**The rule.** Every piece carries at least `VOWEL_FLOOR` vowels (1). Tiles are still drawn one at a time, with the weights and balancing. Before each tile, the generator compares two numbers:
+- the vowels the piece still needs (`VOWEL_FLOOR` minus the vowels drawn so far);
+- the tiles left to draw.
+
+When they're equal, there's no room left to wait for a vowel by chance, so that tile is drawn from the vowels only. With a floor of 1 and 4 tiles, that means: **if the first 3 letters have no vowel, the 4th is a vowel.**
+
+In code (`nextLetters` in `src/letters.js`):
+
+```js
+const force = floor - vowels >= size - i;   // vowels still needed >= tiles left
+const letter = this.nextLetter(force);      // force: draw from the vowels only
+```
+
+**Which vowel.** The forced draw uses the same roulette wheel with the consonants taken off it (`vowelWeights()`). The vowels keep their weights: E 12, A 8, O 8, I 7, U 3, which sum to 38. So a forced vowel is:
+- E 12/38 = 31.6%;
+- A and O 21.1% each;
+- I 18.4%;
+- U 7.9%.
+
+These are the same odds a vowel has when it turns up by chance.
+
+**Where it lands.** The forced vowel is always the last tile drawn, and the game puts tiles on the tetromino's cells in order. So after a forced vowel the piece's tiles are shuffled, and the vowel can land on any cell.
+
+**What doesn't change:**
+- A piece that gets its vowel by chance is drawn exactly as before, with no extra random numbers.
+- Every letter is still possible; consonants only lose a little share.
+- Balancing is unaffected, because no vowel is uncommon.
+- If no vowel has any weight (say you set them all to 0), the floor does nothing rather than fail.
+
+**The maths.** Without the floor, a piece's vowel count is binomial: 4 tiles, each a vowel with probability V = 38 / 98.9 = 0.384. The floor turns every count below 1 into 1:
+
+| Vowels in a piece | 0 | 1 | 2 | 3 | 4 |
+|---|---|---|---|---|---|
+| Without the floor | 14.4% | 35.9% | 33.6% | 14.0% | 2.2% |
+| With the floor | **0%** | **50.3%** | 33.6% | 14.0% | 2.2% |
+
+- **Vowels per piece:** 4V = 1.537 becomes 1.537 + 0.144 = 1.681. Each of the 14.4% of pieces that had none gains exactly one.
+- **Vowel share:** 1.681 / 4 = **42.0%**. As a formula, V + (1 − V)⁴ / 4.
+- **Each letter's share.** Every vowel's share grows by the same factor, 42.0 / 38.4 = 1.094; for example, E goes from 12.13% to 13.27%. Every consonant's share shrinks by (100 − 42.0) / (100 − 38.4) = 0.942; T goes from 9.10% to 8.57%. Uncommon letters fall from 2.43% to 2.29%.
+
+**Forced isn't the same as rescued.** The floor forces a vowel whenever the first 3 letters are consonants, which is 0.616³ = **23.4%** of pieces. Only 14.4% of pieces are actually rescued. In the other 8.9%, the 4th letter would have been a vowel anyway, with the same odds, so forcing it changes nothing. That's why `stats.forcedVowels` counts more forced tiles than there are rescued pieces.
+
+**Compared with the main game:**
+
+| | Weighted with the floor | Main game |
+|---|---|---|
+| Vowel share | 42.0% | 40% from its quota; 42–44% in play, because it adds vowels when the stack runs short |
+| Pieces with no vowel | 0% | 0% |
+| Pieces with exactly one vowel | 50.3% | 45% from its quota; 43% in play |
+
+In 2,000 pieces of scripted play on each version, both dealt 42.0% vowels and no vowel-less piece. The difference left is shape: the weighted game deals more one-vowel pieces (50% against 43%) and more three- and four-vowel ones, while the main game clusters on two.
+
+**Changing it:**
+- `VOWEL_FLOOR: 0` turns the floor off; the game is back to the playtest-5 behaviour.
+- `VOWEL_FLOOR: 2` gives every piece at least two vowels. That pushes the vowel share to about 55%, which is probably too many.
+- Raising the vowel **weights** instead also adds vowels, but it can't rule out a vowel-less piece. For example, A 11, E 15, I 9, O 10, U 4 gives about 45% vowels, and 9% of pieces would still have none.
+
+## 5. What the simulation shows
+
+`npm run letters` runs the production generator: the same `WeightedLetters.nextLetters(4)` call the game makes for each piece. It makes 10,000 letters (2,500 pieces) three ways from the same seed:
+- as configured;
+- with balancing off;
+- with the vowel floor off.
+
+Then it makes a million letters each way for precision. Each letter is compared with its **expected** share with the floor (section 4), not its weights-only share, because the floor moves some share from consonants to vowels.
 
 **Results with seed 2026, 10,000 letters:**
-- **Every letter matches its theoretical probability within random noise.** The biggest gap is E at +0.54 percentage points. With 10,000 draws, a gap of about ±0.5 points is normal for a common letter.
-- **Uncommon share:** theory 2.43%, observed 2.60%. That's within the ±0.46% tolerance (3 standard errors), so **as designed**: not too often and not too rare.
-- **Pieces with no vowel:** 13.4%, against 14.4% in theory.
+- **Every letter matches its expected share within random noise.** The biggest gap is O at −0.65 percentage points. With 10,000 draws, a gap within about ±0.85 points (3 standard errors) is normal for a common letter.
+- **Uncommon share:** expected 2.29%, observed 2.40%. That's within the ±0.45% tolerance (3 standard errors), so **as designed**: not too often and not too rare.
+- **Vowel floor:**
 
-**What balancing changes, over 1,000,000 letters:**
+  | | With the floor | Without it |
+  |---|---|---|
+  | Vowel share | 41.8% (theory 42.0%) | 38.6% (theory 38.4%) |
+  | Pieces with no vowel | 0.0% (theory 0%) | 13.4% (theory 14.4%) |
+  | Pieces with exactly one vowel | 50.1% (theory 50.3%) | 36.2% (theory 35.9%) |
+  | Tiles forced by the floor | 582, or 0.233 per piece (theory 0.234) | (n/a) |
+
+**Over 1,000,000 letters:**
 
 | | Balancing off | Balancing on |
 |---|---|---|
-| Uncommon share | 2.433% | 2.425% |
-| 5-letter stretches with 2+ uncommon | 0.562% | 0.545% |
+| Uncommon share | 2.290% | 2.285% (expected 2.285%) |
+| 5-letter stretches with 2+ uncommon | 0.474% | 0.463% |
 | Longest run of uncommon letters | 4 | 3 |
-| Draws with balancing switched on | (n/a) | 0.545% |
+| Draws with balancing switched on | (n/a) | 0.468% |
+
+- **Vowel share:** 42.047% with the floor, against 42.017% in theory. Without the floor it was 38.426%, against 38.423%.
+- **Pieces with no vowel:** 0.000% with the floor. Without it, 14.310%, against 14.378% in theory.
 
 **Takeaways:**
-- **With these weights, balancing rarely matters.** Uncommon letters are already scarce (2.4%), so two of them inside 5 letters happens in only about 1 stretch in 180. That makes balancing a safety net for unlucky streaks, not something you'll notice in a normal game.
-- **What it would take to make it matter.** If you count everything with weight 2 or less as uncommon, that adds B, M, W, F, G, Y and P. Try it with `npm run letters -- --rare-max 2`:
+- **The floor does exactly what the maths says.** It adds 3.6 points of vowels, all of them in pieces that would otherwise have had none.
+- **With these weights, balancing rarely matters.** Uncommon letters are already scarce (2.3%), so two of them inside 5 letters happens in only about 1 stretch in 200. That makes balancing a safety net for unlucky streaks, not something you'll notice in a normal game.
+- **What it would take to make balancing matter.** If you count everything with weight 2 or less as uncommon, that adds B, M, W, F, G, Y and P. Try it with `npm run letters -- --rare-max 2` (1,000,000 letters):
 
   | | Balancing off | Balancing on |
   |---|---|---|
-  | Draws with balancing switched on | (n/a) | 15% |
-  | Stretches with 2+ uncommon | 18.5% | 15.0% |
-  | Longest uncommon run | 7 | 5 |
-  | Uncommon share | 16.1% | 14.5% |
+  | Draws with balancing switched on | (n/a) | 13.6% |
+  | Stretches with 2+ uncommon | 16.5% | 13.6% |
+  | Longest uncommon run | 6 | 5 |
+  | Uncommon share | 15.1% | 13.8% |
 
-  The share drops below the weights' design. That's a real trade-off: the balancing then shapes the overall mix, not just streaks.
+  The share drops below the weights' design. That's a real trade-off: balancing then shapes the overall mix, not just streaks. It also nudges vowels up (42.5% instead of 42.0%), because the damped consonants' share goes partly to vowels.
 
-## 5. Which files and functions control it
+## 6. Which files and functions control it
 
 | File | What's there |
 |---|---|
@@ -150,7 +238,7 @@ Uncommon letters become about 3.3× less likely. The probability they lose goes 
 | `src/game.js` → `reset()`, `newPiece()` | `reset()` builds `WeightedLetters` when `LETTER_SYSTEM` is `'weighted'`. `newPiece()` asks it for 4 letters per piece and hands them to `ST.makePiece()` (`src/pieces.js`), which puts them on the tetromino's cells. |
 | `src/ui.js` | Only draws the tiles; it never chooses letters. |
 | `scripts/letter-sim.mjs` | The simulation (`npm run letters`). |
-| `test/letters.test.js` | Tests for the maths, the balancing, the window, Qu, config-only changes and the game wiring. |
+| `test/letters.test.js` | Tests for the maths, the balancing, the window, Qu, config-only changes, the vowel floor and the game wiring. |
 
 The functions in `src/letters.js`:
 
@@ -159,16 +247,18 @@ The functions in `src/letters.js`:
 | `normaliseWeights(weights)` | Turns weights into probabilities |
 | `weightedPick(weights, rng)` | The roulette wheel |
 | `isRare(letter)` | Is the letter uncommon (weight ≤ `RARE_MAX_WEIGHT`)? |
+| `isVowel(letter)` | Is the letter one of `VOWELS`? |
 | `rareInWindow()` | How many uncommon letters are in the recent window |
 | `balancing()` | Is balancing on? |
 | `currentWeights()` | The weights the next draw will use (damped or not) |
 | `probabilities()` | The next draw's probabilities |
-| `nextLetter()` | Draws one letter and remembers it |
-| `nextLetters(size)` | One piece's tiles, with Q delivered as `QU` |
+| `vowelWeights()` | The current weights with the consonants removed: the vowel floor's draw |
+| `nextLetter(onlyVowels)` | Draws one letter (from the vowels only when `onlyVowels` is true) and remembers it |
+| `nextLetters(size)` | One piece's tiles: applies the vowel floor, shuffles after a forced vowel, and delivers Q as `QU` |
 
 All of them belong to `class WeightedLetters`, and the class also keeps counters in `stats`.
 
-## 6. How to change the distribution yourself
+## 7. How to change the distribution yourself
 
 Edit `LETTER_GENERATION` in `src/config.js`. You never need to touch the algorithm.
 
@@ -179,12 +269,15 @@ Edit `LETTER_GENERATION` in `src/config.js`. You never need to touch the algorit
 | `RARE_MAX_WEIGHT` | Which letters count as uncommon | 2 also includes B M W F G Y P |
 | `RARE_THRESHOLD` | How many uncommon letters in the window switch balancing on | 1 reacts to every single uncommon letter |
 | `RARE_DAMPING` | How strongly balancing turns uncommon letters down | 0.5 is gentler, 0.1 is stronger, 1 switches balancing off |
+| `VOWEL_FLOOR` | The fewest vowels a piece can carry | 0 switches the floor off; 2 gives about 55% vowels |
+| `VOWELS` | Which letters count as vowels for the floor | Add `'Y'` to let Y satisfy the floor |
 
-**Try before you edit.** The simulation takes the balancing settings as flags, so you can compare without editing anything:
+**Try before you edit.** The simulation takes the balancing settings and the vowel floor as flags, so you can compare without editing anything:
 
 ```sh
 npm run letters                                  # current settings
 npm run letters -- --rare-max 2 --damping 0.5    # what-if
+npm run letters -- --vowel-floor 0               # without the vowel floor
 npm run letters -- --letters 100000 --seed 7     # bigger sample, different seed
 ```
 
