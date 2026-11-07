@@ -148,18 +148,21 @@ For **every piece**:
 ## Dictionary: everyday words
 
 Only common everyday English words count. Rare Scrabble words don't, and neither do words that read as abbreviations or names.
-- **The list (v0.9):** ENABLE1 ∩ SCOWL size 35, with US + UK spellings, minus `scripts/blocklist.txt`, plus `scripts/allowlist.txt`. That's 38,528 words of 3–12 letters.
+- **The list (v0.9):** ENABLE1 ∩ SCOWL size 35, with US + UK spellings, minus `scripts/blocklist.txt`, plus `scripts/allowlist.txt`. That's 38,790 words of 3–12 letters.
   - **ENABLE1** is a public-domain Scrabble-style list. It contributes clean, lowercase entries with no names or abbreviations.
   - **SCOWL** is the list behind standard spell-checkers. Size 35 is its "small" dictionary of common words.
   - **The blocklist** holds 22 words that pass both lists but read as abbreviations, names, plurals of short words, or Latin: IFS, OHS, COX, LEE, MOD, QUA and others. Each group has a comment explaining why. Add to it whenever a word like that slips through.
-  - **The allowlist** adds everyday words the base lists leave out. ENABLE drops words that dictionaries capitalise, even when people use them in lowercase. It starts with ZEN ("very zen").
+  - **The allowlist** adds everyday words the base lists leave out, about 260 in all. Each one's forms (plurals, -ed, -ing) are listed too.
+    - ENABLE drops words that dictionaries capitalise, even when people use them in lowercase: ZEN ("very zen").
+    - The size-35 cut also dropped everyday words that SCOWL ranks at 40 or 50: EMU, OAT, FAX, ZAP, SOY, TOFU, KALE, NERD, BEEP, OOPS, YEAH and about 110 more. They were hand-picked in playtest 7 from every 3–4-letter word at those sizes; abbreviations, crude words, names and archaic words stayed out.
+    - One section holds short forms of longer words (SAX, LIMO, MAYO, DEMO, TYPO). Delete it if they read as abbreviations.
 - **History:**
   - **v0.1–0.2** used all of ENABLE1 (152k words). It accepted OKE (a Turkish unit of weight), PAC (a winter boot) and DOL (a unit of pain).
   - **v0.3–0.8** used SCOWL size 50 (58,771 words). In playtest 4 it still let through EMS, SIS, SIM, DIS, POI, LEI, ERE, BAH and FEY, almost all from SCOWL's rarest tiers (40–50).
 
 | Kept | Dropped |
 |---|---|
-| CAT, CATS, DOG, WOW, ERA, TEEN, AYE, DIE, HOG, AXE, QUIZ, QUIT, DEAN, HAM, TRAINS | GAR, TUT, OKE, PAC, DOL, ZAX, EME, ANA, BOXY, EMS, SIS, SIM, DIS, POI, LEI, ERE, BAH, FEY, MID, TORT, OAT, PEE, IFS, OHS, COX, QUA |
+| CAT, CATS, DOG, WOW, ERA, TEEN, AYE, DIE, HOG, AXE, QUIZ, QUIT, DEAN, HAM, TRAINS; OAT, BAH and EMU are back through the allowlist | GAR, TUT, OKE, PAC, DOL, ZAX, EME, ANA, BOXY, EMS, SIS, SIM, DIS, POI, LEI, ERE, FEY, MID, TORT, PEE, IFS, OHS, COX, QUA |
 
 `data/LICENSES.md` holds the licence notices for every source. All of them allow use in a paid app as long as the notices are included.
 
@@ -168,13 +171,14 @@ Only common everyday English words count. Rare Scrabble words don't, and neither
 Each word in "Words found" shows a short definition, so players can see why a word counted.
 
 Every word in the list gets its definition at build time, in this order:
-1. **Hand-written supplement** (`scripts/supplement-defs.json`), covering about 150 words.
-   - These are function words and interjections that WordNet lacks (THE, AND, SHE, WITH, HEY).
-   - It also fixes words WordNet misreads: HIS would otherwise be the plural of "hi", WHO the World Health Organization, and US the United States.
+1. **Hand-written supplement** (`scripts/supplement-defs.json`), covering about 200 words.
+   - These are function words and interjections that WordNet lacks (THE, AND, SHE, WITH, HEY), and newer words such as KETO and FETA.
+   - It also fixes words WordNet misreads: HIS would otherwise be the plural of "hi", WHO the World Health Organization, and US the United States. Playtest 7's words needed many more: EMU ("units of electricity"), KALE ("money"), TUTU and YOGI (two famous people), LYNX ("a text browser") and PING ("a river in Thailand").
 2. **WordNet 3.0 entry for the word itself.** Use the most-used sense. A noun wins when another sense is only slightly more used, so HOG and QUIZ read as nouns.
 3. **The base form.** This covers irregular forms from WordNet's exception lists (WENT → go, MICE → mouse) and suffix rules (CATS → cat, BOGGED → bog, CHALKIER → chalky, ADEPTLY → adept). When there are several candidates, the most-used sense wins, so DIES means the verb die, not dice.
+4. **A supplement word's base form**, when WordNet knows neither: NERDIER → nerdy, PREPPED → prep.
 
-Coverage is 98.8% of the list. Every common word is covered, and the gaps are rare inflections such as DIALINGS. A word with no definition shows "Everyday word, no short definition yet."
+Coverage is 98.9% of the list, and every allowlisted word has a definition (a test checks it). Every common word is covered, and the gaps are rare inflections such as DIALINGS. A word with no definition shows "Everyday word, no short definition yet."
 
 Glosses are cut at WordNet's example sentences and trimmed to 100 characters. `data/definitions.js` is about 1.7 MB, because each distinct definition text is stored only once.
 
@@ -252,6 +256,20 @@ One game on a phone. Words were read across and down, and gaps closed after ever
 - The game ended when the middle columns grew into a tower (the board's top rows held ITCS and EI in columns 3–6), while the sides stayed low.
 
 **Change (v0.7):** vertical words removed. Gaps still close, and full rows still clear. The control buttons were also swapped: Rotate alone on the left, and Down wide under Left and Right.
+
+## Playtest 7 (7 Nov 2026): vowel floor, and EMU
+
+| | Weighted, vowel floor | Main game |
+|---|---|---|
+| Pieces | 35 | 73 |
+| Words / score | 10 / 745 | 23 / 3,182 |
+| Words per piece | 0.29 | 0.32 |
+| Vowels | 38.6% | 43.2% |
+| Pieces with 0 / 1 / 2 / 3 vowels | 0 / 57 / 31 / 11% | 0 / 34 / 59 / 7% |
+
+- **The vowel floor worked:** no weighted piece lacked a vowel. Most still had only one, against two in the main game.
+- **The weighted letters also ran unlucky:** H 7.9% (expected 5.7%) and F 4.3% (1.9%), but A, O and S short at 5.7%, 4.3% and 4.3%. Over 140 letters that's plausibly chance.
+- **EMU didn't count.** SCOWL ranks it at size 50, beyond the size-35 cut. A hand-picked batch of about 120 everyday short words from sizes 40 and 50, with their forms, is now on the allowlist (see Dictionary).
 
 ## Playtest 6 (7 Nov 2026): the weighted letters ran short of vowels
 
