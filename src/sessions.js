@@ -8,7 +8,7 @@
 (function () {
   const ST = window.ST;
   const MAX_BYTES = 240 * 1024; // documents are capped at 256 KiB
-  const SAVE_EVERY = 10; // pieces between saves while playing
+  const SAVE_EVERY = 3; // pieces between saves while playing (10 lost short games, playtest 6)
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const newId = () => 'g-' + new Date().toISOString().replace(/[:.]/g, '-') + '-' + Math.random().toString(36).slice(2, 6);
@@ -105,7 +105,7 @@
         save(game);
       },
       save,
-      // Called for game events; saves every few pieces, on pause and at game over.
+      // Called for game events; saves every SAVE_EVERY pieces, on pause and at game over.
       onEvent(game, e) {
         if (e.type === 'over' || e.type === 'pause') save(game);
         else if (e.type === 'settled' && e.piece % SAVE_EVERY === 0) save(game);
