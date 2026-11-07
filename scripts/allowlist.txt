@@ -1,7 +1,144 @@
 # Words the game always accepts, even though the base lists leave them out.
-# One word per line; lines starting with # are comments. Rebuild with scripts/build-wordlist.mjs.
+# Words are separated by spaces or new lines; lines starting with # are comments.
+# Each word's forms (plurals, -ed, -ing...) must be listed too. Rebuild with
+# scripts/build-wordlist.mjs.
+
+# ---- Capitalised in dictionaries ------------------------------------------------------
 # ENABLE (the Scrabble-style base list) drops words that dictionaries spell with a capital
 # letter, even when people use them as everyday words.
 
 # Everyday use in lowercase ("very zen"); playtest 5 expected it to count
 zen
+
+# ---- Everyday words the size-35 cut left out (playtest 7) ------------------------------
+# The list stops at SCOWL size 35 to keep out EMS, SIS, SIM, POI and LEI (playtest 4).
+# That also dropped real everyday words that SCOWL puts at size 40 or 50, such as EMU,
+# which playtest 7 expected to count. These were hand-picked from every 3-4 letter ENABLE
+# word at those sizes. Left out on purpose: abbreviations (ref, rep, doc, exec, prof),
+# swear words, crude words and slurs, names (tom, john), archaic or specialist words
+# (ere, oft, yon, erg, iamb), Greek letters (eta, rho) and letter names (zed).
+
+# 3 letters
+aha
+baa baas baaed baaing
+bah
+brr
+fax faxes faxed faxing
+oat oats
+tad tads
+tic tics
+yep
+yum
+zap zaps zapped zapping zapper zappers
+zit zits
+emu emus
+soy
+aft
+orb orbs
+awl awls
+hex hexes hexed hexing
+pug pugs
+cud cuds
+pip pips
+sty sties
+nub nubs
+nib nibs
+vim
+yup
+
+# 4 letters
+achy achier achiest
+ante antes anted anteing
+beep beeps beeped beeping beepers
+blah blahs
+cola colas
+crud
+dork dorks dorky dorkier dorkiest
+dorm dorms
+flab
+flub flubs flubbed flubbing
+funk funks funky funkier funkiest
+geek geeks geeky geekier geekiest
+glob globs
+gunk gunky
+heck
+hype hypes hyped hyping
+icky ickier ickiest
+iffy iffier iffiest
+jeez
+jock jocks
+jowl jowls jowly
+meld melds melded melding
+nerd nerds nerdy nerdier nerdiest
+nope
+nuke nukes nuked nuking
+oink oinks oinked oinking
+oops
+ping pings pinged pinging
+posh posher
+sass sasses sassed sassing
+scam scams scammed scamming
+snit snits
+tarp tarps
+tofu
+tyke tykes
+wham whams
+wimp wimps wimpy wimpier wimpiest
+yeah
+aloe aloes
+aqua
+atop
+beau beaus
+bunt bunts bunted bunting
+diva divas
+dewy dewier dewiest
+euro euros
+feta
+flan flans
+flax
+gyro gyros
+hula hulas
+kale
+luau luaus
+lynx lynxes
+mesa mesas
+peso pesos
+pita pitas
+slaw
+sumo
+swag
+teal teals
+tram trams
+tutu tutus
+vole voles
+whey
+yogi yogis
+ahem
+riff riffs riffed riffing
+
+# ---- Short forms of longer words (playtest 7) -------------------------------------------
+# Words in their own right, but clipped from longer ones, as SIS and SIM were. If these
+# read as abbreviations, delete this section and rebuild.
+sax saxes
+tux tuxes
+ammo
+demo demos
+expo expos
+limo limos
+mayo
+mini minis
+perm perms permed perming
+prep preps prepped prepping
+quad quads
+temp temps
+grad grads
+sync syncs synced syncing
+typo typos
+vibe vibes
+semi semis
+lube lubes
+keto
+
+# ---- Plurals of words already in the list (playtest 7) ---------------------------------
+# SCOWL puts these plurals at size 40 although the singulars are at 35 or below.
+pubs gels duos logos dodos

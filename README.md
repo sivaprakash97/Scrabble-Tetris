@@ -7,7 +7,7 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 
 - The board is 10 × 10 tiles.
 - Spell words **left to right in any row**. Words reading down a column don't count.
-- Any common everyday English word of 3 or more letters vanishes (38,528 words; abbreviation-like words such as EMS or SIS don't count), and every tile drops to fill the gaps below, so buried gaps don't build up. Drops that spell new words score chain bonuses.
+- Any common everyday English word of 3 or more letters vanishes (38,790 words; abbreviation-like words such as EMS or SIS don't count), and every tile drops to fill the gaps below, so buried gaps don't build up. Drops that spell new words score chain bonuses.
 - A completely full row also clears, but only words score.
 - Letters use Scrabble values, and longer words multiply steeply.
 - "Words found", below the board, shows each word with a short definition.

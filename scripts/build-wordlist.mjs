@@ -44,12 +44,14 @@ const keep = (w) => new RegExp(`^[a-z]{${MIN_LEN},${MAX_LEN}}$`).test(w);
 const enable = new Set((await readFile(enablePath, 'utf8')).split(/\r?\n/).map((w) => w.trim()).filter(keep));
 
 // Hand-picked words to leave out, and to add; see the comments in each file for why.
+// Words are separated by spaces or new lines; lines starting with # are comments.
 const readList = async (name) =>
   new Set(
     (await readFile(join(root, 'scripts', name), 'utf8'))
       .split('\n')
       .map((l) => l.trim().toLowerCase())
       .filter((l) => l && !l.startsWith('#'))
+      .flatMap((l) => l.split(/\s+/))
   );
 const blocked = await readList('blocklist.txt');
 const allowed = await readList('allowlist.txt');
@@ -62,7 +64,12 @@ for (const lv of SCOWL_LEVELS) {
     if (keep(word) && enable.has(word) && !blocked.has(word) && !level.has(word)) level.set(word, lv);
   }
 }
-for (const word of allowed) if (keep(word) && !blocked.has(word)) level.set(word, level.get(word) ?? 0);
+const notInEnable = [];
+for (const word of allowed) {
+  if (!keep(word) || blocked.has(word)) continue;
+  if (!enable.has(word)) notInEnable.push(word);
+  level.set(word, level.get(word) ?? 0);
+}
 const words = [...level.keys()].sort();
 
 // ---- WordNet ----------------------------------------------------------------
@@ -168,7 +175,11 @@ function define(word) {
     pickBase(inflectionBases(word)) ||
     pickBase(DERIVED.map((rule) => [strip(word, rule), 'a']).filter(([b]) => b));
   if (d && Object.hasOwn(supplement, d.lemma)) return fromSupplement(d.lemma);
-  return d;
+  if (d) return d;
+  // Last of all: an inflection of a word WordNet lacks but the supplement defines
+  // (nerdier -> nerdy, prepped -> prep).
+  const supplemented = inflectionBases(word).find(([base]) => Object.hasOwn(supplement, base));
+  return supplemented ? fromSupplement(supplemented[0]) : null;
 }
 
 // ---- output -------------------------------------------------------------------
@@ -210,6 +221,9 @@ await writeFile(
 const pct = (n) => ((100 * n) / words.length).toFixed(1) + '%';
 console.log(`Wrote ${words.length} words; ${entries.length} defined (${pct(entries.length)}), ${glosses.length} distinct definitions.`);
 if (report) {
+  const allowMissing = missing.filter((w) => level.get(w) === 0);
+  console.log(`\nAllowlisted words with no definition (${allowMissing.length}):\n${allowMissing.join(' ')}`);
+  console.log(`\nAllowlisted words not in ENABLE (${notInEnable.length}):\n${notInEnable.join(' ')}`);
   for (const lv of SCOWL_LEVELS) {
     const m = missing.filter((w) => level.get(w) === lv);
     console.log(`\nMissing at SCOWL level ${lv} (${m.length}):\n${m.join(' ')}`);

@@ -20,6 +20,26 @@ test('blocklisted words never count', () => {
 test('allowlisted words count even though the base lists leave them out', () => {
   assert.ok(dict().set.has('ZEN'));
   assert.equal(ST.lookupDefinition('zen').pos, 'noun');
+  // Everyday words the size-35 cut dropped (playtest 7), with their forms.
+  for (const w of ['EMU', 'EMUS', 'OAT', 'KALE', 'TOFU', 'PUBS', 'ZAPPED', 'NERDIER', 'SAX']) assert.ok(dict().set.has(w), w);
+  assert.match(ST.lookupDefinition('emu').gloss, /bird/);
+  assert.match(ST.lookupDefinition('nerdier').gloss, /studious/);
+});
+
+test('every allowlisted word has a definition', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const words = fs
+    .readFileSync(path.join(__dirname, '..', 'scripts', 'allowlist.txt'), 'utf8')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('#'))
+    .flatMap((l) => l.split(/\s+/));
+  assert.ok(words.length > 250, `${words.length} words`);
+  for (const w of words) {
+    assert.ok(dict().set.has(w.toUpperCase()), `${w} in the dictionary`);
+    assert.ok(ST.lookupDefinition(w), `${w} has a definition`);
+  }
 });
 
 test('longer word beats the word inside it', () => {
