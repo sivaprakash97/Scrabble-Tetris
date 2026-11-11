@@ -1,6 +1,6 @@
-# Scrabble-Tetris design
+# Alphaboom design
 
-Tetris where every block cell is a Scrabble-style letter tile, and you clear lines by spelling words.
+A falling-block game where every block cell is a Scrabble-style letter tile, and you clear lines by spelling words. It was called Scrabble-Tetris while it was a prototype; it was renamed Alphaboom for hosting, to keep both trademarks out of the name.
 This doc records the rules the prototype uses and why. Every number in it lives in `src/config.js`.
 
 **Platform:** mobile only, for a future phone app. There's no desktop layout and no keyboard controls. On a computer the page shows the phone layout, and the buttons work with a mouse.
@@ -79,7 +79,10 @@ Paste it into a conversation to look at what came up.
 
 ## Saved sessions (playtesting)
 
-On the hosted page, every game is saved to the page's own database (`src/sessions.js`), so a session a person played can be reviewed afterwards.
+Every game is saved (`src/sessions.js`), so a session a person played can be reviewed afterwards. Where it goes depends on where the page runs:
+- **The website (Vercel):** the Supabase project `alphaboom`, anonymously. See "Hosting and saving" below.
+- **The Claude-hosted page:** that page's own database, as described in the rest of this section.
+- **Anywhere else** (a local file, a signed-out viewer): nothing is saved.
 
 **What's saved, one document per game.** `Game.sessionRecord()` builds it.
 
@@ -111,13 +114,46 @@ For **every piece**:
 - on pause, including leaving the app;
 - at game over.
 
-**Where it's saved:** `sessions/<player id>/games/<game id>`, plus `sessions/<player id>` = `{ lastGame, lastPlayedAt }` so players can be listed.
+**Where it's saved on the Claude page:** `sessions/<player id>/games/<game id>`, plus `sessions/<player id>` = `{ lastGame, lastPlayedAt }` so players can be listed.
 
 **Who can read and write it.** The database rules let each player write only their own subtree. Only the page's owner and its editors can read everyone's sessions. The Rules panel says this to players.
 
 **Size.** A 100-piece game is about 50 KB. The cap is 256 KB per document; above it, boards are kept for every 5th piece only.
 
 **When nothing is saved.** With no database (a local file, or a signed-out viewer), nothing is saved and the game plays normally.
+
+## Hosting and saving (the website)
+
+**Name.** The game was renamed from Scrabble-Tetris to **Alphaboom** for hosting, to keep both trademarks out of anything players see. "Wordfall" and most "-fall" names were already taken by other word games. A web search found no other Alphaboom, but that isn't a trademark search: do one before an app-store release.
+
+**Vercel.**
+- Project `alphaboom` in the Hobby team, linked to this GitHub repo. Every push to `main` deploys to production; other branches get preview deployments.
+- `vercel.json` runs `node scripts/build-web.mjs`, which copies `index.html` and only the files it loads (style, scripts, word list, definitions, favicon) into `dist/web`. Scripts, tests and docs aren't published.
+- The word list and definitions are cached for a day.
+
+**Supabase (project `alphaboom`, region ap-south-1, free plan).**
+- **Table `games`, one row per game:** `id`, `player_id`, `status`, `score`, `words`, `piece_count`, `level`, `started_at`, `saved_at`, plus `record`, the full session record described above (as JSON).
+- **Function `save_game(p_id, p_player, p_record)`:**
+  - It's the only way in, and only the public `anon` role may call it.
+  - It checks the id's format and caps a record at 256 KB.
+  - It inserts or updates the row, but updates only when the player id matches, so nobody can overwrite another player's game.
+- **Row-level security is on with no policies,** so the public key can't read, list, insert or delete rows directly. Supabase's security advisor notes both on purpose: "RLS enabled, no policy" and "anon can execute a security-definer function".
+- **The page's settings** are in `src/backend-config.js`: the project URL and the publishable key, which is meant to be public. Empty the URL there to turn website saving off.
+
+**Players are anonymous.**
+- Each browser gets a random player id (`localStorage alphaboom.player`), so one person's games group together. There's no name, account or email.
+- The Rules panel tells players: "Games are saved anonymously to help improve Alphaboom…".
+
+**Reading games.** Use the Supabase dashboard, or SQL with the project's own access (not the public key), for example:
+
+```sql
+select id, player_id, status, score, words, piece_count, saved_at
+from games order by saved_at desc limit 20;
+
+select record from games where id = 'g-…';   -- the full game, same shape as the Claude page's
+```
+
+**Free-tier limits.** Supabase pauses a free project after a week with no activity; restore it from the dashboard. Vercel's Hobby plan is for non-commercial use.
 
 ## Points
 

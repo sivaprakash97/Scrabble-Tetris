@@ -365,7 +365,7 @@
       });
       const board = this.boardRows();
       return [
-        `Scrabble-Tetris game log: score ${this.score}, ${this.words} words, level ${this.level}`,
+        `Alphaboom game log: score ${this.score}, ${this.words} words, level ${this.level}`,
         `Rules: shortest word ${minLen}, words read ${vertical ? 'across and down' : 'across only'}`,
         '',
         `Pieces (${this.log.pieces.length}, letters in reading order; [x] = helper letter, * = blank, q = Qu):`,

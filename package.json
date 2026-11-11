@@ -1,11 +1,12 @@
 {
-  "name": "scrabble-tetris",
+  "name": "alphaboom",
   "version": "0.1.0",
   "private": true,
-  "description": "Tetris with Scrabble letter tiles: spell words in a row to clear them.",
+  "description": "A falling-block word game: spell words across a row to clear them.",
   "scripts": {
     "test": "node --test test/*.test.js",
     "build": "node scripts/build-artifact.mjs",
+    "build:web": "node scripts/build-web.mjs",
     "wordlist": "node scripts/build-wordlist.mjs",
     "benchmark": "node scripts/benchmark.mjs"
   }

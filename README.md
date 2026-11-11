@@ -1,5 +1,8 @@
-# Scrabble-Tetris
-it's a tetris game but instead of tetris blocks, they would be alphabet scrabble pieces. the way to clear a row would be to create a word with those letters as they fall down
+# Alphaboom
+
+A falling-block word game for phones. Pieces of four letter tiles fall into a 10 × 10 well; spell a word across any row and it clears.
+
+Where it started: "it's a tetris game but instead of tetris blocks, they would be alphabet scrabble pieces. the way to clear a row would be to create a word with those letters as they fall down"
 
 ## Play
 
@@ -22,11 +25,16 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 | Down (wide button under Left and Right) | Hold to drop faster. The piece locks a moment after it lands. |
 | Pause (top right) | Pause or resume |
 
+## Hosting
+
+The website runs on Vercel and saves games anonymously to Supabase so they can be reviewed. The project URL and public key live in `src/backend-config.js`. See "Hosting and saving" in [DESIGN.md](DESIGN.md).
+
 ## Develop
 
 ```sh
 npm test             # unit tests (Node 22+, no dependencies)
-npm run build        # dist/scrabble-tetris.html, a single self-contained page
+npm run build:web    # dist/web, the website Vercel serves (pushes to main deploy it)
+npm run build        # dist/alphaboom.html, a single self-contained page
 npm run benchmark    # a computer player measures how playable the rules are
 npm run benchmark -- --keep-gaps --games 20
 ```

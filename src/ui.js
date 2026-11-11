@@ -17,15 +17,16 @@
   const fmt = (n) => n.toLocaleString('en-US');
 
   // Per-viewer conveniences only; the game works without storage.
+  // Keys were 'scrabble-tetris.*' before the game was named Alphaboom; those are still read.
   const store = {
     get(key, fallback) {
       try {
-        const v = localStorage.getItem('scrabble-tetris.' + key);
+        const v = localStorage.getItem('alphaboom.' + key) ?? localStorage.getItem('scrabble-tetris.' + key);
         return v == null ? fallback : JSON.parse(v);
       } catch { return fallback; }
     },
     set(key, value) {
-      try { localStorage.setItem('scrabble-tetris.' + key, JSON.stringify(value)); } catch {}
+      try { localStorage.setItem('alphaboom.' + key, JSON.stringify(value)); } catch {}
     },
   };
 
@@ -344,7 +345,7 @@
     o.logText.hidden = true;
     if (game.state === 'ready') {
       o.eyebrow.textContent = 'Prototype';
-      o.title.textContent = 'Scrabble-Tetris';
+      o.title.textContent = 'Alphaboom';
       o.text.textContent = rulesLine();
       o.primary.textContent = 'Start';
     } else if (game.state === 'paused') {
@@ -396,9 +397,18 @@
     saveStatusEl.hidden = !text;
     if (text) saveStatusEl.textContent = text;
   }
-  const saver = ST.createSessionSaver((state) => {
+  // What the Rules panel says about saving, by where games are saved (see src/sessions.js).
+  const HISTORY_NOTE = {
+    web:
+      "Games are saved anonymously to help improve Alphaboom: each piece's letters, where it went, " +
+      'how long it took, and the words it made. No name or account is stored.',
+  };
+  const saver = ST.createSessionSaver((state, info) => {
     saveState = state === 'ready' ? saveState : state;
-    if (state === 'ready') historyNoteEl.hidden = false;
+    if (state === 'ready') {
+      if (info && HISTORY_NOTE[info.backend]) historyNoteEl.textContent = HISTORY_NOTE[info.backend];
+      historyNoteEl.hidden = false;
+    }
     showSaveStatus();
   });
 

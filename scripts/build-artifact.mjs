@@ -1,11 +1,11 @@
 // Inlines style.css and every script into one HTML file for hosting as a single page.
-// Usage: node scripts/build-artifact.mjs [out.html]   (default: dist/scrabble-tetris.html)
+// Usage: node scripts/build-artifact.mjs [out.html]   (default: dist/alphaboom.html)
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const out = resolve(process.argv[2] || join(root, 'dist', 'scrabble-tetris.html'));
+const out = resolve(process.argv[2] || join(root, 'dist', 'alphaboom.html'));
 const html = await readFile(join(root, 'index.html'), 'utf8');
 
 function section(name) {
