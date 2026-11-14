@@ -16,6 +16,42 @@ The layout follows the player's own sketch (v0.6), which had Down alone on the l
 - **The landing shadow shows the letters.** Each outline holds the letter that will land there, drawn lighter than a real tile, so you can see the word you'll make before the piece drops (v0.7).
 - There's no Hold and no preview of upcoming pieces. Both were removed in v0.3 because they weren't used, and removing them gave the board more room.
 
+## Look (branch `visual-overhaul`)
+
+The game is drawn as a glossy, chunky cartoon toy, in the style of casual phone games. Only the look changed: rules, controls, layout and timings are the same.
+
+**One recipe for every part.** Tiles, buttons, score badges, the tray around the board, dialogs and panels all share it:
+- a thick near-black outline (`--ink`) and generous round corners;
+- a saturated body that is lighter on top, with a darker lip underneath, so it reads as inflated;
+- a soft white gloss band across the top and a small bright speck of shine;
+- a hard ink drop underneath in place of a blurred shadow. Buttons sink onto it when pressed.
+
+The recipe lives in `style.css` for the page, and in `paintTile` in `src/ui.js` for the board.
+
+**Tile colours follow the letter**, so nothing extra is saved with a game:
+
+| Tiles | Colour |
+|---|---|
+| Vowels | yellow |
+| 1-point consonants (L N R S T) | blue |
+| 2–3 points (B C D G M P) | green |
+| 4–5 points (F H K V W Y) | pink |
+| 8–10 points (J X Z Qu) | purple |
+| Blank | white, with a gold star |
+
+Letters and values are always dark ink on a light face, so they stay readable on every colour.
+
+**Feedback.**
+- A word's tiles flash gold with a white outline and throw out stars. Tiles cleared without scoring fade to grey.
+- After a clear, tiles drop into the gaps with a small bounce. The piece that just locked squashes for a moment.
+- Banners (chain, row cleared, level) pop in as outlined lettering, and a new level drops confetti.
+- A stat in the score strip jumps when a word changes it.
+- These are drawn on top of the game state and never delay it. All of them are skipped when the device asks for reduced motion.
+
+**Type.** Lilita One for tiles, numbers, buttons and headings; Fredoka for reading text. Text outlines are built from shadows so they work in every browser.
+
+**Speed.** Each tile is painted once per letter and look into a small off-screen canvas, and the empty well once per size; each frame only stamps them.
+
 ## Core loop
 
 - **The board is 10 × 10 (v0.8).** It was 10 wide by 20 tall until playtest 3, when the stack rarely got past the fourth row.

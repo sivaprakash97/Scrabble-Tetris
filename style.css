@@ -1,32 +1,81 @@
 /* Layout: one phone column. Score strip with a pause button, then the well at full width,
-   then a one-row control pad. Found words (with definitions) and rules sit below the fold. */
-:root {
-  --table: #0d2422;
-  --felt: #15403b;
-  --felt-deep: #0f302c;
-  --rule: #24524c;
-  --maple: #ecd3a0;
-  --maple-hi: #f8e8c6;
-  --maple-lo: #c4a066;
-  --ink: #2b1e0f;
-  --text: #e8efe9;
-  --muted: #93b3aa;
-  --accent: #e0574a;
-  --accent-press: #c2443a;
-  --on-accent: #fff6ef;
-  --gold: #f4c64f;
+   then a one-row control pad. Found words (with definitions) and rules sit below the fold.
 
-  --font-display: "Archivo Black", "Arial Black", Impact, sans-serif;
-  --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+   Look: a glossy, chunky cartoon toy. Every part follows the same recipe:
+   - a thick near-black outline (--ink) and generous round corners;
+   - a saturated body with a lighter top and a darker lower lip, so it reads as inflated;
+   - a soft white gloss band across the top, plus a small bright speck of shine;
+   - a hard ink "drop" underneath instead of a blurred shadow, which squashes when pressed.
+   The canvas tiles in src/ui.js are painted to the same recipe. */
+:root {
+  --ink: #1b1139;
+
+  /* backdrop */
+  --sky-hi: #8d63ff;
+  --sky: #5a36e6;
+  --sky-lo: #2b168f;
+  --well: #22145f;
+  --well-deep: #170c47;
+
+  /* paper for panels and dialogs */
+  --cream: #fff6dc;
+  --cream-hi: #fffdf3;
+  --cream-lo: #f0d9a4;
+  --ink-soft: #55497f;
+
+  /* toy colours: light, body, lip */
+  --yellow-hi: #fff3a3;
+  --yellow: #ffd62e;
+  --yellow-lo: #f29d00;
+  --orange-hi: #ffd86b;
+  --orange: #ffab1f;
+  --orange-lo: #f47a0c;
+  --red-hi: #ff98a2;
+  --red: #ff4b5f;
+  --red-lo: #d41c43;
+  --blue-hi: #9be2ff;
+  --blue: #37b6ff;
+  --blue-lo: #1180e2;
+  --green-hi: #c0f892;
+  --green: #62dc3a;
+  --green-lo: #25a31c;
+  --pink-hi: #ffc4e3;
+  --pink: #ff7fc2;
+  --pink-lo: #e2408f;
+
+  --font-display: "Lilita One", "Arial Rounded MT Bold", "Arial Black", Impact, sans-serif;
+  --font-body: "Fredoka", "Arial Rounded MT Bold", "Helvetica Neue", Arial, sans-serif;
 
   --step--2: 0.6875rem;
-  --step--1: 0.75rem;
+  --step--1: 0.8125rem;
   --step-0: 0.9375rem;
   --step-1: 1.25rem;
-  --step-2: 1.75rem;
+  --step-2: 2.25rem;
 
   --gap: 12px;
+  --line: 3px; /* outline weight for controls, badges and panels */
+  --well-pad: 11px; /* frame thickness around the board */
+
+  /* Ink outlines for text, built from shadows so they work in every browser.
+     The last few shadows are the same outline pushed down: a hard drop. */
+  --outline-sm:
+    1.5px 0 0 var(--ink), -1.5px 0 0 var(--ink), 0 1.5px 0 var(--ink), 0 -1.5px 0 var(--ink),
+    1.1px 1.1px 0 var(--ink), -1.1px 1.1px 0 var(--ink), 1.1px -1.1px 0 var(--ink), -1.1px -1.1px 0 var(--ink),
+    0 3px 0 var(--ink), 1.1px 2.6px 0 var(--ink), -1.1px 2.6px 0 var(--ink);
+  --outline-md:
+    2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 2px 0 var(--ink), 0 -2px 0 var(--ink),
+    1.4px 1.4px 0 var(--ink), -1.4px 1.4px 0 var(--ink), 1.4px -1.4px 0 var(--ink), -1.4px -1.4px 0 var(--ink),
+    1.85px 0.75px 0 var(--ink), -1.85px 0.75px 0 var(--ink), 1.85px -0.75px 0 var(--ink), -1.85px -0.75px 0 var(--ink),
+    0.75px 1.85px 0 var(--ink), -0.75px 1.85px 0 var(--ink), 0.75px -1.85px 0 var(--ink), -0.75px -1.85px 0 var(--ink),
+    0 4.5px 0 var(--ink), 1.4px 4px 0 var(--ink), -1.4px 4px 0 var(--ink), 2px 2.5px 0 var(--ink), -2px 2.5px 0 var(--ink);
+  --outline-lg:
+    3px 0 0 var(--ink), -3px 0 0 var(--ink), 0 3px 0 var(--ink), 0 -3px 0 var(--ink),
+    2.12px 2.12px 0 var(--ink), -2.12px 2.12px 0 var(--ink), 2.12px -2.12px 0 var(--ink), -2.12px -2.12px 0 var(--ink),
+    2.77px 1.15px 0 var(--ink), -2.77px 1.15px 0 var(--ink), 2.77px -1.15px 0 var(--ink), -2.77px -1.15px 0 var(--ink),
+    1.15px 2.77px 0 var(--ink), -1.15px 2.77px 0 var(--ink), 1.15px -2.77px 0 var(--ink), -1.15px -2.77px 0 var(--ink),
+    0 7px 0 var(--ink), 1.15px 6.77px 0 var(--ink), -1.15px 6.77px 0 var(--ink),
+    2.12px 6.12px 0 var(--ink), -2.12px 6.12px 0 var(--ink), 2.77px 5.15px 0 var(--ink), -2.77px 5.15px 0 var(--ink),
+    3px 4px 0 var(--ink), -3px 4px 0 var(--ink);
 
   color-scheme: dark;
 }
@@ -35,14 +84,50 @@
   display: none !important;
 }
 
+html {
+  background: var(--sky-lo);
+}
+
 body {
-  background: var(--table);
-  color: var(--text);
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  isolation: isolate; /* so the backdrop layers below sit above this colour, not behind it */
+  background: var(--sky);
+  color: var(--cream);
   font-family: var(--font-body);
   font-size: var(--step-0);
+  font-weight: 500;
   line-height: 1.45;
   overscroll-behavior: none;
   touch-action: manipulation;
+}
+
+/* Backdrop: a violet sky with sunburst rays from behind the board... */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(90% 55% at 50% 16%, rgb(255 255 255 / 0.3), transparent 70%),
+    repeating-conic-gradient(from -4deg at 50% 26%, rgb(255 255 255 / 0.075) 0 8deg, transparent 8deg 16deg),
+    linear-gradient(180deg, var(--sky-hi) 0%, var(--sky) 46%, var(--sky-lo) 100%);
+}
+
+/* ...and a slow drift of faint letter tiles, sparkles and bubbles. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: -260px;
+  z-index: -1;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='%23fff' fill-opacity='.075' font-family='Arial Black, Arial, sans-serif' font-weight='900' text-anchor='middle'%3E%3Cg transform='rotate(-14 46 52)'%3E%3Crect x='22' y='28' width='48' height='48' rx='13'/%3E%3Ctext x='46' y='64' font-size='30' fill-opacity='.16'%3EA%3C/text%3E%3C/g%3E%3Cg transform='rotate(11 190 168)'%3E%3Crect x='168' y='146' width='44' height='44' rx='12'/%3E%3Ctext x='190' y='179' font-size='27' fill-opacity='.16'%3EZ%3C/text%3E%3C/g%3E%3Cg transform='rotate(8 78 204)'%3E%3Crect x='62' y='188' width='32' height='32' rx='9'/%3E%3Ctext x='78' y='212' font-size='20' fill-opacity='.16'%3EO%3C/text%3E%3C/g%3E%3Cpath d='M196 30 201 49 220 54 201 59 196 78 191 59 172 54 191 49Z'/%3E%3Cpath d='M124 112 127 122 137 125 127 128 124 138 121 128 111 125 121 122Z'/%3E%3Ccircle cx='232' cy='112' r='7'/%3E%3Ccircle cx='20' cy='140' r='5'/%3E%3Ccircle cx='132' cy='232' r='6'/%3E%3C/g%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='.09' stroke-width='5' stroke-linecap='round'%3E%3Ccircle cx='118' cy='40' r='11'/%3E%3Cpath d='M22 236h18M31 227v18'/%3E%3Cpath d='M236 216h14M243 209v14'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 260px 260px;
+  animation: drift 48s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes drift {
+  to { transform: translate3d(260px, 260px, 0); }
 }
 
 .app {
@@ -51,9 +136,9 @@ body {
   gap: var(--gap);
   max-width: 480px;
   margin: 0 auto;
-  padding-block: 10px 28px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 10px 32px;
+  padding-left: max(14px, env(safe-area-inset-left, 0px));
+  padding-right: max(14px, env(safe-area-inset-right, 0px));
 }
 
 .top,
@@ -64,168 +149,64 @@ body {
   -webkit-touch-callout: none;
 }
 
-/* ---- score strip ------------------------------------------------------- */
+/* ---- the shared toy recipe ------------------------------------------------
+   Set --hi / --body / --lo (and --drop for how far it stands off the page). */
 
-.top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--gap);
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 8px;
-}
-
-.stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 18px;
-  align-items: baseline;
-  min-width: 0;
-}
-
-.icon-btn {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  color: var(--text);
-  background: var(--felt);
-  border: 1px solid var(--rule);
-  border-radius: 10px;
-  touch-action: none;
-}
-
-.icon-btn.on {
-  color: var(--ink);
-  background: var(--maple);
-  border-color: var(--maple);
-}
-
-.icon-btn svg,
-.touch svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.stat-best {
-  flex: 1 1 100%;
-  flex-direction: row;
-  gap: 8px;
-  align-items: baseline;
-}
-
-.label,
-.panel h2 {
-  font-family: var(--font-mono);
-  font-size: var(--step--1);
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.value {
-  font-family: var(--font-display);
-  font-size: var(--step-1);
-  line-height: 1.15;
-  font-variant-numeric: tabular-nums;
-}
-
-.stat-best .value {
-  font-size: var(--step-0);
-  color: var(--maple);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ---- well -------------------------------------------------------------- */
-
-.panel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.panel h2 {
-  margin: 0;
-}
-
-.well {
-  align-self: center;
+.stat,
+.icon-btn,
+.touch button,
+.btn-primary,
+.btn-ghost {
+  --hi: var(--blue-hi);
+  --body: var(--blue);
+  --lo: var(--blue-lo);
+  --drop: 4px;
   position: relative;
-  line-height: 0;
-  padding: 6px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, var(--maple-lo), #8d6a3a);
-  box-shadow: 0 14px 32px rgb(0 0 0 / 0.45);
-  touch-action: none;
+  isolation: isolate;
+  border: var(--line) solid var(--ink);
+  background: linear-gradient(180deg, var(--hi) 0%, var(--body) 46%, var(--lo) 100%);
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.6),
+    inset 0 -4px 0 rgb(27 17 57 / 0.2),
+    0 var(--drop) 0 var(--ink);
+  margin-bottom: var(--drop);
 }
 
-#board {
-  display: block;
-  border-radius: 5px;
-}
-
-.overlay {
+/* Gloss band: sits above the body colour but under the label. */
+.stat::before,
+.icon-btn::before,
+.touch button::before,
+.btn-primary::before,
+.btn-ghost::before {
+  content: "";
   position: absolute;
-  inset: 6px;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgb(13 36 34 / 0.8);
-  border-radius: 5px;
-  line-height: 1.45;
-  backdrop-filter: blur(2px);
+  z-index: -1;
+  top: 3px;
+  left: 5px;
+  right: 5px;
+  height: 44%;
+  border-radius: 999px 999px 60% 60% / 999px 999px 45% 45%;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.62), rgb(255 255 255 / 0.1));
+  pointer-events: none;
 }
 
-.card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-width: 26ch;
-}
-
-.card h1 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--step-2);
-  line-height: 0.95;
-  color: var(--maple);
-  text-wrap: balance;
-}
-
-.card p {
-  margin: 0;
-}
-
-.eyebrow {
-  font-family: var(--font-mono);
-  font-size: var(--step--1);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.overlay-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 4px;
+/* Speck of shine near the top-left corner. */
+.icon-btn::after,
+.touch button::after,
+.btn-primary::after,
+.btn-ghost::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 6px;
+  left: 9px;
+  width: 13px;
+  height: 6px;
+  border-radius: 999px;
+  background: #fff;
+  opacity: 0.92;
+  transform: rotate(-20deg);
+  pointer-events: none;
 }
 
 button {
@@ -235,52 +216,419 @@ button {
 }
 
 button:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 2px;
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
 }
 
-/* The primary button is a letter tile. */
-.btn-primary {
+/* Pressed: the part sinks onto its drop. Control-pad buttons get .on from the touch code. */
+.icon-btn,
+.touch button,
+.btn-primary,
+.btn-ghost {
+  transition: transform 70ms ease-out, box-shadow 70ms ease-out, filter 120ms ease-out;
+}
+
+.icon-btn.on,
+.touch button.on,
+.btn-primary:active,
+.btn-ghost:active {
+  transform: translateY(calc(var(--drop) - 1px));
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.45),
+    inset 0 -2px 0 rgb(27 17 57 / 0.2),
+    0 1px 0 var(--ink);
+  filter: brightness(0.93) saturate(1.1);
+}
+
+@media (hover: hover) {
+  .icon-btn:hover,
+  .touch button:hover,
+  .btn-primary:hover,
+  .btn-ghost:hover {
+    filter: brightness(1.08);
+  }
+
+  .btn-primary:hover:not(:active),
+  .btn-ghost:hover:not(:active) {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 2px 0 rgb(255 255 255 / 0.6),
+      inset 0 -4px 0 rgb(27 17 57 / 0.2),
+      0 calc(var(--drop) + 2px) 0 var(--ink);
+  }
+}
+
+/* Icons are drawn twice: a fat ink stroke (.ol) under a white one (.fl). */
+.ico {
+  width: 26px;
+  height: 26px;
+  overflow: visible;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 0 var(--ink));
+}
+
+.ico .ol {
+  stroke: var(--ink);
+  stroke-width: 7.5;
+}
+
+.ico .fl {
+  stroke: #fff;
+  stroke-width: 3.6;
+}
+
+.ico .fl.solid,
+.ico .fl .tip {
+  fill: #fff;
+}
+
+.ico .fl.solid {
+  stroke-width: 1.5;
+}
+
+.ico .ol .tip {
+  fill: var(--ink);
+}
+
+/* ---- score strip ------------------------------------------------------- */
+
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stats {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.stat {
+  --drop: 3px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1px 10px 2px;
+  border-radius: 15px;
+}
+
+.stat:nth-child(1) { --hi: var(--yellow-hi); --body: var(--yellow); --lo: var(--orange); }
+.stat:nth-child(2) { --hi: var(--pink-hi); --body: var(--pink); --lo: var(--pink-lo); }
+.stat:nth-child(3) { --hi: var(--blue-hi); --body: var(--blue); --lo: var(--blue-lo); }
+
+.stat-best {
+  --hi: #5d3fd0;
+  --body: #3b2399;
+  --lo: #2a1777;
+  grid-column: 1 / -1;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  padding: 1px 12px 2px;
+  border-radius: 999px;
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.22),
+    inset 0 -3px 0 rgb(27 17 57 / 0.3),
+    0 var(--drop) 0 var(--ink);
+}
+
+.stat-best::before {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.03));
+}
+
+.label {
+  font-size: var(--step--2);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(27 17 57 / 0.78);
+  white-space: nowrap;
+}
+
+.stat-best .label {
+  color: #cfc2ff;
+}
+
+.value {
   font-family: var(--font-display);
   font-size: var(--step-1);
-  color: var(--ink);
-  background: linear-gradient(180deg, var(--maple-hi), var(--maple));
-  border: 0;
-  border-radius: 6px;
-  padding: 10px 22px;
-  box-shadow: inset 0 -4px 0 var(--maple-lo), 0 3px 0 rgb(0 0 0 / 0.35);
+  line-height: 1.12;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: var(--outline-sm);
+  padding-bottom: 2px;
+  transform-origin: 20% 60%;
 }
 
-.btn-primary:active {
-  transform: translateY(2px);
-  box-shadow: inset 0 -2px 0 var(--maple-lo), 0 1px 0 rgb(0 0 0 / 0.35);
+.stat-best .value {
+  flex: 1;
+  font-size: var(--step-0);
+  line-height: 1.25;
+  color: var(--yellow);
+  min-width: 0;
+  padding: 1px 3px 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A stat jumps when a word changes it. */
+.value.bump {
+  animation: bump 420ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes bump {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.32) rotate(-4deg); }
+  100% { transform: scale(1); }
+}
+
+.icon-btn {
+  --hi: var(--yellow-hi);
+  --body: var(--yellow);
+  --lo: var(--orange);
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 43px;
+  padding: 0;
+  border-radius: 15px;
+  touch-action: none;
+}
+
+.icon-btn .ico {
+  width: 24px;
+  height: 24px;
+}
+
+/* ---- well -------------------------------------------------------------- */
+
+/* A chunky orange toy tray. The board sits in it behind an ink ring. */
+.well {
+  align-self: center;
+  position: relative;
+  line-height: 0;
+  padding: var(--well-pad);
+  border: 4px solid var(--ink);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--orange-hi) 0%, var(--orange) 38%, var(--orange-lo) 100%);
+  box-shadow:
+    inset 0 3px 0 rgb(255 255 255 / 0.7),
+    inset 0 -5px 0 rgb(150 50 0 / 0.4),
+    0 7px 0 var(--ink),
+    0 18px 26px rgb(15 6 60 / 0.45);
+  margin-bottom: 7px;
+  touch-action: none;
+}
+
+/* Shine on the tray's rim: a long streak and a dot, top left. */
+.well::before,
+.well::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  height: 4px;
+  border-radius: 999px;
+  background: #fff;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.well::before {
+  left: 20px;
+  width: 22%;
+}
+
+.well::after {
+  left: calc(20px + 22% + 7px);
+  width: 6px;
+}
+
+#board {
+  display: block;
+  border-radius: 13px;
+  box-shadow: 0 0 0 3px var(--ink);
+}
+
+/* ---- dialog over the board --------------------------------------------- */
+
+.overlay {
+  position: absolute;
+  inset: var(--well-pad);
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  border-radius: 13px;
+  line-height: 1.4;
+  background:
+    radial-gradient(rgb(255 255 255 / 0.1) 1.5px, transparent 2px) 0 0 / 14px 14px,
+    rgb(27 17 57 / 0.74);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  container-type: inline-size;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: min(100%, 320px);
+  padding: 22px 14px 14px;
+  text-align: center;
+  font-size: var(--step--1);
+  font-size: clamp(0.72rem, 4.4cqi, 0.9375rem);
+  font-weight: 500;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--cream-hi) 0%, var(--cream) 55%, var(--cream-lo) 100%);
+  border: 4px solid var(--ink);
+  border-radius: 24px;
+  box-shadow:
+    inset 0 3px 0 #fff,
+    inset 0 -5px 0 rgb(170 120 30 / 0.3),
+    0 7px 0 var(--ink),
+    0 16px 22px rgb(10 4 40 / 0.5);
+}
+
+/* Shine on the dialog's top-left corner. */
+.card::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: 14px;
+  width: 22px;
+  height: 7px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 28px -1px 0 -1px #fff;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+
+.overlay:not([hidden]) .card {
+  animation: card-in 380ms cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+
+@keyframes card-in {
+  from { transform: scale(0.6) rotate(-5deg); opacity: 0; }
+  60% { opacity: 1; }
+  to { transform: none; opacity: 1; }
+}
+
+.card p {
+  margin: 0;
+}
+
+/* The eyebrow is a red ribbon badge pinned to the top edge of the dialog. */
+.eyebrow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -58%) rotate(-3deg);
+  padding: 3px 16px 4px;
+  font-family: var(--font-display);
+  font-size: var(--step--1);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #fff;
+  text-shadow: var(--outline-sm);
+  background: linear-gradient(180deg, var(--red-hi) 0%, var(--red) 50%, var(--red-lo) 100%);
+  border: var(--line) solid var(--ink);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.55),
+    inset 0 -3px 0 rgb(27 17 57 / 0.2),
+    0 4px 0 var(--ink);
+}
+
+.card h1 {
+  margin: 4px 0 6px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--step-2);
+  font-size: clamp(1.6rem, 12.5cqi, 2.6rem);
+  line-height: 1;
+  letter-spacing: 0.03em;
+  color: var(--yellow);
+  text-shadow: var(--outline-lg);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  transform: rotate(-3deg);
+  animation: bob 2.6s ease-in-out infinite;
+}
+
+@keyframes bob {
+  0%, 100% { transform: rotate(-3deg) translateY(0); }
+  50% { transform: rotate(-1.5deg) translateY(-3px); }
+}
+
+.overlay-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.btn-primary,
+.btn-ghost {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  color: #fff;
+  text-shadow: var(--outline-sm);
+  border-radius: 18px;
+}
+
+/* The main action is a big green candy button. */
+.btn-primary {
+  --hi: var(--green-hi);
+  --body: var(--green);
+  --lo: var(--green-lo);
+  --drop: 5px;
+  font-size: 1.35em;
+  padding: 7px 26px 9px;
+  text-shadow: var(--outline-md);
 }
 
 .btn-ghost {
-  color: var(--text);
-  background: transparent;
-  border: 1px solid var(--rule);
-  border-radius: 6px;
-  padding: 10px 18px;
+  font-size: 1.05em;
+  padding: 7px 14px 8px;
 }
 
 .save-status {
   font-size: var(--step--1);
-  color: var(--muted) !important;
+  font-weight: 600;
+  color: var(--ink-soft);
 }
 
 .log-text {
+  box-sizing: border-box;
   width: 100%;
   height: 8.5em;
   resize: none;
-  font-family: var(--font-mono);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
   font-size: var(--step--2);
   line-height: 1.4;
-  color: var(--text);
-  background: var(--felt-deep);
-  border: 1px solid var(--rule);
-  border-radius: 6px;
+  text-align: left;
+  color: #fff;
+  background: var(--well);
+  border: var(--line) solid var(--ink);
+  border-radius: 12px;
+  box-shadow: inset 0 3px 0 rgb(0 0 0 / 0.35);
   padding: 6px 8px;
   user-select: text;
   -webkit-user-select: text;
@@ -296,14 +644,14 @@ select:focus-visible {
 }
 
 .touch .pad-solo {
-  width: 76px;
-  min-height: 84px;
+  width: 80px;
+  min-height: 86px;
 }
 
 .pad-group {
   display: grid;
   grid-template-columns: repeat(2, 84px);
-  gap: 8px;
+  gap: 7px 8px;
 }
 
 .pad-group .pad-wide {
@@ -311,42 +659,99 @@ select:focus-visible {
 }
 
 .touch button {
-  min-height: 56px;
+  --drop: 5px;
+  min-height: 50px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 6px 4px;
-  color: var(--text);
-  background: var(--felt);
-  border: 1px solid var(--rule);
-  border-radius: 10px;
-  font-family: var(--font-mono);
-  font-size: var(--step--2);
+  gap: 0;
+  padding: 3px 4px 4px;
+  border-radius: 18px;
+  font-family: var(--font-display);
+  font-size: var(--step--1);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: #fff;
+  text-shadow: var(--outline-sm);
   touch-action: none;
 }
 
-.touch button.on {
-  color: var(--ink);
-  background: var(--maple);
-  border-color: var(--maple);
+.touch button.pad-wide {
+  flex-direction: row;
+  gap: 8px;
 }
 
+/* Rotate is the red one, so it isn't mixed up with Down. */
 .touch button.primary {
-  color: var(--on-accent);
-  background: var(--accent);
-  border-color: var(--accent);
+  --hi: var(--red-hi);
+  --body: var(--red);
+  --lo: var(--red-lo);
+  gap: 3px;
+  border-radius: 24px;
 }
 
-.touch button.primary.on {
-  background: var(--accent-press);
-  border-color: var(--accent-press);
+.touch button.primary .ico {
+  width: 34px;
+  height: 34px;
 }
 
-/* ---- found words ------------------------------------------------------- */
+.touch button.primary .ico .ol {
+  stroke-width: 6.8;
+}
+
+.touch button.primary .ico .fl {
+  stroke-width: 3.1;
+}
+
+/* ---- panels: found words and rules ------------------------------------- */
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  margin: 16px 0 6px;
+  padding: 24px 14px 14px;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--cream-hi) 0%, var(--cream) 30%, var(--cream) 100%);
+  border: var(--line) solid var(--ink);
+  border-radius: 22px;
+  box-shadow:
+    inset 0 3px 0 #fff,
+    inset 0 -5px 0 rgb(170 120 30 / 0.28),
+    0 6px 0 var(--ink);
+}
+
+/* The heading is a ribbon tab hanging over the panel's top edge. */
+.panel h2 {
+  position: absolute;
+  top: 0;
+  left: 14px;
+  margin: 0;
+  transform: translateY(-55%) rotate(-2deg);
+  padding: 2px 16px 3px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--step-0);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: var(--outline-sm);
+  background: linear-gradient(180deg, var(--pink-hi) 0%, var(--pink) 50%, var(--pink-lo) 100%);
+  border: var(--line) solid var(--ink);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.55),
+    inset 0 -3px 0 rgb(27 17 57 / 0.18),
+    0 4px 0 var(--ink);
+}
+
+.panel + .panel h2 {
+  background: linear-gradient(180deg, var(--blue-hi) 0%, var(--blue) 50%, var(--blue-lo) 100%);
+  transform: translateY(-55%) rotate(1.5deg);
+}
 
 .recent {
   list-style: none;
@@ -354,25 +759,32 @@ select:focus-visible {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 9px;
 }
 
+/* Each found word is its own little white card. */
 .recent li {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--rule);
+  padding: 6px 10px 8px;
+  background: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: inset 0 -3px 0 rgb(27 17 57 / 0.08), 0 3px 0 var(--ink);
 }
 
 .recent li.empty {
-  color: var(--muted);
-  border: 0;
+  color: var(--ink-soft);
+  font-weight: 600;
+  background: transparent;
+  border: 2.5px dashed rgb(27 17 57 / 0.35);
+  box-shadow: none;
 }
 
 .recent .row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
 }
 
@@ -380,48 +792,68 @@ select:focus-visible {
   margin: 0;
   font-size: var(--step--1);
   line-height: 1.4;
-  color: var(--muted);
+  color: var(--ink-soft);
 }
 
 .recent .def .pos {
-  font-family: var(--font-mono);
-  color: var(--text);
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .recent .w {
   font-family: var(--font-display);
   font-size: var(--step-1);
-  color: var(--maple);
-  letter-spacing: 0.02em;
+  line-height: 1.2;
+  color: #6a35e8;
+  letter-spacing: 0.04em;
   overflow-wrap: anywhere;
   min-width: 0;
+  transform-origin: left center;
+}
+
+/* Points are a gold coin badge; chain and direction are small stickers. */
+.recent .pts,
+.recent .tag,
+.recent .chain {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: var(--step--1);
+  line-height: 1.3;
+  letter-spacing: 0.03em;
+  padding: 0 8px 1px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.6), 0 2px 0 var(--ink);
 }
 
 .recent .pts {
   margin-left: auto;
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--yellow-hi), var(--yellow) 55%, var(--orange));
 }
 
 .recent .tag {
-  font-family: var(--font-mono);
-  font-size: var(--step--1);
-  color: var(--muted);
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--blue-hi), var(--blue));
 }
 
 .recent .chain {
-  font-family: var(--font-mono);
-  font-size: var(--step--1);
-  color: var(--accent);
+  color: #fff;
+  background: linear-gradient(180deg, var(--red-hi), var(--red) 55%, var(--red-lo));
 }
 
-.recent li.fresh .w {
-  animation: pop 500ms ease-out;
+.recent li.fresh {
+  animation: word-in 520ms cubic-bezier(0.3, 1.5, 0.5, 1) both;
 }
 
-@keyframes pop {
-  from { color: var(--gold); transform: translateY(-3px); }
-  to { color: var(--maple); transform: none; }
+.recent li.fresh .pts {
+  animation: bump 520ms 160ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+@keyframes word-in {
+  from { transform: scale(0.82) translateY(-10px); opacity: 0; }
+  to { transform: none; opacity: 1; }
 }
 
 /* ---- rules ------------------------------------------------------------- */
@@ -431,32 +863,66 @@ select:focus-visible {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
+  font-weight: 700;
 }
 
 .setting select {
+  appearance: none;
+  -webkit-appearance: none;
   font: inherit;
-  color: var(--text);
-  background: var(--felt-deep);
-  border: 1px solid var(--rule);
-  border-radius: 6px;
-  padding: 8px 10px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6' fill='none' stroke='%231b1139' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") right 8px center / 18px no-repeat,
+    linear-gradient(180deg, var(--yellow-hi), var(--yellow) 55%, var(--orange));
+  border: var(--line) solid var(--ink);
+  border-radius: 14px;
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.65), 0 4px 0 var(--ink);
+  margin-bottom: 4px;
+  padding: 6px 32px 7px 12px;
+  cursor: pointer;
+}
+
+.setting select option {
+  font-family: var(--font-body);
+  color: #fff;
+  background: var(--well);
 }
 
 .hint {
   margin: 0;
   font-size: var(--step--1);
-  color: var(--muted);
+  color: var(--ink-soft);
 }
 
 .glyph {
-  width: 1.1em;
-  height: 1.1em;
-  vertical-align: -0.2em;
-  fill: var(--maple);
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.28em;
+  fill: var(--yellow);
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  overflow: visible;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .recent li.fresh .w {
+  body::after,
+  .card h1,
+  .overlay:not([hidden]) .card,
+  .recent li.fresh,
+  .recent li.fresh .pts,
+  .value.bump {
     animation: none;
+  }
+
+  .icon-btn,
+  .touch button,
+  .btn-primary,
+  .btn-ghost {
+    transition: none;
   }
 }

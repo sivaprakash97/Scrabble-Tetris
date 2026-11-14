@@ -5,20 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- Website only: the Claude page build (scripts/build-artifact.mjs) skips these. -->
 <meta name="description" content="Alphaboom: a falling-block word game for phones. Spell words across a row to clear them.">
-<meta name="theme-color" content="#0d2422">
+<meta name="theme-color" content="#5a36e6">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <!-- build:artifact-head -->
 <title>Alphaboom</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Lilita+One&display=swap">
 <link rel="stylesheet" href="style.css">
 <!-- /build:artifact-head -->
 </head>
 <body>
 <!-- build:artifact-body -->
-<!-- Icons: Lucide (ISC licence) pause, chevron-left/down/right, rotate-cw. -->
+<!-- Icons: Lucide (ISC licence) pause and chevron-left/down/right; the rotate arrow is our own.
+     Each is drawn twice: a fat ink stroke (.ol) under a white one (.fl), for a cartoon outline. -->
 <main class="app" id="app">
   <header class="top" id="top">
     <div class="stats" aria-label="Score">
@@ -28,7 +29,7 @@
       <div class="stat stat-best"><span class="label">Best word</span><span class="value" id="best">–</span></div>
     </div>
     <button type="button" class="icon-btn" data-action="pause" aria-label="Pause">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></svg>
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></g><g class="fl solid"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></g></svg>
     </button>
   </header>
 
@@ -54,20 +55,20 @@
        dropping are grouped on the right, with Down as one wide button under Left and Right. -->
   <nav class="touch" id="touch" aria-label="Controls">
     <button type="button" data-action="rotate" class="primary pad-solo" aria-label="Rotate">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M18.9 15.4a7.5 7.5 0 1 1-2.6-9.05"/><path class="tip" d="M18.8 8.1 17.3 3.9 14.3 8.1Z"/></g><g class="fl"><path d="M18.9 15.4a7.5 7.5 0 1 1-2.6-9.05"/><path class="tip" d="M18.8 8.1 17.3 3.9 14.3 8.1Z"/></g></svg>
       <span>Rotate</span>
     </button>
     <div class="pad-group">
       <button type="button" data-action="left" aria-label="Move left">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="m15 18-6-6 6-6"/></g><g class="fl"><path d="m15 18-6-6 6-6"/></g></svg>
         <span>Left</span>
       </button>
       <button type="button" data-action="right" aria-label="Move right">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="m9 18 6-6-6-6"/></g><g class="fl"><path d="m9 18 6-6-6-6"/></g></svg>
         <span>Right</span>
       </button>
       <button type="button" data-action="down" class="pad-wide" aria-label="Soft drop">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="m6 9 6 6 6-6"/></g><g class="fl"><path d="m6 9 6 6 6-6"/></g></svg>
         <span>Down</span>
       </button>
     </div>
@@ -94,6 +95,7 @@
       Vowels come in 1–3 per piece. Q arrives as Qu. A tile marked
       <svg class="glyph" viewBox="0 0 24 24" aria-label="star"><path d="M12 3 14.4 9.6 21 12 14.4 14.4 12 21 9.6 14.4 3 12 9.6 9.6Z"/></svg>
       is a blank that can be any letter. Hold Down to drop faster.
+      Tile colours follow the letter: vowels are yellow, and the rest go from blue to green, pink and purple as they are worth more.
     </p>
     <p class="hint" id="history-note" hidden>
       Every game you play here is saved for review: each piece's letters, where it went, how long it took, and the words it made.

@@ -4,15 +4,14 @@
   const cfg = ST.CONFIG;
   const $ = (id) => document.getElementById(id);
   const css = getComputedStyle(document.documentElement);
-  const token = (name) => css.getPropertyValue(name).trim();
-  const COLOR = {
-    felt: token('--felt'), feltDeep: token('--felt-deep'), maple: token('--maple'),
-    mapleHi: token('--maple-hi'), mapleLo: token('--maple-lo'), ink: token('--ink'),
-    accent: token('--accent'), gold: token('--gold'), text: token('--text'), muted: token('--muted'),
-    table: token('--table'),
-  };
-  const TILE_FONT = '"Archivo Black", "Arial Black", Impact, sans-serif';
-  const NUM_FONT = '"Archivo", "Helvetica Neue", Arial, sans-serif';
+  const token = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
+  // The board is painted to the same recipe as the page (see style.css): thick ink outlines,
+  // glossy toy colours, hard drops.
+  const INK = token('--ink', '#1b1139');
+  const WELL = token('--well', '#22145f');
+  const WELL_DEEP = token('--well-deep', '#170c47');
+  const TILE_FONT = '"Lilita One", "Arial Rounded MT Bold", "Arial Black", Impact, sans-serif';
+  const NUM_FONT = '"Fredoka", "Arial Rounded MT Bold", "Helvetica Neue", Arial, sans-serif';
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fmt = (n) => n.toLocaleString('en-US');
 
@@ -37,19 +36,23 @@
   // ---- canvas setup ---------------------------------------------------
 
   const boardEl = $('board');
+  const wellEl = $('well');
   let bctx;
   let cell = 26;
+  let dpr = 1;
+  let backdrop = null; // the empty well, painted once per size
+  const sprites = new Map(); // painted tiles, by letter and look
   const GAP = 12;
-  const WELL_PAD = 12; // frame around the board, both sides together
 
   function setupCanvas(canvas, w, h) {
-    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    dpr = Math.min(window.devicePixelRatio || 1, 3);
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
     canvas.style.width = w + 'px';
     canvas.style.height = h + 'px';
     const ctx = canvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingQuality = 'high';
     return ctx;
   }
 
@@ -58,19 +61,28 @@
     const app = $('app');
     const appStyle = getComputedStyle(app);
     const rootStyle = getComputedStyle(document.documentElement);
+    const wellStyle = getComputedStyle(wellEl);
     const px = (s, prop) => parseFloat(s[prop]) || 0;
     const viewH = window.visualViewport ? window.visualViewport.height : innerHeight;
 
+    // The tray around the board: padding and outline on both sides, and the drop under it.
+    const frameW = px(wellStyle, 'paddingLeft') + px(wellStyle, 'paddingRight') +
+      px(wellStyle, 'borderLeftWidth') + px(wellStyle, 'borderRightWidth');
+    const frameH = px(wellStyle, 'paddingTop') + px(wellStyle, 'paddingBottom') +
+      px(wellStyle, 'borderTopWidth') + px(wellStyle, 'borderBottomWidth') + px(wellStyle, 'marginBottom');
+
     const innerW = app.clientWidth - px(appStyle, 'paddingLeft') - px(appStyle, 'paddingRight');
-    const byW = (innerW - WELL_PAD) / cfg.COLS;
+    const byW = (innerW - frameW) / cfg.COLS;
 
     const chrome =
-      $('top').offsetHeight + $('touch').offsetHeight + 2 * GAP + WELL_PAD +
+      $('top').offsetHeight + $('touch').offsetHeight + 2 * GAP + frameH +
       px(appStyle, 'paddingTop') + px(rootStyle, 'paddingTop') + px(rootStyle, 'paddingBottom') + 20;
     const byH = (viewH - chrome) / cfg.ROWS;
 
     cell = Math.max(14, Math.min(40, Math.floor(Math.min(byW, byH))));
     bctx = setupCanvas(boardEl, cell * cfg.COLS, cell * cfg.ROWS);
+    sprites.clear();
+    paintBackdrop();
   }
 
   // ---- drawing ----------------------------------------------------------
@@ -86,108 +98,336 @@
     ctx.closePath();
   }
 
-  function drawStar(ctx, cx, cy, r) {
+  // A star with `points` tips; `inner` is how deep the notches go (0-1).
+  function starPath(ctx, cx, cy, r, points, inner, rot = 0) {
     ctx.beginPath();
-    for (let i = 0; i < 8; i++) {
-      const a = (Math.PI / 4) * i - Math.PI / 2;
-      const rr = i % 2 ? r * 0.38 : r;
+    for (let i = 0; i < points * 2; i++) {
+      const a = (Math.PI / points) * i - Math.PI / 2 + rot;
+      const rr = i % 2 ? r * inner : r;
       ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
     }
     ctx.closePath();
-    ctx.fill();
   }
 
-  // The letter (or blank star) of a tile in a w-wide box, in the current fill colour.
-  function drawGlyph(ctx, tile, x, y, w, cx) {
-    if (tile.ch === '*') {
-      ctx.globalAlpha *= 0.55;
-      drawStar(ctx, x + w / 2, y + w * 0.47, w * 0.26);
-      return;
+  // The empty well: a deep violet tray with a rounded socket for every cell.
+  function paintBackdrop() {
+    const W = cell * cfg.COLS;
+    const H = cell * cfg.ROWS;
+    backdrop = document.createElement('canvas');
+    backdrop.width = boardEl.width;
+    backdrop.height = boardEl.height;
+    const ctx = backdrop.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, WELL_DEEP);
+    g.addColorStop(1, WELL);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    const pad = Math.max(1, cell * 0.06);
+    const r = cell * 0.26;
+    for (let y = 0; y < cfg.ROWS; y++) {
+      for (let x = 0; x < cfg.COLS; x++) {
+        const sx = x * cell + pad;
+        const sy = y * cell + pad;
+        const s = cell - 2 * pad;
+        // A lighter rim below and a dark dish on top of it, so each socket looks pressed in.
+        roundRect(ctx, sx, sy + 1.5, s, s, r);
+        ctx.fillStyle = 'rgba(255,255,255,0.07)';
+        ctx.fill();
+        roundRect(ctx, sx, sy, s, s, r);
+        ctx.fillStyle = WELL_DEEP;
+        ctx.fill();
+        roundRect(ctx, sx, sy, s, s, r);
+        ctx.fillStyle = 'rgba(122,92,255,0.13)';
+        ctx.fill();
+      }
     }
+
+    // The tray's rim throws a shadow onto the top of the well.
+    const shade = ctx.createLinearGradient(0, 0, 0, cell * 0.6);
+    shade.addColorStop(0, 'rgba(8,3,36,0.6)');
+    shade.addColorStop(1, 'rgba(8,3,36,0)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 0, W, cell * 0.6);
+  }
+
+  // Tile colours, as glossy toy blocks: hi (top of the face), face, mid (bottom of the face)
+  // and lo (the lip underneath). The colour follows the letter, so nothing extra is saved:
+  // vowels are yellow, and consonants go blue, green, pink, purple as their value climbs.
+  const SKIN = {
+    vowel: { hi: '#fff6b0', face: '#ffd930', mid: '#ffc20f', lo: '#e58a00' },
+    one: { hi: '#cdf4ff', face: '#5fd4ff', mid: '#33bbf7', lo: '#1283d0' },
+    low: { hi: '#e4ffb5', face: '#a2e845', mid: '#84d326', lo: '#479a10' },
+    mid: { hi: '#ffd9ec', face: '#ff93cb', mid: '#ff74ba', lo: '#d63c8a' },
+    high: { hi: '#eedfff', face: '#c69eff', mid: '#ad7dfc', lo: '#7741d6' },
+    blank: { hi: '#ffffff', face: '#f6f2ff', mid: '#ded7f6', lo: '#a39bcb' },
+    flash: { hi: '#fffbe0', face: '#ffe23d', mid: '#ffc400', lo: '#ff8400' }, // part of a word
+    dim: { hi: '#d5d1e6', face: '#b4aecd', mid: '#9f99bb', lo: '#6c668d' }, // cleared without scoring
+  };
+
+  function skinName(tile) {
+    if (tile.ch === '*') return 'blank';
+    if (cfg.VOWELS.includes(tile.ch)) return 'vowel';
+    if (tile.value <= 1) return 'one';
+    if (tile.value <= 3) return 'low';
+    if (tile.value <= 5) return 'mid';
+    return 'high';
+  }
+
+  // The letter of a tile, centred on (cx, cy), in the current fill colour.
+  function drawLetter(ctx, tile, cx, cy, w) {
     const qu = tile.ch === 'QU';
-    ctx.font = `${Math.round(w * (qu ? 0.44 : 0.58))}px ${TILE_FONT}`;
+    ctx.font = `${Math.round(w * (qu ? 0.47 : 0.66))}px ${TILE_FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(qu ? 'Qu' : tile.ch, x + w * cx, y + w * 0.5);
+    ctx.fillText(qu ? 'Qu' : tile.ch, cx, cy);
   }
 
-  // A Scrabble-style tile: maple face, bevelled lower edge, letter and value.
-  function drawTile(ctx, px, py, s, tile, o = {}) {
-    const inset = Math.max(1, s * 0.045);
-    const scale = o.scale || 1;
-    const w = (s - 2 * inset) * scale;
-    const x = px + (s - w) / 2;
-    const y = py + (s - w) / 2;
-    const r = Math.max(2, w * 0.14);
-    ctx.save();
-    ctx.globalAlpha = o.alpha == null ? 1 : o.alpha;
+  // Paints one tile into an s-wide box at the origin. Looks: 'base' (coloured by letter),
+  // 'flash', 'dim', and 'ghost' (the landing shadow).
+  function paintTile(ctx, s, tile, look) {
+    const inset = Math.max(0.5, s * 0.025);
+    const w = s - 2 * inset;
+    const line = Math.min(4, Math.max(1.25, w * 0.085)); // ink outline
+    const R = w * 0.27;
+    const lip = Math.max(1.5, w * 0.11);
+    const fx = inset + line;
+    const fy = inset + line;
+    const fw = w - 2 * line; // face width; the face is `lip` shorter than it is wide
+    const fh = fw - lip;
+    const fr = Math.max(1, R - line);
 
-    // Landing shadow: an outline with the letter inside, so you can read what lands where.
-    if (o.ghost) {
-      roundRect(ctx, x + 0.5, y + 0.5, w - 1, w - 1, r);
-      ctx.strokeStyle = COLOR.maple;
-      ctx.globalAlpha = 0.45;
-      ctx.lineWidth = 1.5;
+    // Landing shadow: a dashed outline with the letter inside, so you can read what lands where.
+    if (look === 'ghost') {
+      const lw = Math.max(1.25, w * 0.06);
+      roundRect(ctx, inset + lw / 2, inset + lw / 2, w - lw, w - lw, R);
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.fill();
+      ctx.setLineDash([w * 0.17, w * 0.13]);
+      ctx.lineCap = 'round';
+      ctx.lineWidth = lw;
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
       ctx.stroke();
-      ctx.globalAlpha = 0.7;
-      ctx.fillStyle = COLOR.maple;
-      drawGlyph(ctx, tile, x, y, w, 0.5);
-      ctx.restore();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,255,255,0.78)';
+      if (tile.ch === '*') { starPath(ctx, s / 2, s / 2, w * 0.24, 4, 0.42); ctx.fill(); }
+      else drawLetter(ctx, tile, s / 2, s / 2 + w * 0.02, fw);
       return;
     }
 
-    const face = o.flash ? COLOR.gold : COLOR.maple;
-    roundRect(ctx, x, y, w, w, r);
-    ctx.fillStyle = o.flash ? '#b8862a' : COLOR.mapleLo;
+    const skin = SKIN[look === 'base' ? skinName(tile) : look];
+
+    // Ink outline (white-hot while a word flashes), then the darker body whose bottom edge
+    // shows as the lip.
+    roundRect(ctx, inset, inset, w, w, R);
+    ctx.fillStyle = look === 'flash' ? '#ffffff' : INK;
     ctx.fill();
-    const g = ctx.createLinearGradient(0, y, 0, y + w);
-    g.addColorStop(0, o.flash ? '#fff1b8' : COLOR.mapleHi);
-    g.addColorStop(1, face);
-    roundRect(ctx, x, y, w, w - Math.max(1.5, w * 0.08), r);
+    roundRect(ctx, fx, fy, fw, fw, fr);
+    ctx.fillStyle = skin.lo;
+    ctx.fill();
+
+    // Face, lighter at the top.
+    const g = ctx.createLinearGradient(0, fy, 0, fy + fh);
+    g.addColorStop(0, skin.hi);
+    g.addColorStop(0.45, skin.face);
+    g.addColorStop(1, skin.mid);
+    roundRect(ctx, fx, fy, fw, fh, fr);
     ctx.fillStyle = g;
     ctx.fill();
-    if (o.dim) {
-      roundRect(ctx, x, y, w, w, r);
-      ctx.fillStyle = COLOR.table;
-      ctx.globalAlpha *= 0.55;
+
+    // Gloss: a soft white dome across the top of the face, and two specks of shine.
+    ctx.save();
+    roundRect(ctx, fx, fy, fw, fh, fr);
+    ctx.clip();
+    const gloss = ctx.createLinearGradient(0, fy, 0, fy + fh * 0.48);
+    gloss.addColorStop(0, 'rgba(255,255,255,0.6)');
+    gloss.addColorStop(1, 'rgba(255,255,255,0.1)');
+    ctx.fillStyle = gloss;
+    ctx.beginPath();
+    ctx.ellipse(fx + fw / 2, fy - fh * 0.04, fw * 0.6, fh * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.beginPath();
+    ctx.ellipse(fx + fw * 0.2, fy + fh * 0.16, fw * 0.1, fh * 0.052, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(fx + fw * 0.37, fy + fh * 0.1, fw * 0.035, 0, Math.PI * 2);
+    ctx.fill();
+
+    const ink = look === 'dim' ? '#4a4468' : INK;
+    if (tile.ch === '*') {
+      // A blank: a gold star with its own outline.
+      starPath(ctx, fx + fw / 2, fy + fh * 0.52, fw * 0.33, 4, 0.42);
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = line * 1.7;
+      ctx.strokeStyle = ink;
+      ctx.stroke();
+      ctx.fillStyle = look === 'dim' ? '#cfcbe0' : '#ffc20f';
       ctx.fill();
-      ctx.globalAlpha /= 0.55;
+      return;
     }
 
-    ctx.fillStyle = COLOR.ink;
-    drawGlyph(ctx, tile, x, y, w, 0.46);
-    if (tile.ch !== '*' && w >= 14) {
-      ctx.font = `700 ${Math.max(7, Math.round(w * 0.22))}px ${NUM_FONT}`;
+    // The letter, pressed into the face: a pale edge just below it, then the ink.
+    const cx = fx + fw * (tile.value > 9 ? 0.42 : 0.45);
+    const cy = fy + fh * (tile.value > 9 ? 0.47 : 0.51);
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    drawLetter(ctx, tile, cx, cy + Math.max(0.75, w * 0.035), fw);
+    ctx.fillStyle = ink;
+    drawLetter(ctx, tile, cx, cy, fw);
+    if (w >= 13) {
+      ctx.font = `700 ${Math.max(7, Math.round(fw * (tile.value > 9 ? 0.27 : 0.3)))}px ${NUM_FONT}`;
       ctx.textAlign = 'right';
       ctx.textBaseline = 'alphabetic';
-      ctx.fillText(String(tile.value), x + w - w * 0.08, y + w - w * 0.12);
+      ctx.fillText(String(tile.value), fx + fw - fw * 0.07, fy + fh - fh * 0.06);
     }
-    ctx.restore();
   }
 
-  const effects = [];
+  // Tiles are painted once per letter and look, then stamped each frame.
+  function sprite(tile, look) {
+    const key = tile.ch + '|' + look;
+    let img = sprites.get(key);
+    if (!img) {
+      img = document.createElement('canvas');
+      img.width = img.height = Math.max(1, Math.round(cell * dpr));
+      const ctx = img.getContext('2d');
+      ctx.scale(img.width / cell, img.width / cell);
+      paintTile(ctx, cell, tile, look);
+      sprites.set(key, img);
+    }
+    return img;
+  }
+
+  // Tiles are painted before the web fonts arrive; repaint them once the fonts are in.
+  if (document.fonts) {
+    if (document.fonts.ready) document.fonts.ready.then(() => sprites.clear());
+    if (document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', () => sprites.clear());
+  }
+
+  // Stamps a tile into the cell at (px, py). Options: ghost / flash / dim pick the look;
+  // scale, or sx and sy, stretch it; foot keeps its bottom edge planted; alpha fades it.
+  function drawTile(ctx, px, py, s, tile, o = {}) {
+    const alpha = o.alpha == null ? 1 : o.alpha;
+    if (alpha <= 0) return;
+    const img = sprite(tile, o.ghost ? 'ghost' : o.flash ? 'flash' : o.dim ? 'dim' : 'base');
+    const w = s * (o.sx || o.scale || 1);
+    const h = s * (o.sy || o.scale || 1);
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(img, px + (s - w) / 2, o.foot ? py + s - h : py + (s - h) / 2, w, h);
+    ctx.globalAlpha = 1;
+  }
+
+  // Easing: a drop that bounces to rest, and a pop that overshoots.
+  function bounceOut(k) {
+    const n = 7.5625;
+    const d = 2.75;
+    if (k < 1 / d) return n * k * k;
+    if (k < 2 / d) return n * (k -= 1.5 / d) * k + 0.75;
+    if (k < 2.5 / d) return n * (k -= 2.25 / d) * k + 0.9375;
+    return n * (k -= 2.625 / d) * k + 0.984375;
+  }
+  const backOut = (k) => 1 + 2.7 * Math.pow(k - 1, 3) + 1.7 * Math.pow(k - 1, 2);
+
+  // Outlined cartoon lettering: a fat ink stroke, the same stroke again as a hard drop,
+  // and a fill that runs from `top` to `bottom`.
+  function chunkyText(ctx, text, x, y, size, font, top, bottom) {
+    ctx.font = font;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = Math.max(3, size * 0.26);
+    ctx.strokeStyle = INK;
+    ctx.strokeText(text, x, y + size * 0.12);
+    ctx.strokeText(text, x, y);
+    const g = ctx.createLinearGradient(0, y - size * 0.42, 0, y + size * 0.38);
+    g.addColorStop(0, top);
+    g.addColorStop(1, bottom);
+    ctx.fillStyle = g;
+    ctx.fillText(text, x, y);
+  }
+
+  const effects = []; // floating score text and banners
+  const particles = []; // stars and confetti
+  const BANNER = {
+    chain: ['#ffb3ba', '#ff4b5f'],
+    rows: ['#ffffff', '#b9c4f5'],
+    level: ['#fff6b0', '#ffc20f'],
+  };
+  const CONFETTI = ['#ffd930', '#ffffff', '#ff93cb', '#5fd4ff', '#a2e845', '#ff4b5f'];
+
+  // Throws `count` stars or confetti bits out from (x, y). Speeds are in cells per second.
+  function burst(now, x, y, count, speed, kind) {
+    if (reduceMotion) return;
+    for (let i = 0; i < count && particles.length < 160; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const v = (speed * cell / 1000) * (0.4 + Math.random() * 0.8);
+      particles.push({
+        kind, x, y,
+        vx: Math.cos(a) * v,
+        vy: Math.sin(a) * v - (speed * cell / 1000) * 0.5,
+        rot: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 0.016,
+        size: cell * (0.15 + Math.random() * 0.13),
+        color: CONFETTI[(Math.random() * CONFETTI.length) | 0],
+        born: now,
+        life: 620 + Math.random() * 480,
+      });
+    }
+  }
+
+  function drawParticles(ctx, now, dt) {
+    const gravity = (cell * 11) / 1e6; // px per ms, per ms
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      const t = (now - p.born) / p.life;
+      if (t >= 1) { particles.splice(i, 1); continue; }
+      p.vy += gravity * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.rot += p.spin * dt;
+      const grow = t < 0.15 ? t / 0.15 : 1;
+      ctx.save();
+      ctx.globalAlpha = t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.scale(grow, grow);
+      if (p.kind === 'star') starPath(ctx, 0, 0, p.size, 5, 0.5);
+      else roundRect(ctx, -p.size * 0.6, -p.size * 0.35, p.size * 1.2, p.size * 0.7, p.size * 0.2);
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(1.5, p.size * 0.5);
+      ctx.strokeStyle = INK;
+      ctx.stroke();
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  let rowOf = new Map(); // tile id -> the row it was drawn in last frame
+  const falls = new Map(); // tile id -> a drop in progress, after a clear closes the gaps
+  let landed = null; // the tiles of the piece that just locked, for a quick squash
+  let lastPieceIds = [];
+  let lastRender = 0;
 
   function renderBoard(now) {
     const ctx = bctx;
     const W = cell * cfg.COLS;
     const H = cell * cfg.ROWS;
-    ctx.fillStyle = COLOR.felt;
-    ctx.fillRect(0, 0, W, H);
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.045)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let x = 1; x < cfg.COLS; x++) { ctx.moveTo(x * cell + 0.5, 0); ctx.lineTo(x * cell + 0.5, H); }
-    for (let y = 1; y < cfg.ROWS; y++) { ctx.moveTo(0, y * cell + 0.5); ctx.lineTo(W, y * cell + 0.5); }
-    ctx.stroke();
+    const dt = Math.min(50, Math.max(0, now - lastRender));
+    lastRender = now;
+    ctx.globalAlpha = 1;
+    ctx.drawImage(backdrop, 0, 0, W, H);
 
     // Warn when the stack reaches the top fifth of the board (2 rows on a 10-row board).
     const grid = game.board.grid;
     const warnRows = Math.max(2, Math.round(cfg.ROWS / 5));
     if (grid.slice(0, warnRows).some((row) => row.some(Boolean))) {
+      const pulse = reduceMotion ? 0.42 : 0.36 + 0.14 * Math.sin(now / 260);
       const g = ctx.createLinearGradient(0, 0, 0, cell * (warnRows + 1));
-      g.addColorStop(0, 'rgba(224,87,74,0.35)');
-      g.addColorStop(1, 'rgba(224,87,74,0)');
+      g.addColorStop(0, `rgba(255,75,95,${pulse})`);
+      g.addColorStop(1, 'rgba(255,75,95,0)');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, cell * (warnRows + 1));
     }
@@ -202,65 +442,90 @@
       p = 1 - Math.max(0, game.clearing.timer) / cfg.CLEAR_FLASH;
     }
 
+    const squash = landed && !reduceMotion ? (now - landed.born) / 200 : 1;
+    if (squash >= 1) landed = null;
+    const nextRowOf = new Map();
     for (let y = 0; y < cfg.ROWS; y++) {
       for (let x = 0; x < cfg.COLS; x++) {
         const t = grid[y][x];
         if (!t) continue;
+        nextRowOf.set(t.id, y);
+        const was = rowOf.get(t.id);
+        if (was != null && was < y && !reduceMotion) {
+          falls.set(t.id, { from: was, born: now, dur: 190 + 55 * Math.min(4, y - was) });
+        }
         const key = x + ',' + y;
         if (flash.has(key)) {
-          const scale = reduceMotion ? 1 : 1 + 0.1 * Math.sin(p * Math.PI);
+          // A quick jump up in size, then the tile shrinks away.
+          const scale = reduceMotion ? 1 : 1 + 0.16 * Math.sin(Math.min(1, p * 1.6) * Math.PI) - 0.25 * Math.pow(p, 4);
           drawTile(ctx, x * cell, y * cell, cell, t, { flash: true, scale, alpha: 1 - Math.pow(p, 4) });
         } else if (junk.has(key)) {
-          drawTile(ctx, x * cell, y * cell, cell, t, { dim: true, scale: reduceMotion ? 1 : 1 - 0.2 * p, alpha: 1 - p });
+          drawTile(ctx, x * cell, y * cell, cell, t, { dim: true, scale: reduceMotion ? 1 : 1 - 0.25 * p, alpha: 1 - p });
         } else {
-          drawTile(ctx, x * cell, y * cell, cell, t);
+          let py = y * cell;
+          const f = falls.get(t.id);
+          if (f) {
+            const k = (now - f.born) / f.dur;
+            if (k >= 1) falls.delete(t.id);
+            else py += (f.from - y) * cell * (1 - bounceOut(k));
+          }
+          if (landed && landed.ids.has(t.id)) {
+            const q = Math.sin(squash * Math.PI) * 0.14;
+            drawTile(ctx, x * cell, py, cell, t, { sx: 1 + q * 0.45, sy: 1 - q, foot: true });
+          } else {
+            drawTile(ctx, x * cell, py, cell, t);
+          }
         }
       }
     }
+    rowOf = nextRowOf;
+    for (const id of falls.keys()) if (!rowOf.has(id)) falls.delete(id);
 
     const cur = game.current;
     if (cur && (game.state === 'playing' || game.state === 'paused')) {
+      const cells = ST.pieceCells(cur);
       const d = game.dropDistance();
-      for (const { x, y, tile } of ST.pieceCells(cur)) {
+      for (const { x, y, tile } of cells) {
         if (d > 0 && y + d >= 0) drawTile(ctx, x * cell, (y + d) * cell, cell, tile, { ghost: true });
       }
-      for (const { x, y, tile } of ST.pieceCells(cur)) {
+      // The falling piece floats above the well: a soft shadow sits under it.
+      ctx.fillStyle = 'rgba(8,3,36,0.4)';
+      for (const { x, y } of cells) {
+        if (y < 0) continue;
+        roundRect(ctx, x * cell + cell * 0.04, y * cell + cell * 0.16, cell * 0.92, cell * 0.92, cell * 0.26);
+        ctx.fill();
+      }
+      for (const { x, y, tile } of cells) {
         if (y >= 0) drawTile(ctx, x * cell, y * cell, cell, tile);
       }
     }
+
+    drawParticles(ctx, now, dt);
 
     // Floating score text and banners.
     for (let i = effects.length - 1; i >= 0; i--) {
       const e = effects[i];
       const t = (now - e.born) / e.life;
       if (t >= 1) { effects.splice(i, 1); continue; }
+      const pop = reduceMotion ? 1 : t < 0.14 ? 0.35 + 0.65 * backOut(t / 0.14) : 1;
       ctx.save();
       ctx.globalAlpha = t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.lineJoin = 'round';
       if (e.kind === 'banner') {
-        const size = Math.round(cell * 1.1);
-        ctx.font = `${size}px ${TILE_FONT}`;
-        const y = H * 0.38 - (reduceMotion ? 0 : t * cell);
-        ctx.lineWidth = 6;
-        ctx.strokeStyle = COLOR.ink;
-        ctx.strokeText(e.text, W / 2, y);
-        ctx.fillStyle = e.color;
-        ctx.fillText(e.text, W / 2, y);
+        const size = Math.round(cell * 1.15);
+        const font = `${size}px ${TILE_FONT}`;
+        ctx.font = font;
+        const fitW = Math.min(1, (W * 0.9) / (ctx.measureText(e.text).width + size * 0.3));
+        ctx.translate(W / 2, H * 0.38 - (reduceMotion ? 0 : t * cell));
+        ctx.rotate(-0.05);
+        ctx.scale(pop * fitW, pop * fitW);
+        chunkyText(ctx, e.text, 0, 0, size, font, e.colors[0], e.colors[1]);
       } else {
-        const y = e.y - (reduceMotion ? 0 : t * cell * 1.6);
-        ctx.font = `${Math.round(cell * 0.72)}px ${TILE_FONT}`;
-        ctx.lineWidth = 5;
-        ctx.strokeStyle = COLOR.ink;
-        ctx.strokeText(e.text, e.x, y);
-        ctx.fillStyle = COLOR.gold;
-        ctx.fillText(e.text, e.x, y);
-        ctx.font = `700 ${Math.round(cell * 0.42)}px ${NUM_FONT}`;
-        ctx.lineWidth = 4;
-        ctx.strokeText(e.sub, e.x, y + cell * 0.62);
-        ctx.fillStyle = COLOR.text;
-        ctx.fillText(e.sub, e.x, y + cell * 0.62);
+        const size = Math.round(cell * 0.8);
+        ctx.translate(e.x, e.y - (reduceMotion ? 0 : t * cell * 1.6));
+        ctx.scale(pop, pop);
+        chunkyText(ctx, e.text, 0, 0, size, `${size}px ${TILE_FONT}`, '#fff6b0', '#ffc20f');
+        const sub = Math.round(cell * 0.46);
+        chunkyText(ctx, e.sub, 0, cell * 0.68, sub, `${sub}px ${TILE_FONT}`, '#ffffff', '#e6deff');
       }
       ctx.restore();
     }
@@ -272,6 +537,15 @@
   const shown = {};
   function setText(key, value) {
     if (shown[key] !== value) { shown[key] = value; hud[key].textContent = value; }
+  }
+
+  // Makes a stat jump, to show that a word just changed it.
+  function bump(key) {
+    if (reduceMotion) return;
+    const node = hud[key];
+    node.classList.remove('bump');
+    void node.offsetWidth; // restart the animation if it's still running
+    node.classList.add('bump');
   }
 
   function updateHud() {
@@ -377,6 +651,7 @@
   function restart() {
     game.reset();
     effects.length = 0;
+    particles.length = 0;
     renderRecent(0);
     game.start();
     saver.begin(game);
@@ -436,7 +711,10 @@
   function drainEvents(now) {
     for (const e of game.events) {
       saver.onEvent(game, e);
-      if (e.type === 'words') {
+      if (e.type === 'lock') {
+        // The piece that just landed squashes for a moment.
+        landed = { ids: new Set(lastPieceIds), born: now };
+      } else if (e.type === 'words') {
         for (const w of e.found) {
           const xs = w.cells.map((c) => c.x);
           const ys = w.cells.map((c) => c.y);
@@ -444,13 +722,20 @@
           const cx = Math.min(Math.max(mid, cell * 1.4), cell * (cfg.COLS - 1.4)); // keep text on the board
           const cy = ((Math.min(...ys) + Math.max(...ys)) / 2) * cell;
           effects.push({ kind: 'word', text: '+' + fmt(w.points), sub: w.display, x: cx, y: cy, born: now, life: 1300 });
+          // Stars fly out of every tile of the word.
+          for (const c of w.cells) burst(now, (c.x + 0.5) * cell, (c.y + 0.5) * cell, 3, 5.5, 'star');
         }
-        if (e.chain > 1) effects.push({ kind: 'banner', text: `CHAIN ×${e.chain}`, color: COLOR.accent, born: now, life: 1200 });
+        if (e.chain > 1) effects.push({ kind: 'banner', text: `CHAIN ×${e.chain}`, colors: BANNER.chain, born: now, life: 1200 });
         renderRecent(e.found.length);
+        bump('score');
+        bump('words');
       } else if (e.type === 'rows') {
-        effects.push({ kind: 'banner', text: e.count > 1 ? `${e.count} ROWS CLEARED` : 'ROW CLEARED', color: COLOR.muted, born: now, life: 1000 });
+        effects.push({ kind: 'banner', text: e.count > 1 ? `${e.count} ROWS CLEARED` : 'ROW CLEARED', colors: BANNER.rows, born: now, life: 1000 });
       } else if (e.type === 'level') {
-        effects.push({ kind: 'banner', text: `LEVEL ${e.level}`, color: COLOR.gold, born: now, life: 1400 });
+        effects.push({ kind: 'banner', text: `LEVEL ${e.level}`, colors: BANNER.level, born: now, life: 1400 });
+        // Confetti from the top of the well.
+        for (let i = 0; i < 6; i++) burst(now, ((i + 0.5) / 6) * cell * cfg.COLS, cell * 0.5, 6, 6.5, 'bit');
+        bump('level');
       }
     }
     game.events.length = 0;
@@ -538,6 +823,7 @@
     const dt = Math.min(50, now - last);
     last = now;
     autoRepeat(dt);
+    if (game.current) lastPieceIds = ST.pieceCells(game.current).map((c) => c.tile.id);
     game.update(dt);
     drainEvents(now);
     renderBoard(now);
