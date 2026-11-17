@@ -200,4 +200,6 @@
   }
 
   ST.createSessionSaver = createSessionSaver;
+  // The scoreboard (src/scores.js) posts games under the same anonymous id.
+  ST.playerId = playerId;
 })(window);

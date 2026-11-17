@@ -156,7 +156,8 @@ body::after {
 .icon-btn,
 .touch button,
 .btn-primary,
-.btn-ghost {
+.btn-ghost,
+.close-btn {
   --hi: var(--blue-hi);
   --body: var(--blue);
   --lo: var(--blue-lo);
@@ -177,7 +178,8 @@ body::after {
 .icon-btn::before,
 .touch button::before,
 .btn-primary::before,
-.btn-ghost::before {
+.btn-ghost::before,
+.close-btn::before {
   content: "";
   position: absolute;
   z-index: -1;
@@ -194,7 +196,8 @@ body::after {
 .icon-btn::after,
 .touch button::after,
 .btn-primary::after,
-.btn-ghost::after {
+.btn-ghost::after,
+.close-btn::after {
   content: "";
   position: absolute;
   z-index: -1;
@@ -226,14 +229,16 @@ textarea:focus-visible {
 .icon-btn,
 .touch button,
 .btn-primary,
-.btn-ghost {
+.btn-ghost,
+.close-btn {
   transition: transform 70ms ease-out, box-shadow 70ms ease-out, filter 120ms ease-out;
 }
 
 .icon-btn.on,
 .touch button.on,
 .btn-primary:active,
-.btn-ghost:active {
+.btn-ghost:active,
+.close-btn:active {
   transform: translateY(calc(var(--drop) - 1px));
   box-shadow:
     inset 0 2px 0 rgb(255 255 255 / 0.45),
@@ -246,7 +251,8 @@ textarea:focus-visible {
   .icon-btn:hover,
   .touch button:hover,
   .btn-primary:hover,
-  .btn-ghost:hover {
+  .btn-ghost:hover,
+  .close-btn:hover {
     filter: brightness(1.08);
   }
 
@@ -282,7 +288,8 @@ textarea:focus-visible {
 }
 
 .ico .fl.solid,
-.ico .fl .tip {
+.ico .fl .tip,
+.ico .fl .fill {
   fill: #fff;
 }
 
@@ -290,7 +297,8 @@ textarea:focus-visible {
   stroke-width: 1.5;
 }
 
-.ico .ol .tip {
+.ico .ol .tip,
+.ico .ol .fill {
   fill: var(--ink);
 }
 
@@ -909,20 +917,745 @@ textarea:focus-visible {
   overflow: visible;
 }
 
+/* ---- small buttons: How to play, Scoreboard, Copy game log ------------- */
+
+.btn-small {
+  --drop: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.95em;
+  padding: 5px 12px 6px;
+  border-radius: 14px;
+}
+
+.btn-small .ico {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-left: -2px;
+}
+
+.btn-small .ico .ol {
+  stroke-width: 6;
+}
+
+.btn-small .ico .fl {
+  stroke-width: 2.8;
+}
+
+.btn-small::after {
+  top: 5px;
+  left: 7px;
+  width: 9px;
+  height: 4px;
+}
+
+.btn-gold {
+  --hi: var(--yellow-hi);
+  --body: var(--yellow);
+  --lo: var(--orange-lo);
+}
+
+.btn-primary.btn-small {
+  --drop: 4px;
+  font-size: 1.05em;
+  padding: 6px 16px 7px;
+  text-shadow: var(--outline-sm);
+}
+
+button:disabled {
+  cursor: default;
+  filter: grayscale(0.5) brightness(0.9);
+}
+
+.overlay-more,
+.panel-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.overlay-more {
+  margin-top: 2px;
+}
+
+/* Narrow boards (small phones): keep the small buttons on one row. */
+@container (max-width: 300px) {
+  .card {
+    gap: 6px;
+    padding: 20px 9px 11px;
+  }
+
+  .card h1 {
+    margin: 2px 0 3px;
+  }
+
+  .overlay-more {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .overlay-more .btn-small {
+    gap: 3px;
+    padding: 4px 8px 5px;
+    font-size: 0.88em;
+    white-space: nowrap;
+  }
+
+  .overlay-more .btn-small .ico {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.panel-actions {
+  justify-content: flex-start;
+  margin-bottom: 2px;
+}
+
+/* ---- dialogs: How to play and Scoreboard --------------------------------- */
+
+dialog.sheet {
+  box-sizing: border-box;
+  width: min(100% - 28px, 420px);
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  color: var(--ink);
+  background: transparent;
+}
+
+dialog.sheet::backdrop {
+  background:
+    radial-gradient(rgb(255 255 255 / 0.1) 1.5px, transparent 2px) 0 0 / 14px 14px,
+    rgb(27 17 57 / 0.74);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.sheet-card:focus {
+  outline: none;
+}
+
+.sheet-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  max-height: calc(100vh - 60px);
+  max-height: calc(100dvh - 60px);
+  padding: 30px 16px 16px;
+  background: linear-gradient(180deg, var(--cream-hi) 0%, var(--cream) 55%, var(--cream-lo) 100%);
+  border: 4px solid var(--ink);
+  border-radius: 24px;
+  box-shadow:
+    inset 0 3px 0 #fff,
+    inset 0 -5px 0 rgb(170 120 30 / 0.3),
+    0 7px 0 var(--ink),
+    0 16px 22px rgb(10 4 40 / 0.5);
+}
+
+dialog.sheet[open] .sheet-card {
+  animation: card-in 380ms cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+
+/* The title is a ribbon over the card's top edge, like the panels'. */
+.sheet-title {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  margin: 0;
+  transform: translate(-50%, -58%) rotate(-2deg);
+  padding: 3px 20px 4px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--step-1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #fff;
+  text-shadow: var(--outline-sm);
+  background: linear-gradient(180deg, var(--pink-hi) 0%, var(--pink) 50%, var(--pink-lo) 100%);
+  border: var(--line) solid var(--ink);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.55),
+    inset 0 -3px 0 rgb(27 17 57 / 0.18),
+    0 4px 0 var(--ink);
+}
+
+.sheet-title.gold {
+  background: linear-gradient(180deg, var(--yellow-hi) 0%, var(--yellow) 50%, var(--orange-lo) 100%);
+}
+
+.close-btn {
+  --hi: var(--red-hi);
+  --body: var(--red);
+  --lo: var(--red-lo);
+  --drop: 3px;
+  position: absolute;
+  z-index: 2;
+  top: -17px;
+  right: -11px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.close-btn .ico {
+  width: 20px;
+  height: 20px;
+}
+
+.close-btn::after {
+  top: 6px;
+  left: 8px;
+  width: 9px;
+  height: 4px;
+}
+
+/* ---- how to play ---------------------------------------------------------- */
+
+.howto-track {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  margin: 0 -16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.howto-track::-webkit-scrollbar {
+  display: none;
+}
+
+.howto-card {
+  flex: 0 0 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 2px 18px 4px;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  text-align: center;
+}
+
+.howto-card h3 {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.55rem;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  color: var(--yellow);
+  text-shadow: var(--outline-md);
+  text-wrap: balance;
+}
+
+.howto-card p,
+.howto-card ul {
+  margin: 0;
+  font-size: var(--step-0);
+  line-height: 1.4;
+}
+
+.howto-card ul {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.howto-card li {
+  position: relative;
+  padding-left: 22px;
+}
+
+/* Bullets are tiny glossy tiles. */
+.howto-card li::before {
+  content: "";
+  position: absolute;
+  top: 0.32em;
+  left: 0;
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--yellow-hi), var(--yellow) 55%, var(--orange));
+}
+
+.howto-card li:nth-child(2)::before { background: linear-gradient(180deg, var(--blue-hi), var(--blue) 55%, var(--blue-lo)); }
+.howto-card li:nth-child(3)::before { background: linear-gradient(180deg, var(--green-hi), var(--green) 55%, var(--green-lo)); }
+.howto-card li:nth-child(4)::before { background: linear-gradient(180deg, var(--pink-hi), var(--pink) 55%, var(--pink-lo)); }
+
+/* The picture on each card: a little piece of the well. */
+.howto-art {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 118px;
+  padding: 14px 10px 12px;
+  background:
+    radial-gradient(rgb(255 255 255 / 0.08) 1.5px, transparent 2px) 0 0 / 14px 14px,
+    linear-gradient(180deg, var(--well-deep), var(--well));
+  border: var(--line) solid var(--ink);
+  border-radius: 18px;
+  box-shadow: inset 0 4px 0 rgb(0 0 0 / 0.35), 0 4px 0 var(--ink);
+}
+
+.art-steer {
+  flex-direction: row;
+  gap: 18px;
+}
+
+.tile-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.tile-row canvas {
+  display: block;
+}
+
+/* Word tiles on the cards pop now and then, like on the board. */
+.tile-row .pop {
+  animation: tile-pop 2.6s cubic-bezier(0.3, 1.6, 0.5, 1) infinite;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+
+@keyframes tile-pop {
+  0%, 52%, 100% { transform: none; }
+  62% { transform: translateY(-6px) scale(1.14); }
+  74% { transform: none; }
+}
+
+.art-points {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--yellow);
+  text-shadow: var(--outline-md);
+  animation: points-float 2.6s ease-out infinite;
+}
+
+@keyframes points-float {
+  0%, 50% { opacity: 0; transform: translateY(8px) scale(0.7); }
+  62% { opacity: 1; transform: translateY(0) scale(1.1); }
+  70%, 92% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+
+.mini-keys {
+  display: grid;
+  grid-template-columns: repeat(2, 44px);
+  gap: 6px;
+}
+
+.mini-key {
+  --hi: var(--blue-hi);
+  --body: var(--blue);
+  --lo: var(--blue-lo);
+  display: grid;
+  place-items: center;
+  height: 36px;
+  background: linear-gradient(180deg, var(--hi) 0%, var(--body) 46%, var(--lo) 100%);
+  border: var(--line) solid var(--ink);
+  border-radius: 12px;
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.6), 0 3px 0 var(--ink);
+}
+
+.mini-key.red {
+  --hi: var(--red-hi);
+  --body: var(--red);
+  --lo: var(--red-lo);
+}
+
+.mini-key .ico {
+  width: 18px;
+  height: 18px;
+}
+
+.art-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.drop-line {
+  width: 0;
+  height: 16px;
+  border-left: 3px dashed rgb(255 255 255 / 0.5);
+}
+
+.mult-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 44px;
+  padding: 1px 6px 3px;
+  line-height: 1.1;
+  background: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: inset 0 -3px 0 rgb(27 17 57 / 0.08), 0 3px 0 var(--ink);
+}
+
+.chip small {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.chip b {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.05rem;
+  color: #6a35e8;
+}
+
+.howto-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.howto-dots button {
+  width: 13px;
+  height: 13px;
+  padding: 0;
+  background: #e2d9f7;
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  transition: width 160ms ease-out, background-color 160ms;
+}
+
+.howto-dots button[aria-current="step"] {
+  width: 28px;
+  background: var(--yellow);
+}
+
+.howto-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.howto-nav .btn-primary {
+  min-width: 128px;
+  font-size: 1.25rem;
+  padding: 6px 22px 8px;
+}
+
+/* ---- scoreboard ------------------------------------------------------------- */
+
+.posted {
+  margin: 0;
+  padding: 6px 14px 7px;
+  font-family: var(--font-display);
+  font-size: var(--step-0);
+  letter-spacing: 0.03em;
+  text-align: center;
+  color: #fff;
+  text-shadow: var(--outline-sm);
+  background: linear-gradient(180deg, var(--green-hi), var(--green) 50%, var(--green-lo));
+  border: var(--line) solid var(--ink);
+  border-radius: 999px;
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.55), 0 4px 0 var(--ink);
+}
+
+.post {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  background: #fff;
+  border: var(--line) solid var(--ink);
+  border-radius: 18px;
+  box-shadow: inset 0 -4px 0 rgb(27 17 57 / 0.08), 0 4px 0 var(--ink);
+}
+
+.post-head {
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.post-head strong {
+  font-weight: 400;
+  color: var(--yellow);
+  text-shadow: var(--outline-sm);
+}
+
+.post-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.post-row input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 42px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 16px; /* 16px keeps iPhones from zooming in on focus */
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--cream-hi);
+  border: var(--line) solid var(--ink);
+  border-radius: 14px;
+  box-shadow: inset 0 3px 0 rgb(27 17 57 / 0.12);
+}
+
+.post-row input::placeholder {
+  color: rgb(85 73 127 / 0.6);
+}
+
+.post-row input:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.post-row .btn-primary {
+  height: 42px;
+}
+
+.post-status {
+  margin: 0;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.post-status:empty {
+  display: none;
+}
+
+.post-status.error {
+  color: var(--red-lo);
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  background: var(--well);
+  border: var(--line) solid var(--ink);
+  border-radius: 999px;
+  box-shadow: inset 0 3px 0 rgb(0 0 0 / 0.35);
+}
+
+.tabs button {
+  padding: 5px 8px 6px;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  color: #cfc2ff;
+  background: transparent;
+  border: 2.5px solid transparent;
+  border-radius: 999px;
+}
+
+.tabs button[aria-selected="true"] {
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--yellow-hi), var(--yellow) 55%, var(--orange));
+  border-color: var(--ink);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.65);
+}
+
+#scoreboard .sheet-card {
+  height: min(640px, calc(100vh - 60px));
+  height: min(640px, calc(100dvh - 60px));
+}
+
+.board-scroll {
+  flex: 1 1 auto;
+  min-height: 120px;
+  margin: 0 -8px -6px;
+  padding: 0 8px 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.board-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 2px 0 4px;
+  list-style: none;
+}
+
+.board-list .entry {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 7px 6px;
+  background: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: 15px;
+  box-shadow: inset 0 -3px 0 rgb(27 17 57 / 0.08), 0 3px 0 var(--ink);
+}
+
+.board-list .entry.mine {
+  background: linear-gradient(180deg, #fffbe0, #fff0a6);
+}
+
+.rank {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--ink);
+  background: linear-gradient(180deg, #f1ecff, #d7ccfa);
+  border: 2.5px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.7), 0 2px 0 var(--ink);
+}
+
+.rank.r1 { background: linear-gradient(180deg, var(--yellow-hi), var(--yellow) 55%, var(--orange)); }
+.rank.r2 { background: linear-gradient(180deg, #ffffff, #dfe4f5 55%, #a9b2d4); }
+.rank.r3 { background: linear-gradient(180deg, #ffe0c2, #f6a96a 55%, #d27a3a); }
+
+.who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.who .name {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: #6a35e8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.who .meta {
+  font-size: var(--step--1);
+  line-height: 1.3;
+  color: var(--ink-soft);
+}
+
+.coin {
+  font-family: var(--font-display);
+  font-size: var(--step-0);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  padding: 1px 10px 2px;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--yellow-hi), var(--yellow) 55%, var(--orange));
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.6), 0 2px 0 var(--ink);
+}
+
+.board-gap {
+  font-family: var(--font-display);
+  line-height: 0.6;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.board-note {
+  padding: 16px 12px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--ink-soft);
+  border: 2.5px dashed rgb(27 17 57 / 0.3);
+  border-radius: 15px;
+}
+
+.link-btn {
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: #6a35e8;
+  text-decoration: underline;
+  background: none;
+  border: 0;
+}
+
+/* Short phones: tighter cards. */
+@media (max-height: 680px) {
+  .sheet-card {
+    gap: 9px;
+    padding-top: 26px;
+  }
+
+  .howto-art {
+    min-height: 92px;
+    padding: 10px 8px;
+  }
+
+  .howto-card h3 {
+    font-size: 1.3rem;
+  }
+
+  .howto-card p,
+  .howto-card ul {
+    font-size: var(--step--1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body::after,
   .card h1,
   .overlay:not([hidden]) .card,
   .recent li.fresh,
   .recent li.fresh .pts,
-  .value.bump {
+  .value.bump,
+  dialog.sheet[open] .sheet-card,
+  .tile-row .pop,
+  .art-points {
     animation: none;
   }
 
   .icon-btn,
   .touch button,
   .btn-primary,
-  .btn-ghost {
+  .btn-ghost,
+  .close-btn {
     transition: none;
   }
 }

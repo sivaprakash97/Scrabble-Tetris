@@ -14,6 +14,8 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 - A completely full row also clears, but only words score.
 - Letters use Scrabble values, and longer words multiply steeply.
 - "Words found", below the board, shows each word with a short definition.
+- "How to play" shows four illustrated cards; they open by themselves on a first visit.
+- After a game, "Post score" puts it on the scoreboard under a nickname. "My best" keeps your 10 best games on the device.
 - After a game, "Copy game log" copies every piece's letters and the final board, so a tricky game can be shared and looked at.
 - On the hosted page, every game is also saved automatically for review. This covers each piece's letters, where it went, how long it took and what it spelled. See "Saved sessions" in DESIGN.md.
 - See [DESIGN.md](DESIGN.md) for the letter rules, the dictionary, the scoring and the benchmark.
@@ -27,7 +29,7 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 
 ## Hosting
 
-The website runs on Vercel and saves games anonymously to Supabase so they can be reviewed. The project URL and public key live in `src/backend-config.js`. See "Hosting and saving" in [DESIGN.md](DESIGN.md).
+The website runs on Vercel and saves games anonymously to Supabase so they can be reviewed. Players can post a finished game to the scoreboard under a nickname; the database side is in `supabase/scoreboard.sql`. The project URL and public key live in `src/backend-config.js`. See "Hosting and saving" in [DESIGN.md](DESIGN.md).
 
 ## Develop
 
@@ -58,6 +60,9 @@ Hand-written definitions for words WordNet lacks are in `scripts/supplement-defs
 | `src/board.js` | The grid and gravity |
 | `src/game.js` | Rules and state |
 | `src/ui.js` | Canvas rendering and touch input |
+| `src/screens.js` | How to play cards and the scoreboard dialog |
+| `src/scores.js` | Talks to the scoreboard functions in Supabase |
+| `supabase/scoreboard.sql` | The scoreboard's table and functions |
 
 ## Credits
 

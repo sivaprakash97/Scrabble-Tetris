@@ -18,7 +18,8 @@
 </head>
 <body>
 <!-- build:artifact-body -->
-<!-- Icons: Lucide (ISC licence) pause and chevron-left/down/right; the rotate arrow is our own.
+<!-- Icons: Lucide (ISC licence) pause and chevron-left/down/right; the rotate arrow, question mark,
+     trophy and close cross are our own.
      Each is drawn twice: a fat ink stroke (.ol) under a white one (.fl), for a cartoon outline. -->
 <main class="app" id="app">
   <header class="top" id="top">
@@ -43,7 +44,11 @@
         <div class="overlay-actions">
           <button type="button" id="overlay-primary" class="btn-primary">Start</button>
           <button type="button" id="overlay-secondary" class="btn-ghost" hidden>Restart</button>
-          <button type="button" id="overlay-log" class="btn-ghost" hidden>Copy game log</button>
+        </div>
+        <div class="overlay-more">
+          <button type="button" id="overlay-help" class="btn-ghost btn-small" data-open="howto"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M8.6 9a3.5 3.5 0 1 1 4.9 3.2c-.9.4-1.5 1.1-1.5 2.1v.4"/><path d="M12 19h.01"/></g><g class="fl"><path d="M8.6 9a3.5 3.5 0 1 1 4.9 3.2c-.9.4-1.5 1.1-1.5 2.1v.4"/><path d="M12 19h.01"/></g></svg><span>How to play</span></button>
+          <button type="button" id="overlay-board" class="btn-ghost btn-small btn-gold" data-open="scoreboard"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path class="fill" d="M6.5 4h11v4a5.5 5.5 0 0 1-11 0Z"/><path d="M6.5 6H4.8a1.8 1.8 0 0 0 0 3.6h2.1"/><path d="M17.5 6h1.7a1.8 1.8 0 0 1 0 3.6h-2.1"/><path d="M12 14.5v3.5"/><path d="M7.5 19.5h9"/></g><g class="fl"><path class="fill" d="M6.5 4h11v4a5.5 5.5 0 0 1-11 0Z"/><path d="M6.5 6H4.8a1.8 1.8 0 0 0 0 3.6h2.1"/><path d="M17.5 6h1.7a1.8 1.8 0 0 1 0 3.6h-2.1"/><path d="M12 14.5v3.5"/><path d="M7.5 19.5h9"/></g></svg><span>Scoreboard</span></button>
+          <button type="button" id="overlay-log" class="btn-ghost btn-small" hidden>Copy game log</button>
         </div>
         <textarea id="log-text" class="log-text" readonly hidden aria-label="Game log"></textarea>
         <p id="save-status" class="save-status" role="status" hidden></p>
@@ -81,6 +86,10 @@
 
   <section class="panel">
     <h2>Rules</h2>
+    <div class="panel-actions">
+      <button type="button" class="btn-ghost btn-small" data-open="howto"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M8.6 9a3.5 3.5 0 1 1 4.9 3.2c-.9.4-1.5 1.1-1.5 2.1v.4"/><path d="M12 19h.01"/></g><g class="fl"><path d="M8.6 9a3.5 3.5 0 1 1 4.9 3.2c-.9.4-1.5 1.1-1.5 2.1v.4"/><path d="M12 19h.01"/></g></svg><span>How to play</span></button>
+      <button type="button" class="btn-ghost btn-small btn-gold" data-open="scoreboard"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path class="fill" d="M6.5 4h11v4a5.5 5.5 0 0 1-11 0Z"/><path d="M6.5 6H4.8a1.8 1.8 0 0 0 0 3.6h2.1"/><path d="M17.5 6h1.7a1.8 1.8 0 0 1 0 3.6h-2.1"/><path d="M12 14.5v3.5"/><path d="M7.5 19.5h9"/></g><g class="fl"><path class="fill" d="M6.5 4h11v4a5.5 5.5 0 0 1-11 0Z"/><path d="M6.5 6H4.8a1.8 1.8 0 0 0 0 3.6h2.1"/><path d="M17.5 6h1.7a1.8 1.8 0 0 1 0 3.6h-2.1"/><path d="M12 14.5v3.5"/><path d="M7.5 19.5h9"/></g></svg><span>Scoreboard</span></button>
+    </div>
     <label class="setting" for="min-len">
       <span>Shortest word</span>
       <select id="min-len">
@@ -105,6 +114,91 @@
   </section>
 </main>
 
+<!-- How to play: four cards that swipe sideways. Opens by itself on a first visit. -->
+<dialog class="sheet" id="howto" aria-labelledby="howto-title">
+  <div class="sheet-card" tabindex="-1">
+    <h2 class="sheet-title" id="howto-title">How to play</h2>
+    <button type="button" class="close-btn" data-close aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g><g class="fl"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g></svg></button>
+    <div class="howto-track" id="howto-track">
+      <section class="howto-card" aria-label="Card 1 of 4">
+        <div class="howto-art" data-art="spell"></div>
+        <h3>Spell words across</h3>
+        <p>Line up letters left to right in any row. A word of <b data-minlen>3</b> or more letters pops and scores, and the tiles above drop into the gap.</p>
+      </section>
+      <section class="howto-card" aria-label="Card 2 of 4">
+        <div class="howto-art art-steer" data-art="steer">
+          <div class="mini-keys" aria-hidden="true">
+            <span class="mini-key red"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M18.9 15.4a7.5 7.5 0 1 1-2.6-9.05"/><path class="tip" d="M18.8 8.1 17.3 3.9 14.3 8.1Z"/></g><g class="fl"><path d="M18.9 15.4a7.5 7.5 0 1 1-2.6-9.05"/><path class="tip" d="M18.8 8.1 17.3 3.9 14.3 8.1Z"/></g></svg></span>
+            <span class="mini-key"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="m15 18-6-6 6-6"/></g><g class="fl"><path d="m15 18-6-6 6-6"/></g></svg></span>
+            <span class="mini-key"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="m9 18 6-6-6-6"/></g><g class="fl"><path d="m9 18 6-6-6-6"/></g></svg></span>
+            <span class="mini-key"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="m6 9 6 6 6-6"/></g><g class="fl"><path d="m6 9 6 6 6-6"/></g></svg></span>
+          </div>
+        </div>
+        <h3>Steer each piece</h3>
+        <ul>
+          <li><b>Rotate</b> turns the piece, and its letters turn with it.</li>
+          <li><b>Left</b> and <b>Right</b> move it. Hold to keep going.</li>
+          <li>Hold <b>Down</b> to drop faster.</li>
+          <li>The dashed outline shows where it will land.</li>
+        </ul>
+      </section>
+      <section class="howto-card" aria-label="Card 3 of 4">
+        <div class="howto-art" data-art="score"></div>
+        <h3>Longer words, bigger points</h3>
+        <p>Each tile shows its points. Longer words multiply them:</p>
+        <div class="mult-chips" id="mult-chips"></div>
+        <p>Words that form as tiles drop are a chain and score extra. Every <b data-perlevel>10</b> words, the level goes up: faster pieces, bigger points.</p>
+      </section>
+      <section class="howto-card" aria-label="Card 4 of 4">
+        <div class="howto-art" data-art="tips"></div>
+        <h3>Good to know</h3>
+        <ul>
+          <li>A star tile is a blank: it can be any letter.</li>
+          <li>Q always comes as Qu.</li>
+          <li>A full row clears too, but scores nothing.</li>
+          <li>Don't let the stack reach the top!</li>
+        </ul>
+      </section>
+    </div>
+    <div class="howto-dots" id="howto-dots">
+      <button type="button" aria-label="Card 1"></button>
+      <button type="button" aria-label="Card 2"></button>
+      <button type="button" aria-label="Card 3"></button>
+      <button type="button" aria-label="Card 4"></button>
+    </div>
+    <div class="howto-nav">
+      <button type="button" class="btn-ghost btn-small" id="howto-back">Back</button>
+      <button type="button" class="btn-primary" id="howto-next">Next</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Scoreboard: everyone's best posted games (website only), and your own best games. -->
+<dialog class="sheet" id="scoreboard" aria-labelledby="board-title">
+  <div class="sheet-card" tabindex="-1">
+    <h2 class="sheet-title gold" id="board-title">Scoreboard</h2>
+    <button type="button" class="close-btn" data-close aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g><g class="fl"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g></svg></button>
+    <p class="posted" id="posted-note" hidden></p>
+    <form class="post" id="post-form" hidden>
+      <label class="post-head" for="post-name">Post your <strong id="post-score">0</strong></label>
+      <div class="post-row">
+        <input id="post-name" name="nickname" maxlength="16" autocomplete="nickname" autocapitalize="words"
+               spellcheck="false" enterkeyhint="send" placeholder="Your nickname">
+        <button type="submit" class="btn-primary btn-small" id="post-submit">Post</button>
+      </div>
+      <p class="post-status" id="post-status" role="status"></p>
+    </form>
+    <div class="tabs" role="tablist" id="board-tabs">
+      <button type="button" role="tab" id="tab-top" aria-controls="board-top" aria-selected="true" data-tab="top">Top players</button>
+      <button type="button" role="tab" id="tab-mine" aria-controls="board-mine" aria-selected="false" data-tab="mine">My best</button>
+    </div>
+    <div class="board-scroll">
+      <ol class="board-list" id="board-top" role="tabpanel" aria-labelledby="tab-top"></ol>
+      <ol class="board-list" id="board-mine" role="tabpanel" aria-labelledby="tab-mine" hidden></ol>
+    </div>
+  </div>
+</dialog>
+
 <script src="src/config.js"></script>
 <script src="src/tiles.js"></script>
 <script src="src/pieces.js"></script>
@@ -115,7 +209,9 @@
 <script src="data/definitions.js"></script>
 <script src="src/backend-config.js"></script>
 <script src="src/sessions.js"></script>
+<script src="src/scores.js"></script>
 <script src="src/ui.js"></script>
+<script src="src/screens.js"></script>
 <!-- /build:artifact-body -->
 </body>
 </html>

@@ -16,7 +16,7 @@ The layout follows the player's own sketch (v0.6), which had Down alone on the l
 - **The landing shadow shows the letters.** Each outline holds the letter that will land there, drawn lighter than a real tile, so you can see the word you'll make before the piece drops (v0.7).
 - There's no Hold and no preview of upcoming pieces. Both were removed in v0.3 because they weren't used, and removing them gave the board more room.
 
-## Look (branch `visual-overhaul`)
+## Look
 
 The game is drawn as a glossy, chunky cartoon toy, in the style of casual phone games. Only the look changed: rules, controls, layout and timings are the same.
 
@@ -51,6 +51,39 @@ Letters and values are always dark ink on a light face, so they stay readable on
 **Type.** Lilita One for tiles, numbers, buttons and headings; Fredoka for reading text. Text outlines are built from shadows so they work in every browser.
 
 **Speed.** Each tile is painted once per letter and look into a small off-screen canvas, and the empty well once per size; each frame only stamps them.
+
+## How to play (onboarding)
+
+Four illustrated cards in a dialog, swiped sideways or stepped through with Back and Next:
+
+| Card | Teaches |
+|---|---|
+| Spell words across | Words of the shortest length or more clear and score; the tiles above drop |
+| Steer each piece | Rotate, Left, Right, hold Down; the dashed outline shows the landing |
+| Longer words, bigger points | Tile values, the length multipliers, chains, levels |
+| Good to know | Blanks, Qu, full rows clear without scoring, don't reach the top |
+
+- **When it shows:** by itself on a first visit, before the first game. On the last card, "Play!" closes it and starts the game. After that it's one tap away: "How to play" on the start and pause screens, and in the Rules panel.
+- **Seen once:** `localStorage alphaboom.seenHowTo`. Clear it to see the first-visit flow again.
+- **Numbers come from `src/config.js`:** the shortest word, the multipliers, words per level and the example scores (CAT +50, QUIZ +420), so the cards stay right when the rules change.
+- The pictures are painted by the game's own tile painter.
+- The pause screen is now short ("24 words so far."), and the start screen gives a one-line pitch, since the cards hold the details.
+
+## Scoreboard
+
+Opened from "Scoreboard" on the start, pause and game-over screens, and in the Rules panel. Two tabs:
+
+- **Top players** (website only): each player's best posted game, under their latest nickname, top 20. Your own row is highlighted, and shown below the top 20 if you're further down.
+- **My best:** your 10 best games on this device (`localStorage alphaboom.games`), with date, level, words and best word. Kept for every finished game, posted or not.
+
+**Posting a score.**
+- After a game, the game-over screen offers "Post score". It opens the scoreboard with a nickname box. The nickname is remembered on the device (`alphaboom.nickname`), so later posts are one tap.
+- Posting is optional, one game at a time. A player who never posts never appears.
+- Nicknames are 2–16 letters, numbers, spaces or `_ . ' -`. Both the page and the database check this.
+
+**Where it's kept.** The Supabase table `scores`, one row per posted game. See "Hosting and saving".
+
+**Where there's no shared board.** On the Claude page and in a local file, games aren't in Supabase, so the scoreboard shows only "My best games".
 
 ## Core loop
 
@@ -176,9 +209,27 @@ For **every piece**:
 - **Row-level security is on with no policies,** so the public key can't read, list, insert or delete rows directly. Supabase's security advisor notes both on purpose: "RLS enabled, no policy" and "anon can execute a security-definer function".
 - **The page's settings** are in `src/backend-config.js`: the project URL and the publishable key, which is meant to be public. Empty the URL there to turn website saving off.
 
-**Players are anonymous.**
-- Each browser gets a random player id (`localStorage alphaboom.player`), so one person's games group together. There's no name, account or email.
-- The Rules panel tells players: "Games are saved anonymously to help improve Alphaboom…".
+**Scoreboard (`supabase/scoreboard.sql`, applied as migration `scoreboard`).**
+- **Table `scores`, one row per posted game:** `game_id` (the game in `games`), `player_id`, `nickname`, `score`, `words`, `level`, `best_word`, `best_points`, `posted_at`.
+- **Function `post_score(p_game, p_player, p_nickname)`:**
+  - It posts a finished game that the same player saved, or renames an already posted one.
+  - The score is copied from the saved game, not taken from the request.
+  - It checks that the saved score equals the record's word points plus its soft-drop points. All four finished games in the database passed this check when it was added.
+  - It returns your best posted score's rank and how many players are on the board.
+- **Function `top_scores(p_player, p_limit)`:** each player's best posted game under their latest nickname, top `p_limit` (up to 50), plus the caller's own row. It returns `mine` instead of player ids, so ids never leave the database.
+- **Locked down like `games`:** row-level security on with no policies, no table grants for `anon`, and only `anon` may call the functions.
+- **It's a friendly board, not a cheat-proof one.** Someone could forge a whole game record through `save_game` and post it.
+- **To remove an entry:** `delete from scores where game_id = 'g-…';`
+
+**Players are anonymous unless they post.**
+- Each browser gets a random player id (`localStorage alphaboom.player`), so one person's games group together. There's no account or email.
+- The only name stored is a nickname a player types to post a score.
+- The Rules panel tells players: "Games are saved anonymously to help improve Alphaboom… If you post a score, the nickname you type is shown with it on the scoreboard."
+- **Reading the board:**
+
+  ```sql
+  select nickname, score, words, best_word, posted_at from scores order by score desc limit 20;
+  ```
 
 **Reading games.** Use the Supabase dashboard, or SQL with the project's own access (not the public key), for example:
 

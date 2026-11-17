@@ -598,14 +598,14 @@
     root: $('overlay'), eyebrow: $('overlay-eyebrow'), title: $('overlay-title'),
     text: $('overlay-text'), primary: $('overlay-primary'), secondary: $('overlay-secondary'),
     log: $('overlay-log'), logText: $('log-text'),
+    help: $('overlay-help'), board: $('overlay-board'),
   };
   let overlayState = null;
 
+  // The start screen's one-line pitch; How to play has the details.
   function rulesLine() {
-    const where = game.settings.vertical
-      ? 'left to right in any row, or top to bottom in any column'
-      : 'left to right in any row';
-    return `Spell words ${where}. Any word of ${game.settings.minLen} or more letters disappears, and every tile drops to fill the gaps below. A full row also clears, but only words score.`;
+    const where = game.settings.vertical ? 'across a row or down a column' : 'across any row';
+    return `Spell words of ${game.settings.minLen}+ letters ${where} to clear them before the stack reaches the top.`;
   }
 
   function updateOverlay(force) {
@@ -617,15 +617,19 @@
     o.log.hidden = game.state !== 'over';
     o.log.textContent = 'Copy game log';
     o.logText.hidden = true;
+    // How to play is there before and during a game; after one, the log takes its place.
+    o.help.hidden = game.state === 'over';
+    o.board.querySelector('span').textContent = (ST.screens && ST.screens.boardLabel()) || 'Scoreboard';
     if (game.state === 'ready') {
       o.eyebrow.textContent = 'Prototype';
       o.title.textContent = 'Alphaboom';
       o.text.textContent = rulesLine();
       o.primary.textContent = 'Start';
     } else if (game.state === 'paused') {
+      // The rules are in How to play, so the pause screen stays short.
       o.eyebrow.textContent = 'Paused';
       o.title.textContent = fmt(game.score);
-      o.text.textContent = `${game.words} words so far. ${rulesLine()}`;
+      o.text.textContent = `${game.words} ${game.words === 1 ? 'word' : 'words'} so far.`;
       o.primary.textContent = 'Resume';
     } else if (game.state === 'over') {
       const best = Math.max(store.get('best', 0), game.score);
@@ -676,7 +680,8 @@
   const HISTORY_NOTE = {
     web:
       "Games are saved anonymously to help improve Alphaboom: each piece's letters, where it went, " +
-      'how long it took, and the words it made. No name or account is stored.',
+      'how long it took, and the words it made. No name or account is stored. ' +
+      'If you post a score, the nickname you type is shown with it on the scoreboard.',
   };
   const saver = ST.createSessionSaver((state, info) => {
     saveState = state === 'ready' ? saveState : state;
@@ -708,9 +713,12 @@
     }
   });
 
+  const overHooks = []; // run once when a game ends (src/screens.js keeps your best games)
+
   function drainEvents(now) {
     for (const e of game.events) {
       saver.onEvent(game, e);
+      if (e.type === 'over') overHooks.forEach((fn) => fn(game));
       if (e.type === 'lock') {
         // The piece that just landed squashes for a moment.
         landed = { ids: new Set(lastPieceIds), born: now };
@@ -854,5 +862,23 @@
   if (hot && hot.ready) hot.ready(boot);
   else boot(hot && hot.data ? hot.data : {});
 
-  ST.ui = { fit, restart };
+  // A tile painted on its own small canvas, for the how-to-play cards.
+  function tileCanvas(ch, look = 'base', size = 40) {
+    const canvas = document.createElement('canvas');
+    const r = Math.min(window.devicePixelRatio || 1, 3);
+    canvas.width = canvas.height = Math.round(size * r);
+    canvas.style.width = canvas.style.height = size + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(r, r);
+    paintTile(ctx, size, { ch, value: cfg.LETTER_VALUES[ch] || 0 }, look);
+    return canvas;
+  }
+
+  // What src/screens.js (how to play, scoreboard) uses.
+  ST.ui = {
+    fit, restart, game, store, tileCanvas,
+    start: primaryAction,
+    refreshOverlay: () => updateOverlay(true),
+    onGameOver: (fn) => overHooks.push(fn),
+  };
 })();
