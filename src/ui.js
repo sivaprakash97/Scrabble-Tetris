@@ -350,6 +350,16 @@
   }
 
   const effects = []; // floating score text and banners
+  const BANNER_SLOT = 1.95; // banner rows, in cells: a title plus its second line
+  const ROW_BANNERS = 2; // how many times a device sees the "ROW CLEARED · 0 POINTS" banner
+
+  // Banners that show at the same time stack top to bottom, oldest first, in the first free row.
+  function addBanner(now, b) {
+    const used = new Set(effects.filter((e) => e.kind === 'banner' && now - e.born < e.life).map((e) => e.slot));
+    let slot = 0;
+    while (used.has(slot)) slot++;
+    effects.push({ kind: 'banner', born: now, ...b, slot: Math.min(slot, 3) });
+  }
   const particles = []; // stars and confetti
   const BANNER = {
     chain: ['#ffb3ba', '#ff4b5f'],
@@ -520,7 +530,8 @@
         const font = `${size}px ${TILE_FONT}`;
         ctx.font = font;
         const fitW = Math.min(1, (W * 0.9) / (ctx.measureText(e.text).width + size * 0.3));
-        ctx.translate(W / 2, H * 0.38 - (reduceMotion ? 0 : t * cell));
+        const slotY = H * 0.2 + e.slot * cell * BANNER_SLOT;
+        ctx.translate(W / 2, slotY - (reduceMotion ? 0 : t * cell * 0.5));
         ctx.rotate(-0.05);
         ctx.scale(pop * fitW, pop * fitW);
         chunkyText(ctx, e.text, 0, 0, size, font, e.colors[0], e.colors[1]);
@@ -621,7 +632,8 @@
     if (!force && overlayState === game.state) return;
     overlayState = game.state;
     const o = overlay;
-    o.root.hidden = game.state === 'playing' || game.state === 'clearing';
+    const held = !!(ST.screens && ST.screens.holding());
+    o.root.hidden = held || game.state === 'playing' || game.state === 'clearing';
     o.secondary.hidden = game.state !== 'paused';
     o.log.hidden = game.state !== 'over';
     o.log.textContent = 'Copy game log';
@@ -766,21 +778,27 @@
           // Stars fly out of every tile of the word.
           for (const c of w.cells) burst(now, (c.x + 0.5) * cell, (c.y + 0.5) * cell, 3, 5.5, 'star');
         }
-        if (e.chain > 1) effects.push({ kind: 'banner', text: `CHAIN ×${e.chain}`, colors: BANNER.chain, born: now, life: 1200 });
+        if (e.chain > 1) addBanner(now, { text: `CHAIN ×${e.chain}`, colors: BANNER.chain, life: 1200 });
         renderRecent(e.found.length);
         bump('score');
         bump('words');
       } else if (e.type === 'rows') {
-        // Full rows score nothing. If a word cleared in the same wave, it still scored.
-        const withWords = !!(game.clearing && game.clearing.found.length);
-        effects.push({
-          kind: 'banner', text: e.count > 1 ? `${e.count} ROWS CLEARED` : 'ROW CLEARED',
-          sub: withWords ? 'ONLY WORDS SCORE' : '0 POINTS', colors: BANNER.rows, born: now, life: 1300,
-        });
+        // Full rows score nothing. The banner says so the first ROW_BANNERS times on this
+        // device, then the grey fade and the whoosh are enough. If a word cleared in the same
+        // wave, it still scored.
+        const shownRows = store.get('rowBanners', 0);
+        if (shownRows < ROW_BANNERS) {
+          store.set('rowBanners', shownRows + 1);
+          const withWords = !!(game.clearing && game.clearing.found.length);
+          addBanner(now, {
+            text: e.count > 1 ? `${e.count} ROWS CLEARED` : 'ROW CLEARED',
+            sub: withWords ? 'ONLY WORDS SCORE' : '0 POINTS', colors: BANNER.rows, life: 1300,
+          });
+        }
         sfx.play('row');
       } else if (e.type === 'level') {
         sfx.play('levelUp');
-        effects.push({ kind: 'banner', text: `LEVEL ${e.level}`, colors: BANNER.level, born: now, life: 1400 });
+        addBanner(now, { text: `LEVEL ${e.level}`, colors: BANNER.level, life: 1400 });
         // Confetti from the top of the well.
         for (let i = 0; i < 6; i++) burst(now, ((i + 0.5) / 6) * cell * cfg.COLS, cell * 0.5, 6, 6.5, 'bit');
         bump('level');
@@ -807,7 +825,11 @@
   let lastDir = null;
 
   function press(action) {
-    if (action === 'pause') { game.togglePause(); return; }
+    if (action === 'pause') {
+      if (ST.screens && ST.screens.holding()) ST.screens.cancelHold(); // stay paused, show the pause screen
+      else game.togglePause();
+      return;
+    }
     switch (action) {
       case 'left':
       case 'right':

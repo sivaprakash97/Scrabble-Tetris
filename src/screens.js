@@ -496,63 +496,161 @@
     focusCard(sheet);
   }
 
-  // ---- tips during play ------------------------------------------------------
-  // Each tip shows once per device, the first time its moment comes up. They sit over the
-  // score strip, not the board, and taps go straight through them.
+  // ---- tips for first-time players ---------------------------------------------
+  // The first time each moment comes up (a word, a chain, a full row, a new level, the stack
+  // nearing the top), the game pauses once things settle and shows a tip with a picture made
+  // from what just happened. Closing it counts down 3-2-1, then play picks up again. Each tip
+  // shows once per device; several from one moment show one after another.
 
-  const TIPS = {
-    word: () => 'Nice! Words score points, and longer words score a lot more.',
-    row: () => 'Full rows clear too, but only words score points.',
-    chain: (e) => `Chain ×${e.chain}! The falling tiles spelled another word, worth ×${e.chain} points.`,
-    level: (e) => `Level ${e.level}! Pieces fall faster, and every word scores ×${e.level}.`,
-    danger: () => "Careful! The stack is near the top. Spell a word to bring it down.",
-  };
-  const TIP_MS = 3800;
-  const tipEl = $('tip');
-  const tipText = tipEl.querySelector('.tip-text');
+  const tipSheet = $('tip-sheet');
+  const tipTitle = $('tip-title');
+  const tipBody = $('tip-body');
+  const tipArt = $('tip-art');
+  const countdownEl = $('countdown');
+  const COUNT_MS = 700;
   const seenTips = new Set(store.get('tips', []));
-  const tipQueue = [];
-  let tipTimer = null;
+  const pendingTips = [];
+  let holding = false; // a tip or its countdown is holding the game paused
+  let countdownTimer = null;
 
-  function tip(id, e) {
-    if (seenTips.has(id)) return;
-    seenTips.add(id);
-    store.set('tips', [...seenTips]);
-    tipQueue.push(TIPS[id](e));
-    if (!tipTimer) nextTip();
+  const lettersAt = (cells) => cells.map(({ x, y }) => (game.board.grid[y][x] || {}).ch).filter(Boolean);
+  const artSize = (count) => Math.max(18, Math.min(40, Math.floor((tipArt.clientWidth - 24) / Math.max(count, 3)) - 2));
+
+  // Tip contents. The pictures are captured when the moment happens (the board changes after).
+  const TIPS = {
+    word(e) {
+      const w = e.found[0];
+      const letters = lettersAt(w.cells);
+      return {
+        title: 'Nice word!',
+        text: 'Words score points, and longer words score a lot more.',
+        art: () => [el('div', 'art-points', '+' + fmt(w.points)), tileRow(letters, 'flash', artSize(letters.length))],
+      };
+    },
+    chain(e) {
+      const w = e.found[0];
+      const letters = lettersAt(w.cells);
+      return {
+        title: `Chain ×${e.chain}!`,
+        text: `When a word clears, the tiles above it fall. If they spell another word, that's a chain, and it scores ×${e.chain}.`,
+        art: () => [el('div', 'art-points', `×${e.chain}`), tileRow(letters, 'flash', artSize(letters.length))],
+      };
+    },
+    row() {
+      const c = game.clearing && game.clearing.junkCells[0];
+      const letters = c ? game.board.grid[c.y].map((t) => t && t.ch).filter(Boolean) : ['R', 'S', 'T', 'L', 'N'];
+      return {
+        title: 'Full row',
+        text: 'A full row clears too, but it scores nothing. Only words score points.',
+        art: () => [tileRow(letters, 'dim', artSize(letters.length))],
+      };
+    },
+    level(e) {
+      return {
+        title: `Level ${e.level}!`,
+        text: `Pieces fall faster now, and every word scores ×${e.level}.`,
+        art: () => [el('div', 'level-badge', String(e.level))],
+      };
+    },
+    danger() {
+      return {
+        title: 'Careful!',
+        text: 'The stack is near the top. Spell words to bring it back down.',
+        art: () => [el('div', 'danger-badge', '!')],
+      };
+    },
+  };
+
+  function queueTip(id, e) {
+    if (seenTips.has(id) || pendingTips.some((t) => t.id === id)) return;
+    pendingTips.push({ id, ...TIPS[id](e) });
+  }
+
+  // Shows queued tips once play is calm: after the piece and its chain have settled.
+  function showTipsSoon() {
+    if (!pendingTips.length || holding) return;
+    setTimeout(() => {
+      if (pendingTips.length && !holding && game.state === 'playing' && !document.hidden) startHold();
+    }, 0);
+  }
+
+  function startHold() {
+    holding = true;
+    if (game.state === 'playing' || game.state === 'clearing') game.togglePause();
+    ui.refreshOverlay(); // keeps the pause screen out of the way
+    nextTip();
   }
 
   function nextTip() {
-    const text = tipQueue.shift();
-    if (!text) {
-      tipEl.hidden = true;
-      tipTimer = null;
-      return;
-    }
-    tipText.textContent = text;
-    tipEl.classList.remove('out');
-    tipEl.hidden = false;
-    tipTimer = setTimeout(() => {
-      tipEl.classList.add('out');
-      tipTimer = setTimeout(nextTip, reduceMotion ? 0 : 230);
-    }, TIP_MS);
+    const t = pendingTips.shift();
+    if (!t) { countdown(); return; }
+    seenTips.add(t.id);
+    store.set('tips', [...seenTips]);
+    tipSheet.className = `sheet tip-sheet tip-${t.id}`;
+    tipTitle.textContent = t.title;
+    tipBody.textContent = t.text;
+    tipArt.replaceChildren();
+    openSheet(tipSheet);
+    tipArt.replaceChildren(...t.art());
+    focusCard(tipSheet);
+    if (sound) sound.play('tip');
   }
 
-  function clearTips() {
-    tipQueue.length = 0;
-    clearTimeout(tipTimer);
-    tipTimer = null;
-    tipEl.hidden = true;
+  // Closing a tip (Got it, Escape, or a tap outside) shows the next, or counts down.
+  $('tip-ok').addEventListener('click', () => closeSheet(tipSheet));
+  tipSheet.addEventListener('close', () => { if (holding) nextTip(); });
+
+  function countdown() {
+    let n = 3;
+    const num = countdownEl.querySelector('span');
+    countdownEl.hidden = false;
+    const step = () => {
+      if (!holding) return;
+      if (n === 0) {
+        endHold();
+        if (game.state === 'paused') game.togglePause();
+        if (sound) sound.play('go');
+        return;
+      }
+      num.textContent = String(n);
+      num.classList.remove('pop');
+      void num.offsetWidth; // restart the pop for each number
+      num.classList.add('pop');
+      if (sound) sound.play('count');
+      n--;
+      countdownTimer = setTimeout(step, COUNT_MS);
+    };
+    step();
   }
+
+  function endHold() {
+    holding = false;
+    clearTimeout(countdownTimer);
+    countdownTimer = null;
+    countdownEl.hidden = true;
+    ui.refreshOverlay();
+  }
+
+  // Pause during the countdown, or leaving the app: stop and show the ordinary pause screen.
+  function cancelHold() {
+    if (!holding) return;
+    pendingTips.length = 0;
+    const wasOpen = tipSheet.open;
+    holding = false;
+    if (wasOpen) closeSheet(tipSheet);
+    endHold();
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden && countdownTimer) cancelHold(); });
 
   ui.onEvent((e) => {
     if (e.type === 'words') {
-      tip('word', e);
-      if (e.chain > 1) tip('chain', e);
-    } else if (e.type === 'rows') tip('row', e);
-    else if (e.type === 'level') tip('level', e);
-    else if (e.type === 'danger') tip('danger', e);
-    else if (e.type === 'over') clearTips();
+      queueTip('word', e);
+      if (e.chain > 1) queueTip('chain', e);
+    } else if (e.type === 'rows') queueTip('row', e);
+    else if (e.type === 'level') queueTip('level', e);
+    else if (e.type === 'danger') { queueTip('danger', e); showTipsSoon(); }
+    else if (e.type === 'settled') showTipsSoon();
+    else if (e.type === 'over') { pendingTips.length = 0; cancelHold(); }
   });
 
   // ---- sound ----------------------------------------------------------------
@@ -587,6 +685,8 @@
   ST.screens = {
     openHowTo,
     openScoreboard,
+    holding: () => holding,
+    cancelHold,
     // The label of the scoreboard button on the game-over screen.
     boardLabel: () => (canPost() ? 'Post score' : 'Scoreboard'),
   };

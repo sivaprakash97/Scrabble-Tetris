@@ -96,23 +96,30 @@ Opened from "Scoreboard" on the start, pause and game-over screens, and in the R
 Playtest 8 showed the risk: 62% of the tiles cleared went in full rows, which score nothing. Players need to learn that words are the goal, and that falling tiles can spell more words. The cards say both, but most people skip cards, so the game also says it at the moment it happens.
 
 **Full rows.**
-- The banner reads "ROW CLEARED" with "0 POINTS" under it. If a word cleared in the same wave, it reads "ONLY WORDS SCORE" instead, since the word did score.
-- The full row's tiles still fade to grey, and the row has its own dull whoosh sound, plainly less fun than a word's.
+- The banner reads "ROW CLEARED" with "0 POINTS" under it, or "ONLY WORDS SCORE" if a word cleared in the same wave, since the word did score.
+- It shows only the first two times on a device (`localStorage alphaboom.rowBanners`), then stops. A banner every time got tiresome.
+- The full row's tiles always fade to grey, and the row always has its dull whoosh, plainly less fun than a word's.
 - The game-over summary adds "19 full rows: 0 points" in red when any full rows cleared. This counts `junkRows` from the game log.
 
-**One-time tips** (`src/screens.js`). A speech bubble over the score strip, not the board, for 3.8 seconds. Taps go straight through it. Each tip shows once per device (`localStorage alphaboom.tips`), the first time its moment comes:
+**Banners stack.** When several happen at once (row cleared, chain, level), each takes the first free row, top to bottom, oldest first, instead of drawing over each other.
 
-| Moment | Tip |
-|---|---|
-| First word | Nice! Words score points, and longer words score a lot more. |
-| First chain | Chain ×2! The falling tiles spelled another word, worth ×2 points. |
-| First full row | Full rows clear too, but only words score points. |
-| First level up | Level 2! Pieces fall faster, and every word scores ×2. |
-| Stack reaches the top fifth | Careful! The stack is near the top. Spell a word to bring it down. |
+**Tips for first-time players** (`src/screens.js`). A bubble over the score strip was easy to miss mid-game, so a tip now pauses the game:
+1. The moment happens, and the game waits until it has settled (the whole chain has played out).
+2. The game pauses and a pop-up shows the tip with a picture from what just happened: the player's own word, the chain word, the full row's letters, a level badge, or a warning sign.
+3. "Got it", Escape or a tap outside closes it. If the same moment set off more than one tip, the next shows straight away.
+4. A 3-2-1 countdown over the board, with a beep each, then play picks up again.
 
-- If two moments come at once, the tips queue.
-- Clear `alphaboom.tips` to see them again.
-- The chain falls aren't slowed down the first time. They're drawn on top of the game's own timing, so slowing them would make tiles jump.
+Pausing during the countdown, or leaving the app, stops it and shows the ordinary pause screen.
+
+Each tip shows once per device (`localStorage alphaboom.tips`); clear it to see them again.
+
+| Moment | Title | Tip |
+|---|---|---|
+| First word | Nice word! | Words score points, and longer words score a lot more. |
+| First full row | Full row | A full row clears too, but it scores nothing. Only words score points. |
+| First chain | Chain ×2! | When a word clears, the tiles above it fall. If they spell another word, that's a chain, and it scores ×2. |
+| First level up | Level 2! | Pieces fall faster now, and every word scores ×2. |
+| Stack reaches the top fifth | Careful! | The stack is near the top. Spell words to bring it back down. |
 
 **Game-over summary.** One fact per line: words, level and longest chain; best word; full rows. A beaten record turns "Game over" into "New best!". Your best games are listed in the scoreboard's My best tab.
 
@@ -131,6 +138,7 @@ Made in the browser with the Web Audio API (`src/sound.js`): no audio files to l
 | Buttons / posting a score | A soft tap / a little three-note cheer |
 
 - **Sound on/off:** the speaker button under Pause, and "Sound" in the Rules panel. It's on by default and remembered per device (`alphaboom.sound`).
+- **Tips and the countdown:** a two-note chime when a tip pops up, a beep for each of 3-2-1, and a rising "go".
 - **Browsers only allow sound after a tap,** so it starts on the first tap anywhere, usually Start.
   - Safari on iPhones only counts the end of a tap (touchend or click), not its start. The sound wakes on all of them and plays a one-sample silent sound inside the tap to start iOS audio.
   - After a phone call or app switch, the next tap restarts it.

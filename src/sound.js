@@ -133,6 +133,17 @@
       [4, 2, 0].forEach((s, i) => tone(note(s) / 2, note(s) / 2 * 0.97, 0.32, { type: 'triangle', vol: 0.18, at: i * 0.22 }));
       tone(130, 90, 0.7, { vol: 0.16, at: 0.66 });
     },
+    // A tip popping up: a bright two-note chime.
+    tip() {
+      tone(note(7), note(7), 0.14, { type: 'triangle', vol: 0.14 });
+      tone(note(9), note(9), 0.26, { type: 'triangle', vol: 0.14, at: 0.1 });
+    },
+    // The 3-2-1 countdown, then a rising "go" as play picks up again.
+    count() { tone(note(2), note(2), 0.16, { type: 'triangle', vol: 0.18 }); },
+    go() {
+      tone(note(7), note(12), 0.22, { type: 'triangle', vol: 0.18 });
+      tone(note(12), note(12), 0.3, { vol: 0.08, at: 0.08 });
+    },
     // Taps on screen buttons (Start, Next, Post…).
     tap() { tone(700, 900, 0.05, { type: 'triangle', vol: 0.08 }); },
     // A posted score, or another small win outside the board.

@@ -37,11 +37,10 @@
     </div>
   </header>
 
-  <!-- One-time tips during play (src/screens.js). Taps go through it. -->
-  <div class="tip" id="tip" role="status" aria-live="polite" hidden><b class="tip-badge">Tip</b><span class="tip-text"></span></div>
-
   <section class="well" id="well">
     <canvas id="board" aria-label="Game board"></canvas>
+    <!-- 3-2-1 before play picks up again after a tip. -->
+    <div class="countdown" id="countdown" aria-live="assertive" hidden><span></span></div>
     <div class="overlay" id="overlay">
       <div class="card">
         <p class="eyebrow" id="overlay-eyebrow">Prototype</p>
@@ -181,6 +180,16 @@
       <button type="button" class="btn-ghost btn-small" id="howto-back">Back</button>
       <button type="button" class="btn-primary" id="howto-next">Next</button>
     </div>
+  </div>
+</dialog>
+
+<!-- A one-time tip: the game pauses, shows it, then counts down 3-2-1 when it's closed. -->
+<dialog class="sheet tip-sheet" id="tip-sheet" aria-labelledby="tip-title" aria-describedby="tip-body">
+  <div class="sheet-card" tabindex="-1">
+    <h2 class="sheet-title" id="tip-title">Tip</h2>
+    <div class="howto-art tip-art" id="tip-art"></div>
+    <p class="tip-body" id="tip-body"></p>
+    <button type="button" class="btn-primary" id="tip-ok">Got it</button>
   </div>
 </dialog>
 
