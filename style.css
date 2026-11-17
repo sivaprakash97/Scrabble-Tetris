@@ -235,6 +235,7 @@ textarea:focus-visible {
 }
 
 .icon-btn.on,
+.sound-btn:active,
 .touch button.on,
 .btn-primary:active,
 .btn-ghost:active,
@@ -288,7 +289,6 @@ textarea:focus-visible {
 }
 
 .ico .fl.solid,
-.ico .fl .tip,
 .ico .fl .fill {
   fill: #fff;
 }
@@ -297,7 +297,6 @@ textarea:focus-visible {
   stroke-width: 1.5;
 }
 
-.ico .ol .tip,
 .ico .ol .fill {
   fill: var(--ink);
 }
@@ -915,6 +914,153 @@ textarea:focus-visible {
   stroke-linejoin: round;
   paint-order: stroke;
   overflow: visible;
+}
+
+/* ---- sound button (under Pause) and the Sound switch in Rules ------------ */
+
+.top-btns {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sound-btn {
+  --hi: var(--blue-hi);
+  --body: var(--blue);
+  --lo: var(--blue-lo);
+  --drop: 3px;
+  height: 32px;
+  border-radius: 13px;
+}
+
+.sound-btn .ico {
+  width: 21px;
+  height: 21px;
+}
+
+.sound-btn .ico .ol {
+  stroke-width: 6.5;
+}
+
+.sound-btn .ico .fl {
+  stroke-width: 3;
+}
+
+.sound-btn[aria-pressed="false"] {
+  --hi: #f1eefb;
+  --body: #c3bddb;
+  --lo: #8f89ad;
+}
+
+.sound-btn[aria-pressed="false"] .waves,
+.sound-btn[aria-pressed="true"] .mute {
+  display: none;
+}
+
+.toggle {
+  min-width: 70px;
+  padding: 6px 14px 7px;
+  font-family: var(--font-display);
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--yellow-hi), var(--yellow) 55%, var(--orange));
+  border: var(--line) solid var(--ink);
+  border-radius: 14px;
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.65), 0 4px 0 var(--ink);
+  margin-bottom: 4px;
+}
+
+.toggle[aria-pressed="false"] {
+  color: var(--ink-soft);
+  background: linear-gradient(180deg, #f6f3ff, #d9d3ef 60%, #bdb6d8);
+}
+
+.toggle:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.65), 0 1px 0 var(--ink);
+}
+
+/* ---- tips during play: a speech bubble over the score strip --------------- */
+
+.tip {
+  position: fixed;
+  z-index: 5;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 50%;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(420px, calc(100% - 24px));
+  padding: 7px 14px 9px 10px;
+  font-size: var(--step-0);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--cream-hi), var(--cream) 60%, var(--cream-lo));
+  border: var(--line) solid var(--ink);
+  border-radius: 18px;
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 4px 0 var(--ink),
+    0 12px 20px rgb(10 4 40 / 0.35);
+  pointer-events: none;
+  transform: translateX(-50%);
+  animation: tip-in 440ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+/* The bubble's tail points down at the board. */
+.tip::after {
+  content: "";
+  position: absolute;
+  bottom: -9px;
+  left: calc(50% - 8px);
+  width: 14px;
+  height: 14px;
+  background: var(--cream-lo);
+  border-right: var(--line) solid var(--ink);
+  border-bottom: var(--line) solid var(--ink);
+  border-bottom-right-radius: 4px;
+  transform: rotate(45deg);
+}
+
+.tip.out {
+  animation: tip-out 220ms ease-in both;
+}
+
+.tip-badge {
+  display: inline-block;
+  margin-right: 7px;
+  padding: 0 8px 1px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 0.08em;
+  color: #fff;
+  text-shadow: var(--outline-sm);
+  background: linear-gradient(180deg, var(--red-hi), var(--red) 55%, var(--red-lo));
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+}
+
+@keyframes tip-in {
+  from { opacity: 0; transform: translate(-50%, -18px) scale(0.7); }
+  to { opacity: 1; transform: translateX(-50%); }
+}
+
+@keyframes tip-out {
+  to { opacity: 0; transform: translate(-50%, -10px) scale(0.9); }
+}
+
+/* Game-over summary: one fact per line; the full-rows line stands out. */
+.card p .line {
+  display: block;
+}
+
+.card p .line.warn {
+  color: var(--red-lo);
+  font-weight: 700;
 }
 
 /* ---- small buttons: How to play, Scoreboard, Copy game log ------------- */
@@ -1647,7 +1793,9 @@ dialog.sheet[open] .sheet-card {
   .value.bump,
   dialog.sheet[open] .sheet-card,
   .tile-row .pop,
-  .art-points {
+  .art-points,
+  .tip,
+  .tip.out {
     animation: none;
   }
 

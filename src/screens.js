@@ -305,6 +305,7 @@
       const result = await board.post(gameId, nick);
       store.set('nickname', nick);
       posted = { gameId, nickname: nick, rank: result && result.rank, players: result && result.players };
+      if (sound) sound.play('cheer');
       form.hidden = true;
       setStatus('');
       showPosted();
@@ -338,6 +339,94 @@
     // Focus the card itself: no phone keyboard popping up, and no focus ring on a button.
     focusCard(sheet);
   }
+
+  // ---- tips during play ------------------------------------------------------
+  // Each tip shows once per device, the first time its moment comes up. They sit over the
+  // score strip, not the board, and taps go straight through them.
+
+  const TIPS = {
+    word: () => 'Nice! Words score points, and longer words score a lot more.',
+    row: () => 'Full rows clear too, but only words score points.',
+    chain: (e) => `Chain ×${e.chain}! The falling tiles spelled another word, worth ×${e.chain} points.`,
+    level: (e) => `Level ${e.level}! Pieces fall faster, and every word scores ×${e.level}.`,
+    danger: () => "Careful! The stack is near the top. Spell a word to bring it down.",
+  };
+  const TIP_MS = 3800;
+  const tipEl = $('tip');
+  const tipText = tipEl.querySelector('.tip-text');
+  const seenTips = new Set(store.get('tips', []));
+  const tipQueue = [];
+  let tipTimer = null;
+
+  function tip(id, e) {
+    if (seenTips.has(id)) return;
+    seenTips.add(id);
+    store.set('tips', [...seenTips]);
+    tipQueue.push(TIPS[id](e));
+    if (!tipTimer) nextTip();
+  }
+
+  function nextTip() {
+    const text = tipQueue.shift();
+    if (!text) {
+      tipEl.hidden = true;
+      tipTimer = null;
+      return;
+    }
+    tipText.textContent = text;
+    tipEl.classList.remove('out');
+    tipEl.hidden = false;
+    tipTimer = setTimeout(() => {
+      tipEl.classList.add('out');
+      tipTimer = setTimeout(nextTip, reduceMotion ? 0 : 230);
+    }, TIP_MS);
+  }
+
+  function clearTips() {
+    tipQueue.length = 0;
+    clearTimeout(tipTimer);
+    tipTimer = null;
+    tipEl.hidden = true;
+  }
+
+  ui.onEvent((e) => {
+    if (e.type === 'words') {
+      tip('word', e);
+      if (e.chain > 1) tip('chain', e);
+    } else if (e.type === 'rows') tip('row', e);
+    else if (e.type === 'level') tip('level', e);
+    else if (e.type === 'danger') tip('danger', e);
+    else if (e.type === 'over') clearTips();
+  });
+
+  // ---- sound ----------------------------------------------------------------
+
+  const sound = ST.sound;
+  const soundBtn = $('sound-btn');
+  const soundToggle = $('sound-toggle');
+  if (!sound || !sound.supported) {
+    soundBtn.hidden = true;
+    $('sound-setting').hidden = true;
+  } else {
+    const sync = (on) => {
+      soundBtn.setAttribute('aria-pressed', String(on));
+      soundBtn.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
+      soundToggle.setAttribute('aria-pressed', String(on));
+      soundToggle.textContent = on ? 'On' : 'Off';
+    };
+    sync(sound.on);
+    sound.onChange(sync);
+    soundBtn.addEventListener('click', () => sound.set(!sound.on));
+    soundToggle.addEventListener('click', () => sound.set(!sound.on));
+  }
+
+  // A soft tap for on-screen buttons (the control pad and the sound switches have their own).
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (b && !b.dataset.action && b !== soundBtn && b !== soundToggle && !b.disabled) {
+      if (sound) sound.play('tap');
+    }
+  });
 
   ST.screens = {
     openHowTo,

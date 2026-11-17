@@ -19,7 +19,7 @@
 <body>
 <!-- build:artifact-body -->
 <!-- Icons: Lucide (ISC licence) pause and chevron-left/down/right; the rotate arrow, question mark,
-     trophy and close cross are our own.
+     trophy, speaker and close cross are our own.
      Each is drawn twice: a fat ink stroke (.ol) under a white one (.fl), for a cartoon outline. -->
 <main class="app" id="app">
   <header class="top" id="top">
@@ -29,10 +29,16 @@
       <div class="stat"><span class="label">Words</span><span class="value" id="words">0</span></div>
       <div class="stat stat-best"><span class="label">Best word</span><span class="value" id="best">–</span></div>
     </div>
-    <button type="button" class="icon-btn" data-action="pause" aria-label="Pause">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></g><g class="fl solid"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></g></svg>
-    </button>
+    <div class="top-btns">
+      <button type="button" class="icon-btn" data-action="pause" aria-label="Pause">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></g><g class="fl solid"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></g></svg>
+      </button>
+      <button type="button" class="icon-btn sound-btn" id="sound-btn" aria-pressed="true" aria-label="Sound"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path class="fill" d="M4 9.5h3.2l4.3-4v13l-4.3-4H4Z"/><path class="waves" d="M15 9.2a4 4 0 0 1 0 5.6"/><path class="waves" d="M17.8 6.6a7.6 7.6 0 0 1 0 10.8"/><path class="mute" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></g><g class="fl"><path class="fill" d="M4 9.5h3.2l4.3-4v13l-4.3-4H4Z"/><path class="waves" d="M15 9.2a4 4 0 0 1 0 5.6"/><path class="waves" d="M17.8 6.6a7.6 7.6 0 0 1 0 10.8"/><path class="mute" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></g></svg></button>
+    </div>
   </header>
+
+  <!-- One-time tips during play (src/screens.js). Taps go through it. -->
+  <div class="tip" id="tip" role="status" aria-live="polite" hidden><b class="tip-badge">Tip</b><span class="tip-text"></span></div>
 
   <section class="well" id="well">
     <canvas id="board" aria-label="Game board"></canvas>
@@ -60,7 +66,7 @@
        dropping are grouped on the right, with Down as one wide button under Left and Right. -->
   <nav class="touch" id="touch" aria-label="Controls">
     <button type="button" data-action="rotate" class="primary pad-solo" aria-label="Rotate">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M18.9 15.4a7.5 7.5 0 1 1-2.6-9.05"/><path class="tip" d="M18.8 8.1 17.3 3.9 14.3 8.1Z"/></g><g class="fl"><path d="M18.9 15.4a7.5 7.5 0 1 1-2.6-9.05"/><path class="tip" d="M18.8 8.1 17.3 3.9 14.3 8.1Z"/></g></svg>
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M18.9 15.4a7.5 7.5 0 1 1-2.6-9.05"/><path class="fill" d="M18.8 8.1 17.3 3.9 14.3 8.1Z"/></g><g class="fl"><path d="M18.9 15.4a7.5 7.5 0 1 1-2.6-9.05"/><path class="fill" d="M18.8 8.1 17.3 3.9 14.3 8.1Z"/></g></svg>
       <span>Rotate</span>
     </button>
     <div class="pad-group">
@@ -97,6 +103,10 @@
         <option value="4">4 letters</option>
       </select>
     </label>
+    <div class="setting" id="sound-setting">
+      <span>Sound</span>
+      <button type="button" class="toggle" id="sound-toggle" aria-pressed="true">On</button>
+    </div>
     <p class="hint">
       Everyday English words count; rare words that only word-game players know don't.
       A full row also clears, but only words score.
@@ -128,7 +138,7 @@
       <section class="howto-card" aria-label="Card 2 of 4">
         <div class="howto-art art-steer" data-art="steer">
           <div class="mini-keys" aria-hidden="true">
-            <span class="mini-key red"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M18.9 15.4a7.5 7.5 0 1 1-2.6-9.05"/><path class="tip" d="M18.8 8.1 17.3 3.9 14.3 8.1Z"/></g><g class="fl"><path d="M18.9 15.4a7.5 7.5 0 1 1-2.6-9.05"/><path class="tip" d="M18.8 8.1 17.3 3.9 14.3 8.1Z"/></g></svg></span>
+            <span class="mini-key red"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M18.9 15.4a7.5 7.5 0 1 1-2.6-9.05"/><path class="fill" d="M18.8 8.1 17.3 3.9 14.3 8.1Z"/></g><g class="fl"><path d="M18.9 15.4a7.5 7.5 0 1 1-2.6-9.05"/><path class="fill" d="M18.8 8.1 17.3 3.9 14.3 8.1Z"/></g></svg></span>
             <span class="mini-key"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="m15 18-6-6 6-6"/></g><g class="fl"><path d="m15 18-6-6 6-6"/></g></svg></span>
             <span class="mini-key"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="m9 18 6-6-6-6"/></g><g class="fl"><path d="m9 18 6-6-6-6"/></g></svg></span>
             <span class="mini-key"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="m6 9 6 6 6-6"/></g><g class="fl"><path d="m6 9 6 6 6-6"/></g></svg></span>
@@ -200,6 +210,7 @@
 </dialog>
 
 <script src="src/config.js"></script>
+<script src="src/sound.js"></script>
 <script src="src/tiles.js"></script>
 <script src="src/pieces.js"></script>
 <script src="src/words.js"></script>

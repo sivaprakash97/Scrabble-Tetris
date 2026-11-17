@@ -85,6 +85,51 @@ Opened from "Scoreboard" on the start, pause and game-over screens, and in the R
 
 **Where there's no shared board.** On the Claude page and in a local file, games aren't in Supabase, so the scoreboard shows only "My best games".
 
+## Learning while playing: full rows and chains
+
+Playtest 8 showed the risk: 62% of the tiles cleared went in full rows, which score nothing. Players need to learn that words are the goal, and that falling tiles can spell more words. The cards say both, but most people skip cards, so the game also says it at the moment it happens.
+
+**Full rows.**
+- The banner reads "ROW CLEARED" with "0 POINTS" under it. If a word cleared in the same wave, it reads "ONLY WORDS SCORE" instead, since the word did score.
+- The full row's tiles still fade to grey, and the row has its own dull whoosh sound, plainly less fun than a word's.
+- The game-over summary adds "19 full rows: 0 points" in red when any full rows cleared. This counts `junkRows` from the game log.
+
+**One-time tips** (`src/screens.js`). A speech bubble over the score strip, not the board, for 3.8 seconds. Taps go straight through it. Each tip shows once per device (`localStorage alphaboom.tips`), the first time its moment comes:
+
+| Moment | Tip |
+|---|---|
+| First word | Nice! Words score points, and longer words score a lot more. |
+| First chain | Chain ×2! The falling tiles spelled another word, worth ×2 points. |
+| First full row | Full rows clear too, but only words score points. |
+| First level up | Level 2! Pieces fall faster, and every word scores ×2. |
+| Stack reaches the top fifth | Careful! The stack is near the top. Spell a word to bring it down. |
+
+- If two moments come at once, the tips queue.
+- Clear `alphaboom.tips` to see them again.
+- The chain falls aren't slowed down the first time. They're drawn on top of the game's own timing, so slowing them would make tiles jump.
+
+**Game-over summary.** One fact per line: words, level and longest chain; best word; full rows. A beaten record turns "Game over" into "New best!". Your best games are listed in the scoreboard's My best tab.
+
+## Sound
+
+Made in the browser with the Web Audio API (`src/sound.js`): no audio files to load or license, and bubbly to match the look.
+
+| Moment | Sound |
+|---|---|
+| Move / rotate | Soft tick / quick rising blip |
+| Piece locks | Soft thump |
+| Word | A bubbly bloop, two semitones higher per extra letter. Several words in one wave play one after another. |
+| Chain | A rising three-note run, a step higher each wave, so a long chain climbs a scale |
+| Full row | A dull falling whoosh |
+| Level up / game over | A short rising jingle / a falling three-note phrase |
+| Buttons / posting a score | A soft tap / a little three-note cheer |
+
+- **Sound on/off:** the speaker button under Pause, and "Sound" in the Rules panel. It's on by default and remembered per device (`alphaboom.sound`).
+- **Browsers only allow sound after a tap,** so it starts on the first tap anywhere, usually Start.
+- **On iPhones,** the "ambient" audio session follows the silent switch and mixes with music that's already playing.
+- Moves while a direction is held are thinned out to one tick every 40 ms.
+- A compressor keeps big chains from clipping.
+
 ## Core loop
 
 - **The board is 10 × 10 (v0.8).** It was 10 wide by 20 tall until playtest 3, when the stack rarely got past the fourth row.

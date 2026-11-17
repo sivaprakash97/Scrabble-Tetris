@@ -26,6 +26,7 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 | Left / Right (top row on the right) | Move. Hold to keep moving. |
 | Down (wide button under Left and Right) | Hold to drop faster. The piece locks a moment after it lands. |
 | Pause (top right) | Pause or resume |
+| Speaker (under Pause) | Sound on or off |
 
 ## Hosting
 
@@ -60,7 +61,8 @@ Hand-written definitions for words WordNet lacks are in `scripts/supplement-defs
 | `src/board.js` | The grid and gravity |
 | `src/game.js` | Rules and state |
 | `src/ui.js` | Canvas rendering and touch input |
-| `src/screens.js` | How to play cards and the scoreboard dialog |
+| `src/screens.js` | How to play cards, the scoreboard dialog and the one-time tips |
+| `src/sound.js` | Sound effects, made in the browser |
 | `src/scores.js` | Talks to the scoreboard functions in Supabase |
 | `supabase/scoreboard.sql` | The scoreboard's table and functions |
 

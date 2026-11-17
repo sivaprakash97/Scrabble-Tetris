@@ -13,6 +13,7 @@
   const TILE_FONT = '"Lilita One", "Arial Rounded MT Bold", "Arial Black", Impact, sans-serif';
   const NUM_FONT = '"Fredoka", "Arial Rounded MT Bold", "Helvetica Neue", Arial, sans-serif';
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sfx = ST.sound || { play() {} }; // src/sound.js
   const fmt = (n) => n.toLocaleString('en-US');
 
   // Per-viewer conveniences only; the game works without storage.
@@ -410,6 +411,7 @@
   let landed = null; // the tiles of the piece that just locked, for a quick squash
   let lastPieceIds = [];
   let lastRender = 0;
+  let wasDanger = false;
 
   function renderBoard(now) {
     const ctx = bctx;
@@ -423,7 +425,10 @@
     // Warn when the stack reaches the top fifth of the board (2 rows on a 10-row board).
     const grid = game.board.grid;
     const warnRows = Math.max(2, Math.round(cfg.ROWS / 5));
-    if (grid.slice(0, warnRows).some((row) => row.some(Boolean))) {
+    const danger = grid.slice(0, warnRows).some((row) => row.some(Boolean));
+    if (danger && !wasDanger && game.state === 'playing') emit({ type: 'danger' });
+    wasDanger = danger;
+    if (danger) {
       const pulse = reduceMotion ? 0.42 : 0.36 + 0.14 * Math.sin(now / 260);
       const g = ctx.createLinearGradient(0, 0, 0, cell * (warnRows + 1));
       g.addColorStop(0, `rgba(255,75,95,${pulse})`);
@@ -519,6 +524,10 @@
         ctx.rotate(-0.05);
         ctx.scale(pop * fitW, pop * fitW);
         chunkyText(ctx, e.text, 0, 0, size, font, e.colors[0], e.colors[1]);
+        if (e.sub) {
+          const sub = Math.round(size * 0.48);
+          chunkyText(ctx, e.sub, 0, size * 0.92, sub, `${sub}px ${TILE_FONT}`, '#ffffff', '#d9d4ee');
+        }
       } else {
         const size = Math.round(cell * 0.8);
         ctx.translate(e.x, e.y - (reduceMotion ? 0 : t * cell * 1.6));
@@ -632,13 +641,25 @@
       o.text.textContent = `${game.words} ${game.words === 1 ? 'word' : 'words'} so far.`;
       o.primary.textContent = 'Resume';
     } else if (game.state === 'over') {
-      const best = Math.max(store.get('best', 0), game.score);
+      const before = store.get('best', 0);
+      const best = Math.max(before, game.score);
       store.set('best', best);
-      o.eyebrow.textContent = 'Game over';
+      const newBest = before > 0 && game.score > before;
+      o.eyebrow.textContent = newBest ? 'New best!' : 'Game over';
       o.title.textContent = fmt(game.score);
-      const bw = game.bestWord ? ` Best word ${game.bestWord.display} for ${fmt(game.bestWord.points)}.` : '';
-      const ch = game.maxChain > 1 ? ` Longest chain ×${game.maxChain}.` : '';
-      o.text.textContent = `${game.words} words, level ${game.level}.${bw}${ch} Your best score: ${fmt(best)}.`;
+      // Full rows that cleared this game: they score nothing, so say so.
+      const rows = game.log.pieces.reduce((n, p) => n + (p.junkRows || 0), 0);
+      // (Your best games are in the scoreboard's My best tab; a new one is announced above.)
+      const lines = [
+        [`${game.words} ${game.words === 1 ? 'word' : 'words'}`, `level ${game.level}`,
+          game.maxChain > 1 ? `chain ×${game.maxChain}` : null].filter(Boolean).join(' · '),
+        game.bestWord ? `Best word ${game.bestWord.display} for ${fmt(game.bestWord.points)}` : null,
+        rows ? [`${rows} full ${rows === 1 ? 'row' : 'rows'}: 0 points`, 'warn'] : null,
+      ].filter(Boolean);
+      o.text.replaceChildren(...lines.map((l) => {
+        const [text, cls] = Array.isArray(l) ? l : [l, ''];
+        return el('span', 'line' + (cls ? ' ' + cls : ''), text);
+      }));
       o.primary.textContent = 'Play again';
     }
     showSaveStatus();
@@ -713,16 +734,28 @@
     }
   });
 
-  const overHooks = []; // run once when a game ends (src/screens.js keeps your best games)
+  // Other parts of the page (src/screens.js: tips, your best games) listen to game events.
+  const eventHooks = [];
+  function emit(e) {
+    for (const fn of eventHooks) {
+      try { fn(e, game); } catch (err) { console.error(err); }
+    }
+  }
 
   function drainEvents(now) {
     for (const e of game.events) {
       saver.onEvent(game, e);
-      if (e.type === 'over') overHooks.forEach((fn) => fn(game));
-      if (e.type === 'lock') {
+      emit(e);
+      if (e.type === 'over') {
+        sfx.play('gameOver');
+      } else if (e.type === 'lock') {
         // The piece that just landed squashes for a moment.
         landed = { ids: new Set(lastPieceIds), born: now };
+        sfx.play('land');
       } else if (e.type === 'words') {
+        // One bloop per word, higher for longer words, then a rising run for a chain.
+        e.found.forEach((w, i) => sfx.play('word', { letters: w.cells.length, at: i * 0.09 }));
+        if (e.chain > 1) sfx.play('chain', { wave: e.chain });
         for (const w of e.found) {
           const xs = w.cells.map((c) => c.x);
           const ys = w.cells.map((c) => c.y);
@@ -738,8 +771,15 @@
         bump('score');
         bump('words');
       } else if (e.type === 'rows') {
-        effects.push({ kind: 'banner', text: e.count > 1 ? `${e.count} ROWS CLEARED` : 'ROW CLEARED', colors: BANNER.rows, born: now, life: 1000 });
+        // Full rows score nothing. If a word cleared in the same wave, it still scored.
+        const withWords = !!(game.clearing && game.clearing.found.length);
+        effects.push({
+          kind: 'banner', text: e.count > 1 ? `${e.count} ROWS CLEARED` : 'ROW CLEARED',
+          sub: withWords ? 'ONLY WORDS SCORE' : '0 POINTS', colors: BANNER.rows, born: now, life: 1300,
+        });
+        sfx.play('row');
       } else if (e.type === 'level') {
+        sfx.play('levelUp');
         effects.push({ kind: 'banner', text: `LEVEL ${e.level}`, colors: BANNER.level, born: now, life: 1400 });
         // Confetti from the top of the well.
         for (let i = 0; i < 6; i++) burst(now, ((i + 0.5) / 6) * cell * cfg.COLS, cell * 0.5, 6, 6.5, 'bit');
@@ -771,12 +811,12 @@
     switch (action) {
       case 'left':
       case 'right':
-        game.move(action === 'left' ? -1 : 1);
+        if (game.move(action === 'left' ? -1 : 1)) sfx.play('move');
         held.set(action, { t: 0, charged: false });
         lastDir = action;
         break;
       case 'down': game.softDropping = true; break;
-      case 'rotate': game.rotate(1); break;
+      case 'rotate': if (game.rotate(1)) sfx.play('rotate'); break;
     }
   }
 
@@ -796,9 +836,9 @@
       if (h.t < cfg.DAS) return;
       h.charged = true;
       h.t -= cfg.DAS;
-      game.move(dx);
+      if (game.move(dx)) sfx.play('move');
     }
-    while (h.t >= cfg.ARR) { h.t -= cfg.ARR; game.move(dx); }
+    while (h.t >= cfg.ARR) { h.t -= cfg.ARR; if (game.move(dx)) sfx.play('move'); }
   }
 
   window.addEventListener('blur', () => [...held.keys(), 'down'].forEach(release));
@@ -879,6 +919,7 @@
     fit, restart, game, store, tileCanvas,
     start: primaryAction,
     refreshOverlay: () => updateOverlay(true),
-    onGameOver: (fn) => overHooks.push(fn),
+    onEvent: (fn) => eventHooks.push(fn),
+    onGameOver: (fn) => eventHooks.push((e, g) => { if (e.type === 'over') fn(g); }),
   };
 })();
