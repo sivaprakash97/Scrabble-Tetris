@@ -1335,22 +1335,17 @@ dialog.sheet[open] .sheet-card {
   padding-left: 22px;
 }
 
-/* Bullets are tiny glossy tiles. */
+/* Plain dots: coloured bullets read as a colour code. */
 .howto-card li::before {
   content: "";
   position: absolute;
-  top: 0.32em;
-  left: 0;
-  width: 11px;
-  height: 11px;
-  border: 2px solid var(--ink);
-  border-radius: 4px;
-  background: linear-gradient(180deg, var(--yellow-hi), var(--yellow) 55%, var(--orange));
+  top: 0.55em;
+  left: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink);
 }
-
-.howto-card li:nth-child(2)::before { background: linear-gradient(180deg, var(--blue-hi), var(--blue) 55%, var(--blue-lo)); }
-.howto-card li:nth-child(3)::before { background: linear-gradient(180deg, var(--green-hi), var(--green) 55%, var(--green-lo)); }
-.howto-card li:nth-child(4)::before { background: linear-gradient(180deg, var(--pink-hi), var(--pink) 55%, var(--pink-lo)); }
 
 /* The picture on each card: a little piece of the well. */
 .howto-art {
@@ -1374,7 +1369,7 @@ dialog.sheet[open] .sheet-card {
 
 .art-steer {
   flex-direction: row;
-  gap: 18px;
+  gap: 14px;
 }
 
 .tile-row {
@@ -1428,6 +1423,9 @@ dialog.sheet[open] .sheet-card {
   display: grid;
   place-items: center;
   height: 36px;
+  padding: 0;
+  margin-bottom: 3px;
+  transition: transform 70ms ease-out, box-shadow 70ms ease-out;
   background: linear-gradient(180deg, var(--hi) 0%, var(--body) 46%, var(--lo) 100%);
   border: var(--line) solid var(--ink);
   border-radius: 12px;
@@ -1445,50 +1443,101 @@ dialog.sheet[open] .sheet-card {
   height: 18px;
 }
 
-.art-drop {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.mini-key.on,
+.mini-key:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.45), 0 1px 0 var(--ink);
+  filter: brightness(0.93);
 }
 
-.drop-line {
-  width: 0;
-  height: 16px;
-  border-left: 3px dashed rgb(255 255 255 / 0.5);
+/* The steering demo: a tiny well with one piece in it. */
+.demo-well {
+  position: relative;
+  flex: none;
 }
 
-.mult-chips {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
+.demo-well > * {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
-.chip {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 44px;
-  padding: 1px 6px 3px;
-  line-height: 1.1;
-  background: #fff;
-  border: 2.5px solid var(--ink);
-  border-radius: 12px;
-  box-shadow: inset 0 -3px 0 rgb(27 17 57 / 0.08), 0 3px 0 var(--ink);
+.demo-cell {
+  box-sizing: border-box;
+  width: calc(var(--c, 26px) - 4px);
+  height: calc(var(--c, 26px) - 4px);
+  margin: 2px;
+  border-radius: 28%;
+  background: rgb(122 92 255 / 0.14);
+  box-shadow: inset 0 2px 0 rgb(0 0 0 / 0.3);
 }
 
-.chip small {
-  font-size: 0.66rem;
+.demo-tile,
+.demo-ghost {
+  display: block;
+  transform-origin: 50% 100%;
+  transition: transform 230ms cubic-bezier(0.3, 1.5, 0.5, 1), opacity 240ms ease;
+}
+
+.demo-ghost {
+  transition: transform 160ms ease-out, opacity 240ms ease;
+}
+
+/* Dropping speeds up as it falls, then the tiles squash as they land. */
+.demo-well.fast .demo-tile {
+  transition: transform 300ms cubic-bezier(0.55, 0, 1, 0.45), opacity 240ms ease;
+}
+
+.demo-well.landed .demo-tile {
+  animation: demo-land 280ms ease-out;
+}
+
+@keyframes demo-land {
+  35% { scale: 1.1 0.84; }
+  100% { scale: 1 1; }
+}
+
+.demo-well.instant > * {
+  transition: none;
+}
+
+.demo-well.fading .demo-tile,
+.demo-well.fading .demo-ghost {
+  opacity: 0;
+}
+
+.art-hint {
+  margin: -2px 0 0;
+  font-size: var(--step--1) !important;
   font-weight: 700;
   color: var(--ink-soft);
-  white-space: nowrap;
 }
 
-.chip b {
+/* The points card: a short word and a long one, with what each is worth. */
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.art-coin {
   font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 1.05rem;
-  color: #6a35e8;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+  padding: 1px 10px 2px;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--yellow-hi), var(--yellow) 55%, var(--orange));
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.6), 0 3px 0 var(--ink);
+  animation: coin-bump 2.8s cubic-bezier(0.3, 1.6, 0.5, 1) infinite;
+  animation-delay: calc(var(--i, 0) * 0.45s);
+}
+
+@keyframes coin-bump {
+  0%, 60%, 100% { transform: none; }
+  70% { transform: scale(1.18) rotate(-4deg); }
+  80% { transform: none; }
 }
 
 .howto-dots {
@@ -1794,6 +1843,8 @@ dialog.sheet[open] .sheet-card {
   dialog.sheet[open] .sheet-card,
   .tile-row .pop,
   .art-points,
+  .art-coin,
+  .demo-well.landed .demo-tile,
   .tip,
   .tip.out {
     animation: none;

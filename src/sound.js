@@ -2,8 +2,9 @@
 // Bubbly and toy-like, to match the look. Holds no game rules; src/ui.js says what to play.
 //
 // Browsers only allow sound after the player taps something, so the audio starts on the first
-// tap (Start, or any button). On iPhones the "ambient" audio session follows the silent switch
-// and mixes with music that's already playing. The Sound setting is kept per device.
+// tap (Start, or any button). On iPhones the "ambient" audio session follows the ring/silent
+// switch, as Apple recommends for game sound effects, and mixes with music that's already
+// playing. The Sound setting is kept per device.
 (function (W) {
   const ST = (W.ST = W.ST || {});
   const KEY = 'alphaboom.sound';
@@ -39,10 +40,22 @@
     return ctx;
   }
 
-  // The first tap anywhere starts the audio (a browser rule).
-  const unlock = () => { if (on) start(); };
-  W.addEventListener('pointerdown', unlock, { capture: true, passive: true });
-  W.addEventListener('keydown', unlock, { capture: true });
+  // The first tap anywhere starts the audio (a browser rule). Safari on iPhones only counts the
+  // end of a tap (touchend, click), not its start, so listen for all of them, and play a
+  // one-sample silent sound inside the tap, which is what finally wakes iOS audio. After a
+  // phone call or app switch iOS can stop the audio again; the next tap restarts it.
+  function unlock() {
+    if (!on || !start() || ctx.state === 'running') return;
+    try {
+      const src = ctx.createBufferSource();
+      src.buffer = ctx.createBuffer(1, 1, 22050);
+      src.connect(ctx.destination);
+      src.start(0);
+    } catch {}
+  }
+  for (const type of ['pointerdown', 'pointerup', 'touchend', 'mouseup', 'click', 'keydown']) {
+    W.addEventListener(type, unlock, { capture: true, passive: true });
+  }
 
   // One note: a wave that slides from f0 to f1 over `dur` seconds, with a quick attack.
   function tone(f0, f1, dur, { type = 'sine', vol = 0.3, at = 0, attack = 0.006 } = {}) {
@@ -141,6 +154,8 @@
   ST.sound = {
     supported: !!AC,
     play,
+    // 'none' before the first tap, then the browser's audio state ('running' when audible).
+    get state() { return ctx ? ctx.state : 'none'; },
     get on() { return on; },
     set(value) {
       on = !!value;

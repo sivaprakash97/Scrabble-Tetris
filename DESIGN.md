@@ -60,13 +60,19 @@ Four illustrated cards in a dialog, swiped sideways or stepped through with Back
 |---|---|
 | Spell words across | Words of the shortest length or more clear and score; the tiles above drop |
 | Steer each piece | Rotate, Left, Right, hold Down; the dashed outline shows the landing |
-| Longer words, bigger points | Tile values, the length multipliers, chains, levels |
+| Longer words, bigger points | Longer words score more; every 10 words, the level goes up |
 | Good to know | Blanks, Qu, full rows clear without scoring, don't reach the top |
 
 - **When it shows:** by itself on a first visit, before the first game. On the last card, "Play!" closes it and starts the game. After that it's one tap away: "How to play" on the start and pause screens, and in the Rules panel.
 - **Seen once:** `localStorage alphaboom.seenHowTo`. Clear it to see the first-visit flow again.
-- **Numbers come from `src/config.js`:** the shortest word, the multipliers, words per level and the example scores (CAT +50, QUIZ +420), so the cards stay right when the rules change.
+- **Numbers come from `src/config.js`:** the shortest word, words per level and the example scores (CAT +50, TRAINS +300), so the cards stay right when the rules change.
 - The pictures are painted by the game's own tile painter.
+- **The steering card is a live demo.** A little 5 × 5 well has a T piece (S over CAT) that plays a loop: rotate, left, right, right, rotate, drop with a squash, start again. Its keys press as it goes.
+  - The player can tap the mini keys to try them, with the game's own sounds. A tap pauses the loop for 5 seconds.
+  - It uses the game's shapes, rotation and kicks, so letters turn the way they do in play.
+  - The loop runs only while that card is showing, and not under reduced motion.
+- **No multiplier table** (v2 of the cards): testers found it too much. The points card shows CAT +50 next to TRAINS +300 instead.
+- **Bullets are plain dots.** Coloured ones read as a colour code.
 - The pause screen is now short ("24 words so far."), and the start screen gives a one-line pitch, since the cards hold the details.
 
 ## Scoreboard
@@ -126,7 +132,11 @@ Made in the browser with the Web Audio API (`src/sound.js`): no audio files to l
 
 - **Sound on/off:** the speaker button under Pause, and "Sound" in the Rules panel. It's on by default and remembered per device (`alphaboom.sound`).
 - **Browsers only allow sound after a tap,** so it starts on the first tap anywhere, usually Start.
-- **On iPhones,** the "ambient" audio session follows the silent switch and mixes with music that's already playing.
+  - Safari on iPhones only counts the end of a tap (touchend or click), not its start. The sound wakes on all of them and plays a one-sample silent sound inside the tap to start iOS audio.
+  - After a phone call or app switch, the next tap restarts it.
+- **On iPhones,** the "ambient" audio session follows the ring/silent switch, as Apple recommends for game sound effects, and mixes with music that's already playing.
+  - **With the phone on silent, there's no sound.**
+  - To play even on silent, set `navigator.audioSession.type` to `'playback'` in `src/sound.js`. That also pauses the player's music.
 - Moves while a direction is held are thinned out to one tick every 40 ms.
 - A compressor keeps big chains from clipping.
 

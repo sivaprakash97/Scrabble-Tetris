@@ -88,34 +88,186 @@
     const size = Math.min(44, Math.floor((track.clientWidth - 70) / 6)) || 40;
     for (const art of howto.querySelectorAll('[data-art]')) {
       const kind = art.dataset.art;
-      art.querySelectorAll('.tile-row, .art-points, .art-drop').forEach((n) => n.remove());
+      art.querySelectorAll('.tile-row, .art-points, .score-row').forEach((n) => n.remove());
       if (kind === 'spell') {
         const word = ['C', 'A', 'T'];
         art.append(el('div', 'art-points', '+' + points(word)), tileRow(['K', ...word, 'Z'], 'base', size, 1, 3));
       } else if (kind === 'steer') {
-        const drop = el('div', 'art-drop');
-        drop.append(ui.tileCanvas('W', 'base', size), el('span', 'drop-line'), ui.tileCanvas('W', 'ghost', size));
-        art.append(drop);
+        demoBuild(art);
       } else if (kind === 'score') {
-        const word = ['QU', 'I', 'Z'];
-        art.append(el('div', 'art-points', '+' + points(word)), tileRow(word, 'base', size, 0, 2));
+        // A short word and a long one, side by side, with what each is worth.
+        const small = Math.min(size, Math.floor((art.clientWidth - 110) / 6)) || 30;
+        [['C', 'A', 'T'], ['T', 'R', 'A', 'I', 'N', 'S']].forEach((word, i) => {
+          const row = el('div', 'score-row');
+          const coin = el('span', 'art-coin', '+' + points(word));
+          coin.style.setProperty('--i', i);
+          row.append(tileRow(word, 'base', small), coin);
+          art.append(row);
+        });
       } else if (kind === 'tips') {
         art.append(tileRow(['*', 'QU'], 'base', size), tileRow(['R', 'S', 'T', 'L', 'N', 'E'], 'dim', Math.round(size * 0.7)));
       }
     }
-    const chips = $('mult-chips');
-    chips.replaceChildren();
-    const lengths = Object.keys(cfg.LENGTH_MULT).map(Number).sort((a, b) => a - b);
-    for (const n of lengths) chips.append(chip(String(n), cfg.LENGTH_MULT[n]));
-    chips.append(chip(`${lengths[lengths.length - 1] + 1}+`, cfg.LENGTH_MULT_MAX));
     howto.querySelectorAll('[data-minlen]').forEach((n) => { n.textContent = game.settings.minLen; });
     howto.querySelectorAll('[data-perlevel]').forEach((n) => { n.textContent = cfg.WORDS_PER_LEVEL; });
   }
 
-  function chip(letters, mult) {
-    const c = el('span', 'chip');
-    c.append(el('small', null, letters + ' letters'), el('b', null, '×' + mult));
-    return c;
+  // ---- the steering demo: a tiny well whose piece obeys the mini keys --------
+  // It plays a short loop by itself (rotate, left, right, drop) while its card is showing,
+  // and the player can tap the keys to try them; a tap pauses the loop for a few seconds.
+  // It uses the game's own piece shapes and rotation, so letters turn the way they do in play.
+
+  const demo = { cols: 5, rows: 5, cell: 26, piece: null, x: 0, y: 0, tiles: new Map(), ghosts: new Map(), timer: null, busy: false, manualUntil: 0, step: 0 };
+  const demoWell = $('demo-well');
+  const demoKeys = [...howto.querySelectorAll('[data-demo]')];
+  const DEMO_LOOP = [['rotate', 900], ['left', 650], ['right', 650], ['right', 650], ['rotate', 750], ['down', 1300], ['reset', 500]];
+
+  function demoCells(piece = demo.piece, x = demo.x, y = demo.y) {
+    const cells = [];
+    piece.grid.forEach((row, r) => row.forEach((t, c) => t && cells.push({ x: x + c, y: y + r, tile: t })));
+    return cells;
+  }
+  const demoFits = (cells) => cells.every((c) => c.x >= 0 && c.x < demo.cols && c.y >= 0 && c.y < demo.rows);
+  function demoDrop() {
+    let d = 0;
+    while (demoFits(demoCells(demo.piece, demo.x, demo.y + d + 1))) d++;
+    return d;
+  }
+
+  function demoPlace() {
+    const s = demo.cell;
+    const d = demoDrop();
+    for (const c of demoCells()) {
+      demo.tiles.get(c.tile.id).style.transform = `translate(${c.x * s}px, ${c.y * s}px)`;
+      demo.ghosts.get(c.tile.id).style.transform = `translate(${c.x * s}px, ${(c.y + d) * s}px)`;
+    }
+  }
+
+  function demoSpawn() {
+    demo.piece = ST.makePiece('T', ['S', 'C', 'A', 'T'], cfg);
+    demo.x = 1;
+    demo.y = -ST.pieceTopRow(demo.piece);
+    demo.busy = false;
+    demoWell.classList.remove('fast', 'landed');
+    demoWell.replaceChildren();
+    for (let r = 0; r < demo.rows; r++) {
+      for (let c = 0; c < demo.cols; c++) {
+        const cellEl = el('span', 'demo-cell');
+        cellEl.style.transform = `translate(${c * demo.cell}px, ${r * demo.cell}px)`;
+        demoWell.append(cellEl);
+      }
+    }
+    demo.tiles.clear();
+    demo.ghosts.clear();
+    for (const c of demoCells()) {
+      const ghost = ui.tileCanvas(c.tile.ch, 'ghost', demo.cell);
+      ghost.className = 'demo-ghost';
+      const tile = ui.tileCanvas(c.tile.ch, 'base', demo.cell);
+      tile.className = 'demo-tile';
+      demo.ghosts.set(c.tile.id, ghost);
+      demo.tiles.set(c.tile.id, tile);
+      demoWell.append(ghost);
+    }
+    demo.tiles.forEach((t) => demoWell.append(t));
+    demoWell.classList.add('instant');
+    demoPlace();
+    void demoWell.offsetWidth; // apply the start positions before turning transitions back on
+    demoWell.classList.remove('instant');
+  }
+
+  function demoBuild(art) {
+    const keysW = 94;
+    demo.cell = Math.max(18, Math.min(32, Math.floor((art.clientWidth - keysW - 42) / demo.cols)));
+    demoWell.style.setProperty('--c', demo.cell + 'px');
+    demoWell.style.width = demo.cols * demo.cell + 'px';
+    demoWell.style.height = demo.rows * demo.cell + 'px';
+    demoSpawn();
+  }
+
+  function pressKey(name, ms = 170) {
+    const key = demoKeys.find((k) => k.dataset.demo === name);
+    if (!key) return;
+    key.classList.add('on');
+    setTimeout(() => key.classList.remove('on'), ms);
+  }
+
+  function demoAct(name) {
+    if (!demo.piece) return;
+    if (name === 'reset') {
+      demoWell.classList.add('fading');
+      setTimeout(() => { demoWell.classList.remove('fading'); demoSpawn(); }, 260);
+      return;
+    }
+    if (demo.busy) return; // the piece is dropping; a new one comes next
+    if (name === 'rotate') {
+      const turned = { ...demo.piece, grid: ST.rotateGrid(demo.piece.grid, 1) };
+      for (const [kx, ky] of ST.KICKS) {
+        if (demoFits(demoCells(turned, demo.x + kx, demo.y + ky))) {
+          demo.piece = turned;
+          demo.x += kx;
+          demo.y += ky;
+          if (ST.sound) ST.sound.play('rotate');
+          break;
+        }
+      }
+      pressKey('rotate');
+    } else if (name === 'left' || name === 'right') {
+      const dx = name === 'left' ? -1 : 1;
+      if (demoFits(demoCells(demo.piece, demo.x + dx, demo.y))) {
+        demo.x += dx;
+        if (ST.sound) ST.sound.play('move');
+      }
+      pressKey(name);
+    } else if (name === 'down') {
+      const d = demoDrop();
+      pressKey('down', 420);
+      demo.busy = true;
+      demoWell.classList.add('fast');
+      demo.y += d;
+      setTimeout(() => {
+        demoWell.classList.remove('fast');
+        demoWell.classList.add('landed');
+        if (ST.sound) ST.sound.play('land');
+      }, d ? 300 : 0);
+    }
+    demoPlace();
+  }
+
+  // Tapping a mini key: do it now, then let the loop take over again a little later.
+  for (const key of demoKeys) {
+    key.addEventListener('click', () => {
+      demo.manualUntil = performance.now() + 5000;
+      if (demo.busy) { demoAct('reset'); return; }
+      demoAct(key.dataset.demo);
+      if (key.dataset.demo === 'down') setTimeout(() => demoAct('reset'), 1100);
+    });
+  }
+
+  function demoTick() {
+    demo.timer = null;
+    if (!howto.open || page !== 1) return;
+    let wait = 400;
+    if (performance.now() >= demo.manualUntil) {
+      const [name, ms] = DEMO_LOOP[demo.step % DEMO_LOOP.length];
+      demo.step++;
+      demoAct(name);
+      wait = ms;
+    }
+    demo.timer = setTimeout(demoTick, wait);
+  }
+
+  // Runs only while the steering card is the one showing, and not under reduced motion.
+  function demoSync() {
+    const showing = howto.open && page === 1;
+    if (showing && !demo.timer && !reduceMotion) {
+      demo.step = 0;
+      demo.manualUntil = 0;
+      demoSpawn();
+      demo.timer = setTimeout(demoTick, 500);
+    } else if (!showing && demo.timer) {
+      clearTimeout(demo.timer);
+      demo.timer = null;
+    }
   }
 
   function syncNav() {
@@ -123,6 +275,7 @@
     cards.forEach((c, i) => c.toggleAttribute('inert', i !== page));
     backBtn.style.visibility = page > 0 ? 'visible' : 'hidden';
     nextBtn.textContent = page < cards.length - 1 ? 'Next' : game.state === 'ready' ? 'Play!' : 'Got it';
+    demoSync();
   }
 
   function goTo(i) {
@@ -144,7 +297,10 @@
     closeSheet(howto);
     if (game.state === 'ready') ui.start();
   });
-  howto.addEventListener('close', () => store.set('seenHowTo', true));
+  howto.addEventListener('close', () => {
+    store.set('seenHowTo', true);
+    demoSync();
+  });
 
   function openHowTo() {
     openSheet(howto);
@@ -423,7 +579,7 @@
   // A soft tap for on-screen buttons (the control pad and the sound switches have their own).
   document.addEventListener('click', (e) => {
     const b = e.target.closest('button');
-    if (b && !b.dataset.action && b !== soundBtn && b !== soundToggle && !b.disabled) {
+    if (b && !b.dataset.action && !b.dataset.demo && b !== soundBtn && b !== soundToggle && !b.disabled) {
       if (sound) sound.play('tap');
     }
   });
