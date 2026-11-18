@@ -264,8 +264,8 @@
   const spell = { stage: null, host: null, timers: [], running: false };
   const SPELL_COLS = 6;
   const SPELL_ROWS = 6;
-  // Stacked tiles in the well. The falling L piece (Z, R, Y, T) lands with its T beside C and A.
-  const SPELL_GRID = ['', '', '', '', 'OBU', 'KCA'];
+  // Stacked tiles in the well. The falling L piece drops straight down with its T right beside C and A.
+  const SPELL_GRID = ['', '', '', ' DK', ' BU', ' CA'];
   const SPELL_WORD = ['C', 'A', 'T'];
 
   const spellAt = (ms, fn) => spell.timers.push(setTimeout(fn, ms));
@@ -282,28 +282,16 @@
     st.setGrid(SPELL_GRID);
     const filled = SPELL_GRID.map((row) => Array.from({ length: SPELL_COLS }, (_, x) => !!row[x] && row[x] !== ' '));
     const free = (cells) => cells.every((c) => c.x >= 0 && c.x < SPELL_COLS && c.y < SPELL_ROWS && (c.y < 0 || !filled[c.y][c.x]));
-    // A real piece: the game's L, letters in reading order, so it turns like one in play.
-    const piece = ST.makePiece('L', ['Z', 'R', 'Y', 'T'], cfg);
+    // A real piece: the game's L, letters in reading order. It is not turned, so the lesson stays simple.
+    const piece = ST.makePiece('L', ['N', 'T', 'Z', 'L'], cfg);
     piece.x = 3;
     piece.y = -1;
     const cellsOf = (pc = piece, dx = 0, dy = 0) => ST.pieceCells({ ...pc, x: pc.x + dx, y: pc.y + dy });
     const drop = () => { let d = 0; while (free(cellsOf(piece, 0, d + 1))) d++; return d; };
     const show = () => st.setPiece(cellsOf(), drop());
 
-    const moves = ['fall', 'fall', 'rotate', 'left', 'fall'];
-    let i = 0;
     const step = () => {
-      let wait = 130;
-      let act = moves[i++] || 'fall';
-      if (act === 'rotate') {
-        piece.grid = ST.rotateGrid(piece.grid, 1);
-        wait = 220;
-        if (ST.sound) ST.sound.play('rotate');
-      } else if (act === 'left') {
-        piece.x -= 1;
-        wait = 200;
-        if (ST.sound) ST.sound.play('move');
-      } else if (free(cellsOf(piece, 0, 1))) {
+      if (free(cellsOf(piece, 0, 1))) {
         piece.y += 1;
       } else {
         st.lock();
@@ -317,7 +305,7 @@
         return;
       }
       show();
-      spellAt(wait, step);
+      spellAt(130, step);
     };
     show();
     spellAt(700, step);
