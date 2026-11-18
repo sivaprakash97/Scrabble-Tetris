@@ -1098,6 +1098,49 @@ textarea:focus-visible {
   font-weight: 700;
 }
 
+/* ---- sandbox (preview links and local copies) ------------------------------ */
+
+.sandbox-tag {
+  position: fixed;
+  z-index: 4;
+  left: max(8px, env(safe-area-inset-left, 0px));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  padding: 2px 10px 3px;
+  font-family: var(--font-display);
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--yellow-hi), var(--yellow) 60%, var(--orange));
+  border: 2.5px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.6), 0 3px 0 var(--ink);
+  transform: rotate(-3deg);
+  opacity: 0.93;
+  pointer-events: none;
+}
+
+.sandbox-tag span {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.sandbox-note {
+  margin: 0;
+  padding: 7px 10px;
+  font-size: var(--step--1);
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  background: #fff6c4;
+  border: 2.5px dashed var(--orange-lo);
+  border-radius: 14px;
+}
+
 /* ---- small buttons: How to play, Scoreboard, Copy game log ------------- */
 
 .btn-small {

@@ -290,6 +290,14 @@ For **every piece**:
 - **It's a friendly board, not a cheat-proof one.** Someone could forge a whole game record through `save_game` and post it.
 - **To remove an entry:** `delete from scores where game_id = 'g-…';`
 
+**Sandbox: testing without touching the live board** (`supabase/sandbox.sql`, migration `sandbox_v2`).
+- **Only the live site uses the live board.** Every preview link (each branch's `alphaboom-git-<branch>-…vercel.app`) and every local copy is a sandbox: its games are saved with `sandbox = true`, and its scoreboard shows and posts to the sandbox board.
+- **How a copy knows:** `scripts/build-web.mjs` stamps `src/deploy.js` with Vercel's `VERCEL_ENV` and the branch name. `production` is live; `preview`, and `development` (the checked-in file, for local copies), are sandboxes. A Vercel build without `VERCEL_ENV` says `unknown` and counts as live, which is how the game behaved before the sandbox.
+- **You can see it:** a sandbox shows a yellow "Sandbox · <branch>" tag in the bottom-left corner, and its scoreboard says "Sandbox board. Scores posted here stay off the live scoreboard." The live site shows neither.
+- **Database:** `games.sandbox` and `scores.sandbox`. The page calls `save_game_v2`, `post_score_v2` (a score goes on its game's board) and `top_scores_v2` (one board). The first versions are kept unchanged so pages already open keep working; they save and post live.
+- **Reading only real players' games:** add `where not sandbox`.
+- **To move a test score off the live board,** or clear the sandbox board, see the top of `supabase/sandbox.sql`.
+
 **Players are anonymous unless they post.**
 - Each browser gets a random player id (`localStorage alphaboom.player`), so one person's games group together. There's no account or email.
 - The only name stored is a nickname a player types to post a score.
