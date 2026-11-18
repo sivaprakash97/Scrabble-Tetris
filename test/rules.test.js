@@ -160,3 +160,40 @@ test('the game log records every piece and word', () => {
   assert.match(text, /Pieces \(\d+/);
   assert.match(text, /Board at the end/);
 });
+
+test('stats: a chain reaction is counted once per piece, and full rows are counted', () => {
+  // CAT, then SUN from the tiles that drop: one piece, a chain of 2.
+  const g = game({ vertical: true });
+  g.newPiece();
+  resolve(g, ['.U........', '.CAT......', 'S.N.......']);
+  g.update(cfg.CLEAR_FLASH + 1);
+  const s = g.stats();
+  assert.equal(s.words, 2);
+  assert.equal(s.chains, 1);
+  assert.equal(s.longestChain, 2);
+  assert.equal(s.fullRows, 0);
+  assert.equal(s.score, g.score);
+  assert.ok(s.bestWord && s.bestWord.points > 0);
+
+  // A later piece that only makes a lone word is not a chain.
+  g.newPiece();
+  g.chain = 0; // what locking a piece does before it looks for words
+  resolve(g, ['CAT.......']);
+  assert.equal(g.stats().chains, 1);
+  assert.equal(g.stats().words, 3);
+
+  // A full row with no word scores nothing but is counted.
+  const f = game({ vertical: false });
+  f.newPiece();
+  resolve(f, ['ZZZZZZZZZZ']);
+  const fs = f.stats();
+  assert.equal(fs.fullRows, 1);
+  assert.equal(fs.words, 0);
+  assert.equal(fs.chains, 0);
+  assert.equal(fs.bestWord, null);
+});
+
+test('stats: a fresh game is all zeros', () => {
+  const s = game().stats();
+  assert.deepEqual(s, { score: 0, words: 0, level: 1, chains: 0, longestChain: 0, fullRows: 0, bestWord: null });
+});

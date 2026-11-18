@@ -15,7 +15,7 @@ Built for phones first, planned for release as a phone app, and it plays on a la
 - Letters use Scrabble values, and longer words multiply steeply.
 - "Words found", below the board, shows each word with a short definition.
 - "How to play" shows four illustrated cards; they open by themselves on a first visit.
-- After a game, "Post score" is the big button: it puts the game on the scoreboard under a nickname. "Play again" sits under it. "My best" keeps your 10 best games on the device.
+- After a game, a results screen opens: the leaderboard first, with your own row in it and a box for your nickname (type it and tap "Post to scoreboard"), then a performance card with your words, level, chains, full rows and best word. "Play again" is at the bottom. "My best" keeps your 10 best games on the device.
 - On preview links and local copies, a small "Copy game log" link copies every piece's letters and the final board, so a tricky game can be shared and looked at. The live site doesn't show it: saved games already hold all of that.
 - On the hosted page, every game is also saved automatically for review. This covers each piece's letters, where it went, how long it took and what it spelled. See "Saved sessions" in DESIGN.md.
 - See [DESIGN.md](DESIGN.md) for the letter rules, the dictionary, the scoring and the benchmark.
@@ -27,7 +27,7 @@ Built for phones first, planned for release as a phone app, and it plays on a la
 | Down | Wide button under Left and Right. Hold to drop faster. | Down or S. Hold to drop faster. |
 | Pause or resume | Pause button, top right | P or Esc |
 | Sound on or off | Speaker, under Pause | M |
-| Start, resume, play again | The big button on the screen (after a game, Play again is under Post score) | Space or Enter |
+| Start, resume, play again | The big button on the screen | Space or Enter |
 
 Rotating turns the piece clockwise and its letters turn with it. A piece locks a moment after it lands. There's no hard drop.
 
@@ -72,6 +72,7 @@ Hand-written definitions for words WordNet lacks are in `scripts/supplement-defs
 | `src/analytics.js` | Product analytics events sent to PostHog |
 | `supabase/scoreboard.sql` | The scoreboard's table and functions |
 | `supabase/sandbox.sql` | The sandbox board: what keeps testing off the live scoreboard |
+| `supabase/standing.sql` | `score_standing_v2`: where a score would stand, for the results screen |
 | `src/deploy.js` | Live site or sandbox (the website build fills it in) |
 
 ## Credits

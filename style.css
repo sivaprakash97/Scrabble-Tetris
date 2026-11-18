@@ -591,13 +591,6 @@ textarea:focus-visible {
   margin-top: 4px;
 }
 
-/* Game over with a score to post: Post score on top, Play again under it. */
-.overlay-actions.stacked {
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
 .btn-primary,
 .btn-ghost {
   font-family: var(--font-display);
@@ -1671,7 +1664,8 @@ dialog.sheet[open] .sheet-card {
   gap: 8px;
 }
 
-.post-row input {
+.post-row input,
+.you-form input {
   flex: 1;
   min-width: 0;
   box-sizing: border-box;
@@ -1687,11 +1681,13 @@ dialog.sheet[open] .sheet-card {
   box-shadow: inset 0 3px 0 rgb(27 17 57 / 0.12);
 }
 
-.post-row input::placeholder {
+.post-row input::placeholder,
+.you-form input::placeholder {
   color: rgb(85 73 127 / 0.6);
 }
 
-.post-row input:focus-visible {
+.post-row input:focus-visible,
+.you-form input:focus-visible {
   outline: 3px solid var(--blue);
   outline-offset: 1px;
 }
@@ -1849,6 +1845,280 @@ dialog.sheet[open] .sheet-card {
   color: var(--ink-soft);
   border: 2.5px dashed rgb(27 17 57 / 0.3);
   border-radius: 15px;
+}
+
+/* ---- results: the screen after a game -------------------------------------- */
+
+.results-card {
+  gap: 0;
+}
+
+/* The ribbon and close button hang over the card's edge, so only the middle scrolls and
+   Play again stays in view underneath. */
+.results-scroll {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  margin: 0 -8px;
+  padding: 4px 8px 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.results-h {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--step-0);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.results-board {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.results-note {
+  margin: 0;
+  font-size: var(--step--1);
+  font-weight: 600;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.results-note.error {
+  color: var(--red-lo);
+}
+
+/* Compact rows, so the leaderboard and the performance card both fit on a phone:
+   rank, name, date and score on one line. */
+#results-list {
+  gap: 6px;
+}
+
+#results-list .entry {
+  gap: 8px;
+  padding: 4px 8px 5px 5px;
+  border-radius: 13px;
+}
+
+/* A circle for ranks up to 99; a pill for #120 and beyond. */
+#results-list .rank {
+  min-width: 28px;
+  width: auto;
+  height: 28px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  font-size: 0.9rem;
+  border-radius: 999px;
+}
+
+#results-list .who {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#results-list .who .name {
+  min-width: 0;
+  font-size: 1rem;
+}
+
+#results-list .who .meta {
+  flex: none;
+  font-size: var(--step--2);
+}
+
+#results-list .coin {
+  font-size: 0.85rem;
+}
+
+/* Your row, before you post: a box where the name goes, and Post under it. */
+.board-list .entry.you {
+  display: block;
+  padding: 8px;
+}
+
+.you-form {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.you-form input {
+  width: 100%;
+  height: 38px;
+}
+
+.you-post {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.you-post .btn-primary {
+  width: 100%;
+}
+
+.you-status {
+  margin: 0;
+  font-size: var(--step--1);
+  font-weight: 600;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.you-status:empty {
+  display: none;
+}
+
+.you-status.error {
+  color: var(--red-lo);
+}
+
+/* How the game went: a dark panel with big numbers, like a video game's end-of-match card. */
+.perf {
+  padding: 12px;
+  color: #fff;
+  background:
+    radial-gradient(rgb(255 255 255 / 0.06) 1.5px, transparent 2px) 0 0 / 14px 14px,
+    var(--well);
+  border: var(--line) solid var(--ink);
+  border-radius: 18px;
+  box-shadow: inset 0 3px 0 rgb(0 0 0 / 0.35), 0 4px 0 var(--ink);
+}
+
+.perf-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.perf .results-h,
+.perf-score-label {
+  font-size: var(--step--1);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #cfc2ff;
+}
+
+.perf-score {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--yellow);
+  text-shadow: var(--outline-md);
+}
+
+.perf-score-label {
+  font-family: var(--font-body);
+  text-shadow: none;
+}
+
+/* Words, Level and Chains on the first row; Full rows and the wide Best word under them. */
+.perf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.perf-stat {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 6px 9px 7px;
+  background: rgb(255 255 255 / 0.07);
+  border: 2px solid rgb(255 255 255 / 0.14);
+  border-radius: 14px;
+}
+
+.perf-stat dt {
+  overflow: hidden;
+  font-size: var(--step--2);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #cfc2ff;
+}
+
+.perf-stat dd {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perf-stat small {
+  overflow: hidden;
+  font-size: var(--step--2);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #b7a8f0;
+}
+
+.perf-wide {
+  grid-column: span 2;
+}
+
+/* Very narrow phones: two to a row, and Best word across the bottom. */
+@media (max-width: 359px) {
+  .perf-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .perf-wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.perf-wide dd {
+  color: var(--yellow);
+}
+
+dialog.sheet[open] .perf-stat {
+  animation: stat-in 420ms cubic-bezier(0.3, 1.5, 0.5, 1) both;
+  animation-delay: calc(var(--i, 0) * 80ms + 250ms);
+}
+
+@keyframes stat-in {
+  from { transform: translateY(10px) scale(0.85); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.results-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+}
+
+.results-again {
+  width: 100%;
+}
+
+.results-foot .key-tip {
+  margin: 0;
 }
 
 .link-btn {
@@ -2123,6 +2393,38 @@ kbd {
   }
 }
 
+/* Results on a wide screen: the card gets wider instead of taller. The leaderboard stays first,
+   on the left, with the performance card beside it. */
+@media (min-width: 1000px) and (hover: hover) and (pointer: fine) {
+  #results {
+    width: min(100% - 28px, 800px);
+  }
+
+  .results-scroll {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .results-board {
+    flex: 1 1 54%;
+    min-width: 0;
+  }
+
+  .results-scroll > .perf {
+    flex: 1 1 46%;
+    min-width: 0;
+  }
+
+  .perf-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .perf-wide {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body::after,
   .card h1,
@@ -2131,6 +2433,7 @@ kbd {
   .recent li.fresh .pts,
   .value.bump,
   dialog.sheet[open] .sheet-card,
+  dialog.sheet[open] .perf-stat,
   .tile-row .pop,
   .art-points,
   .art-coin,

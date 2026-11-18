@@ -20,7 +20,7 @@ The layout follows the player's own sketch (v0.6), which had Down alone on the l
 
 Pointer-and-keyboard devices (`min-width: 1000px`, `hover: hover`, `pointer: fine`; the block at the end of `style.css`) get a wide layout. A touch screen of any size, an iPad in landscape included, keeps the phone layout and its on-screen pad.
 - **Three columns.** Score, keys and rules on the left; the board in the middle, sized to the window's height (up to 96 px a cell, so a projected screen gets a big board); found words and their definitions on the right, as tall as the board.
-- **Keys.** Arrow keys or WASD: Left/Right (A/D) move, Up (W) rotates, Down (S) drops faster. P or Esc pauses and resumes, M mutes. Space or Enter presses the big button on the start, pause and game-over screens, and inside How to play, Enter goes on and Left/Right turn the cards. Space on a tip is "Got it". There is still no hard drop; Space never drops a piece.
+- **Keys.** Arrow keys or WASD: Left/Right (A/D) move, Up (W) rotates, Down (S) drops faster. P or Esc pauses and resumes, M mutes. Space or Enter presses the big button on the start, pause and game-over screens (and plays again from the results screen, unless a box or button has the focus), and inside How to play, Enter goes on and Left/Right turn the cards. Space on a tip is "Got it". There is still no hard drop; Space never drops a piece.
 - **The pad becomes a keyboard diagram.** The same buttons, laid out as ↑ over ← ↓ →, each labelled with its keys, and each lights up while its key is down. They still work by clicking.
 - **Same rules as the buttons.** Keys go through the same code as the on-screen pad (`press`/`release` in `src/ui.js`), so Left and Right repeat the game's own way (DAS/ARR), and Down doesn't carry over to the next piece. The operating system's key repeat is ignored.
 - **Keys stay out of the way** while a dialog is open, while typing in a text box or the Shortest word menu, and when Ctrl, Cmd or Alt is held. After a dialog closes, focus is released so Space starts or resumes the game instead of re-opening the dialog.
@@ -93,15 +93,47 @@ Opened from "Scoreboard" on the start, pause and game-over screens, and in the R
 - **My best:** your 10 best games on this device (`localStorage alphaboom.games`), with date, level, words and best word. Kept for every finished game, posted or not.
 
 **Posting a score.**
-- After a game, the game-over screen leads with "Post score": the big green button. "Play again" is the smaller blue button under it. Post score opens the scoreboard with a nickname box. The nickname is remembered on the device (`alphaboom.nickname`), so later posts are one tap.
-- When there's nothing to post (a score of 0, a game already posted, or no shared board), Play again becomes the big button and a small Scoreboard button comes back under it.
-- Space and Enter always mean "play": at game over they play again, so a quick rematch doesn't open the nickname box. The hint under the buttons reads "or press Space to play again".
+- After a game, the results screen opens by itself (see "Results screen" below). Your row in its leaderboard has a box for your nickname, so posting is one step. The nickname is remembered on the device (`alphaboom.nickname`), so later posts are one tap.
+- The scoreboard dialog can still post the same game (its form shows when there's something to post), so closing the results doesn't lose the chance.
 - Posting is optional, one game at a time. A player who never posts never appears.
 - Nicknames are 2–16 letters, numbers, spaces or `_ . ' -`. Both the page and the database check this.
 
 **Where it's kept.** The Supabase table `scores`, one row per posted game. See "Hosting and saving".
 
 **Where there's no shared board.** On the Claude page and in a local file, games aren't in Supabase, so the scoreboard shows only "My best games".
+
+## Results screen
+
+Playtest data showed the problem: in the first week, 11 games were finished on the live site and none were posted. A "Post score" button on the game-over card was easy to skip. So the page now shows where you stand before asking for anything.
+
+**When.** It opens by itself 0.9 seconds after a game ends (the game-over card and sound land first). Closing it leaves the game-over card, with Play again, a "Results" button to open it again, and Scoreboard. For the first 0.7 seconds a tap on the backdrop or a Space press is ignored, so a player still tapping the pad as the game ends doesn't dismiss it.
+
+**Order: leaderboard first, then performance.** Players want to see their rank before their stats. On a phone it's one column, with Play again pinned at the bottom and the middle scrolling on short screens. On a wide screen (the same query as the wide layout) the card is wider, with the leaderboard on the left and the performance card on the right.
+
+**Leaderboard.**
+- The top 3, a "⋯" gap, then the row above yours, yours, and the row below. The heading shows how many players are on the board, counting you.
+- Rows are one line: rank, name, date posted, score. The top 3 get gold, silver and bronze badges.
+- Your row, before you post, is a box for your nickname (prefilled with the one remembered on the device), your score, and a "Post to scoreboard" button. Enter in the box posts too. The box is never focused automatically, so a phone keyboard doesn't cover the stats.
+- Posting redraws the board: your row is now a real row with your name, under a green "Posted as …: #8 of 13!" pill.
+- The board holds each player's **best** game, so a game only gets a new row if it beats your best. If it doesn't, your existing row shows with a note: "This game didn't beat your best (50,300), so you stay at #1."
+- A score of 0 shows the top of the board and "Score some words to get on the scoreboard."
+- If the board can't be loaded, it says so with "Try again". The performance card still shows.
+- Where there is no shared board (the Claude page, a local file with no backend), only the performance card shows.
+
+**Where the rank comes from.** `score_standing_v2` (`supabase/standing.sql`) takes the score the page has and returns the rows above. It only places the row. Posting still takes the score from the saved game (`post_score_v2`), so a made-up score changes nothing but the preview. See "Hosting and saving".
+
+**Performance card.** A dark panel, like a video game's end-of-match card, with plain numbers, no grades:
+
+| Tile | What it counts | Notes |
+|---|---|---|
+| Score | Final score | Headline, top right |
+| Words | Words cleared | |
+| Level | Level reached | One per 10 words (`WORDS_PER_LEVEL`), so it tracks Words closely |
+| Chains | Pieces that set off a chain of 2 or more waves | "longest ×N" underneath. Worked out in `Game.stats()` from the game log |
+| Full rows | Full rows that cleared | "+0 points" underneath: they score nothing. Counts `junkRows`, as the `game_over` analytics event does |
+| Best word | The word that earned the most points | With its points underneath |
+
+Letter grades (S/A/B/C) and an overall rating were left out for now: thresholds need more real games to set fairly. If they come, `Game.stats()` already has what they'd use.
 
 ## Learning while playing: full rows and chains
 
@@ -111,7 +143,7 @@ Playtest 8 showed the risk: 62% of the tiles cleared went in full rows, which sc
 - The banner reads "ROW CLEARED" with "+0 POINTS" under it (written "+0" so it reads as "added nothing", not "your score is now 0"), or "ONLY WORDS SCORE" if a word cleared in the same wave, since the word did score.
 - It shows only the first two times on a device (`localStorage alphaboom.rowBanners`), then stops. A banner every time got tiresome.
 - The full row's tiles always fade to grey, and the row always has its dull whoosh, plainly less fun than a word's.
-- The game-over summary adds "19 full rows: +0 points" in red when any full rows cleared. This counts `junkRows` from the game log.
+- The results screen's performance card shows "Full rows 19" with "+0 points" under it when any full rows cleared. This counts `junkRows` from the game log.
 
 **Banners stack.** When several happen at once (row cleared, chain, level), each takes the first free row, top to bottom, oldest first, instead of drawing over each other.
 
@@ -297,6 +329,11 @@ For **every piece**:
   - It checks that the saved score equals the record's word points plus its soft-drop points. All four finished games in the database passed this check when it was added.
   - It returns your best posted score's rank and how many players are on the board.
 - **Function `top_scores(p_player, p_limit)`:** each player's best posted game under their latest nickname, top `p_limit` (up to 50), plus the caller's own row. It returns `mine` instead of player ids, so ids never leave the database.
+- **Function `score_standing_v2(p_player, p_score, p_sandbox, p_top, p_around)`** (`supabase/standing.sql`, migration `score_standing_v2`; read-only): where a score would stand, for the results screen.
+  - It returns the top `p_top` rows plus `p_around` rows either side of the caller's, in order. `kind` is `you` for the not-yet-posted game and `row` for everyone else; `pos` is the place in the list, `rank` the rank (ties share one), `mine` marks the caller's row, and `players` counts the board as it would be once posted.
+  - The board holds each player's best game, so a game gets a `you` row only if it beats the caller's best. Otherwise the caller's existing row comes back as `mine`.
+  - `p_score` is only used to place the row. Nothing is written, and posting still takes the score from the saved game.
+  - Tested on synthetic data in a temporary table: new player, a player improving their own row, a lower score, ties, a score of 0, the top and the bottom of the board, and the sandbox board kept separate. A null player id works too.
 - **Locked down like `games`:** row-level security on with no policies, no table grants for `anon`, and only `anon` may call the functions.
 - **It's a friendly board, not a cheat-proof one.** Someone could forge a whole game record through `save_game` and post it.
 - **To remove an entry:** `delete from scores where game_id = 'g-…';`
@@ -346,6 +383,7 @@ Supabase keeps every game in full; PostHog (`src/analytics.js`) answers the ques
 | `game_over` | A game ends | `score`, `words`, `level`, `pieces`, `play_ms`, `max_chain`, `chain_words`, `best_word`, `longest_word`, `avg_word_len`, `words_3`/`words_4`/`words_5_plus`, `words_per_piece`, `full_rows`, `full_row_tile_pct`, `helper_pieces`, `helper_hits`, `pieces_to_first_word`, `input` |
 | `tutorial_closed` | How to play closes | `auto` (opened by itself), `furthest_card`, `finished`, `first_visit` |
 | `tip_shown` | A first-time tip pops up | `tip` (word, chain, row, level, danger) |
+| `results_shown` | The results screen finds your place (once per game) | `score`, `rank`, `players`, `can_post` (it offered a name box), `has_board` |
 | `scoreboard_opened`, `score_posted` | The scoreboard opens; a score is posted | `can_post`; `score`, `rank`, `players` |
 | `game_log_copied`, `sound_toggled` | | `on` |
 

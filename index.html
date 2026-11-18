@@ -46,14 +46,14 @@
         <p class="eyebrow" id="overlay-eyebrow">Prototype</p>
         <h1 id="overlay-title">Alphaboom</h1>
         <p id="overlay-text">Spell words left to right in any row. Any word of 3 or more letters disappears, and every tile drops to fill the gaps below. A full row also clears, but only words score.</p>
-        <!-- Start / Resume lead on their own screens. At game over, Post score leads and Play again follows. -->
-        <div class="overlay-actions" id="overlay-actions">
+        <div class="overlay-actions">
           <button type="button" id="overlay-primary" class="btn-primary">Start</button>
           <button type="button" id="overlay-secondary" class="btn-ghost" hidden>Restart</button>
         </div>
-        <p class="key-tip" aria-hidden="true">or press <kbd>Space</kbd><span id="key-tip-play" hidden> to play again</span></p>
+        <p class="key-tip" aria-hidden="true">or press <kbd>Space</kbd></p>
         <div class="overlay-more">
           <button type="button" id="overlay-help" class="btn-ghost btn-small" data-open="howto"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M8.6 9a3.5 3.5 0 1 1 4.9 3.2c-.9.4-1.5 1.1-1.5 2.1v.4"/><path d="M12 19h.01"/></g><g class="fl"><path d="M8.6 9a3.5 3.5 0 1 1 4.9 3.2c-.9.4-1.5 1.1-1.5 2.1v.4"/><path d="M12 19h.01"/></g></svg><span>How to play</span></button>
+          <button type="button" id="overlay-results" class="btn-ghost btn-small" data-open="results" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M6.5 19v-6M12 19V5M17.5 19v-9"/></g><g class="fl"><path d="M6.5 19v-6M12 19V5M17.5 19v-9"/></g></svg><span>Results</span></button>
           <button type="button" id="overlay-board" class="btn-ghost btn-small btn-gold" data-open="scoreboard"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path class="fill" d="M6.5 4h11v4a5.5 5.5 0 0 1-11 0Z"/><path d="M6.5 6H4.8a1.8 1.8 0 0 0 0 3.6h2.1"/><path d="M17.5 6h1.7a1.8 1.8 0 0 1 0 3.6h-2.1"/><path d="M12 14.5v3.5"/><path d="M7.5 19.5h9"/></g><g class="fl"><path class="fill" d="M6.5 4h11v4a5.5 5.5 0 0 1-11 0Z"/><path d="M6.5 6H4.8a1.8 1.8 0 0 0 0 3.6h2.1"/><path d="M17.5 6h1.7a1.8 1.8 0 0 1 0 3.6h-2.1"/><path d="M12 14.5v3.5"/><path d="M7.5 19.5h9"/></g></svg><span>Scoreboard</span></button>
           <button type="button" id="overlay-log" class="link-btn" hidden>Copy game log</button>
         </div>
@@ -223,6 +223,40 @@
     <div class="board-scroll">
       <ol class="board-list" id="board-top" role="tabpanel" aria-labelledby="tab-top"></ol>
       <ol class="board-list" id="board-mine" role="tabpanel" aria-labelledby="tab-mine" hidden></ol>
+    </div>
+  </div>
+</dialog>
+
+<!-- Results: opens by itself when a game ends. Where you stand on the scoreboard first (with a box
+     for your name in your own row), then how the game went. Play again stays in view at the bottom. -->
+<dialog class="sheet" id="results" aria-labelledby="results-title">
+  <div class="sheet-card results-card" tabindex="-1">
+    <h2 class="sheet-title" id="results-title">Game over</h2>
+    <button type="button" class="close-btn" data-close aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g><g class="fl"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g></svg></button>
+    <div class="results-scroll">
+      <section class="results-board" id="results-board" aria-labelledby="results-board-title" hidden>
+        <h3 class="results-h" id="results-board-title">Leaderboard</h3>
+        <p class="posted" id="results-posted" hidden></p>
+        <ol class="board-list" id="results-list"></ol>
+        <p class="results-note" id="results-note" role="status" hidden></p>
+      </section>
+      <section class="perf" aria-labelledby="perf-title">
+        <div class="perf-head">
+          <h3 class="results-h" id="perf-title">Performance</h3>
+          <p class="perf-score"><span class="perf-score-label">Score</span> <span id="perf-score">0</span></p>
+        </div>
+        <dl class="perf-grid">
+          <div class="perf-stat" style="--i:0"><dt>Words</dt><dd id="perf-words">0</dd></div>
+          <div class="perf-stat" style="--i:1"><dt>Level</dt><dd id="perf-level">1</dd></div>
+          <div class="perf-stat" style="--i:2"><dt>Chains</dt><dd id="perf-chains">0</dd><small id="perf-chains-sub" hidden></small></div>
+          <div class="perf-stat" style="--i:3"><dt>Full rows</dt><dd id="perf-rows">0</dd><small id="perf-rows-sub" hidden>+0 points</small></div>
+          <div class="perf-stat perf-wide" style="--i:4"><dt>Best word</dt><dd id="perf-best">–</dd><small id="perf-best-sub" hidden></small></div>
+        </dl>
+      </section>
+    </div>
+    <div class="results-foot">
+      <button type="button" class="btn-primary results-again" id="results-again">Play again</button>
+      <p class="key-tip" aria-hidden="true">or press <kbd>Space</kbd></p>
     </div>
   </div>
 </dialog>
