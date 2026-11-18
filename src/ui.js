@@ -694,19 +694,24 @@
 
   function primaryAction() {
     if (game.state === 'ready') {
+      game.inputs = {};
       game.start();
       saver.begin(game);
+      if (ST.analytics) ST.analytics.gameStarted(game, 'start');
     } else if (game.state === 'paused') game.togglePause();
-    else if (game.state === 'over') restart();
+    else if (game.state === 'over') restart('play_again');
   }
 
-  function restart() {
+  // `from` says which button started the new game, for analytics.
+  function restart(from) {
     game.reset();
+    game.inputs = {};
     effects.length = 0;
     particles.length = 0;
     renderRecent(0);
     game.start();
     saver.begin(game);
+    if (ST.analytics) ST.analytics.gameStarted(game, typeof from === 'string' ? from : 'other');
   }
 
   // ---- saved sessions ------------------------------------------------------
@@ -729,6 +734,10 @@
     web:
       "Games are saved anonymously to help improve Alphaboom: each piece's letters, where it went, " +
       'how long it took, and the words it made. No name or account is stored. ' +
+      (ST.analytics && ST.analytics.enabled
+        ? 'Anonymous usage stats and screen recordings of play (with typing hidden) go to PostHog, ' +
+          'to see where the game is confusing. No cookies are used. '
+        : '') +
       'If you post a score, the nickname you type is shown with it on the scoreboard.',
   };
   const saver = ST.createSessionSaver((state, info) => {
@@ -741,11 +750,12 @@
   });
 
   overlay.primary.addEventListener('click', primaryAction);
-  overlay.secondary.addEventListener('click', restart);
+  overlay.secondary.addEventListener('click', () => restart('pause_screen'));
 
   // Copies a text summary of the game, so a tricky run can be shared and looked at.
   // If the clipboard is blocked, the text appears in a box to select by hand.
   overlay.log.addEventListener('click', () => {
+    if (ST.analytics) ST.analytics.track('game_log_copied', { game_id: game.sessionId || null });
     const text = game.logText();
     const showBox = () => {
       overlay.logText.value = text;
@@ -772,6 +782,7 @@
   function drainEvents(now) {
     for (const e of game.events) {
       saver.onEvent(game, e);
+      if (ST.analytics) ST.analytics.onEvent(game, e);
       emit(e);
       if (e.type === 'over') {
         sfx.play('gameOver');
@@ -839,7 +850,11 @@
   const held = new Map();
   let lastDir = null;
 
-  function press(action) {
+  // `source` is keyboard, touch or mouse: counted per game, for the saved record and analytics.
+  function press(action, source) {
+    if (source && game.inputs && (game.state === 'playing' || game.state === 'clearing')) {
+      game.inputs[source] = (game.inputs[source] || 0) + 1;
+    }
     if (action === 'pause') {
       if (ST.screens && ST.screens.holding()) ST.screens.cancelHold(); // stay paused, show the pause screen
       else game.togglePause();
@@ -893,7 +908,7 @@
       e.preventDefault();
       try { btn.setPointerCapture(e.pointerId); } catch {}
       btn.classList.add('on');
-      press(action);
+      press(action, e.pointerType === 'mouse' ? 'mouse' : 'touch');
     });
     btn.addEventListener('pointerup', up);
     btn.addEventListener('pointercancel', up);
@@ -936,7 +951,7 @@
       keysDown.add(k);
       const btn = padButton(action);
       if (btn) btn.classList.add('on');
-      press(action);
+      press(action, 'keyboard');
     } else if (k === 'm') {
       $('sound-btn').click();
     } else if (k === ' ' || k === 'Enter') {

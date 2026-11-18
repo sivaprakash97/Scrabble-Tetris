@@ -33,7 +33,7 @@ Rotating turns the piece clockwise and its letters turn with it. A piece locks a
 
 ## Hosting
 
-The website runs on Vercel and saves games anonymously to Supabase so they can be reviewed. Players can post a finished game to the scoreboard under a nickname; the database side is in `supabase/scoreboard.sql`.
+The website runs on Vercel and saves games anonymously to Supabase so they can be reviewed. PostHog counts visits, tutorial use, game starts and game summaries (see "Product analytics" in DESIGN.md). Players can post a finished game to the scoreboard under a nickname; the database side is in `supabase/scoreboard.sql`.
 
 **Sandbox.** Every preview link (each branch gets one) and every local copy is a sandbox: its games and scores go to a separate sandbox board, never the live one, and it shows a yellow "Sandbox" tag. Only the live site uses the live scoreboard. See "Sandbox" in DESIGN.md and `supabase/sandbox.sql`. The project URL and public key live in `src/backend-config.js`. See "Hosting and saving" in [DESIGN.md](DESIGN.md).
 
@@ -69,6 +69,7 @@ Hand-written definitions for words WordNet lacks are in `scripts/supplement-defs
 | `src/screens.js` | How to play cards, the scoreboard dialog and the one-time tips |
 | `src/sound.js` | Sound effects, made in the browser |
 | `src/scores.js` | Talks to the scoreboard functions in Supabase |
+| `src/analytics.js` | Product analytics events sent to PostHog |
 | `supabase/scoreboard.sql` | The scoreboard's table and functions |
 | `supabase/sandbox.sql` | The sandbox board: what keeps testing off the live scoreboard |
 | `src/deploy.js` | Live site or sandbox (the website build fills it in) |

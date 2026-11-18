@@ -233,7 +233,9 @@ The game as a whole:
 - score, level, words and longest chain;
 - play time, not counting pauses;
 - the number of pauses;
-- the final board.
+- the final board;
+- `build`: which copy played it (`env`, `branch`, `commit`, from `src/deploy.js`), so games can be compared before and after a rule change;
+- `input`: control presses by kind (`keyboard`, `touch`, `mouse`).
 
 For **every piece**:
 
@@ -248,6 +250,7 @@ For **every piece**:
 | `softCells` | Cells soft-dropped |
 | `words` | The words it made, with direction, points and chain |
 | `junkRows` | Full rows it cleared |
+| `junkTiles` | Tiles cleared in those rows that weren't part of a word |
 | `board` | The board after everything settled |
 
 **When it's saved:**
@@ -322,6 +325,39 @@ select record from games where id = 'g-…';   -- the full game, same shape as t
 ```
 
 **Free-tier limits.** Supabase pauses a free project after a week with no activity; restore it from the dashboard. Vercel's Hobby plan is for non-commercial use.
+
+## Product analytics (PostHog)
+
+Supabase keeps every game in full; PostHog (`src/analytics.js`) answers the questions about players: where new players get stuck, which tutorial card they leave on, and whether they come back. It's the PostHog project "Alphaboom" on the US cloud; the project key in `src/backend-config.js` is meant to be public (it can only send events). Set it to `''` to turn analytics off.
+
+**Where it runs.** Only the live site. Every sandbox sends nothing: preview links and local copies, by the same rule that keeps them off the live scoreboard (`src/deploy.js`). The Claude page and local files send nothing either. So everything in PostHog is real players, and testing on a preview link never shows up there. The first events arrive once a change reaches `main`.
+
+**Events.** A handful per visit; the per-piece detail stays in Supabase.
+
+| Event | When | Main properties |
+|---|---|---|
+| `$pageview`, `$pageleave` | The page opens and closes | (PostHog's own) |
+| `game_started` | A game begins | `from` (start, play_again, pause_screen), `game_number` on this device, `first_game` |
+| `first_word` | The first word of each game | `word`, `pieces`, `play_ms`, `first_game` |
+| `game_over` | A game ends | `score`, `words`, `level`, `pieces`, `play_ms`, `max_chain`, `chain_words`, `best_word`, `longest_word`, `avg_word_len`, `words_3`/`words_4`/`words_5_plus`, `words_per_piece`, `full_rows`, `full_row_tile_pct`, `helper_pieces`, `helper_hits`, `pieces_to_first_word`, `input` |
+| `tutorial_closed` | How to play closes | `auto` (opened by itself), `furthest_card`, `finished`, `first_visit` |
+| `tip_shown` | A first-time tip pops up | `tip` (word, chain, row, level, danger) |
+| `scoreboard_opened`, `score_posted` | The scoreboard opens; a score is posted | `can_post`; `score`, `rank`, `players` |
+| `game_log_copied`, `sound_toggled` | | `on` |
+
+Every event also carries `deploy_env`, `branch`, `app_version` (the commit), `layout` (phone or wide) and `touch_screen`.
+
+- **`full_row_tile_pct`**: of all tiles cleared in the game, the share that went in full rows, which score nothing. Playtest 8's 62% is this number. It uses `junkTiles`, so it's exact for games from this version on.
+- **`helper_hits`**: pieces given a helper letter that made a word on landing (chain 1). Divide by `helper_pieces` to see whether `HELPER_CHANCE` earns its place.
+- **`game_number`** counts games started on the device. Counting began with analytics: a device that already had a best score starts at 1, so it isn't taken for a new player.
+
+**Same player id.** PostHog's id is the anonymous player id the saved games use (`alphaboom.player`), so a PostHog person and their `games` rows join on `player_id`.
+
+**Privacy.** `persistence: 'memory'`, so PostHog sets no cookies and stores nothing on the device; each visit is a PostHog session. Autocapture is off (the control pad would send an event per tap). Session recordings mask every text box, so nicknames aren't recorded. JavaScript errors are sent for Error Tracking. The Rules panel tells players.
+
+**Project settings to switch on in PostHog** (they live there, not in the code):
+- Session replay → **Canvas capture**. The board is a canvas, so without it recordings show an empty well.
+- Error tracking → turn on exception autocapture, if it isn't already.
 
 ## Points
 

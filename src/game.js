@@ -79,6 +79,7 @@
         softCells: 0,
         words: [],
         junkRows: 0,
+        junkTiles: 0, // tiles cleared in full rows (not part of any word)
       });
       return piece;
     }
@@ -256,7 +257,10 @@
         this.spawnNext();
         return;
       }
-      if (rec && fullRows && junkCells.length) rec.junkRows += fullRows;
+      if (rec && fullRows && junkCells.length) {
+        rec.junkRows += fullRows;
+        rec.junkTiles = (rec.junkTiles || 0) + junkCells.length;
+      }
 
       if (found.length) {
         this.chain++;

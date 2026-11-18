@@ -10,6 +10,8 @@
   const board = ST.scoreboard || { enabled: false };
   const $ = (id) => document.getElementById(id);
   const fmt = (n) => Number(n).toLocaleString('en-US');
+  // Product analytics (src/analytics.js); does nothing where analytics is off.
+  const trackEvent = (name, props) => { if (ST.analytics) ST.analytics.track(name, props); };
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const el = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -54,7 +56,7 @@
   document.addEventListener('click', (e) => {
     const opener = e.target.closest('[data-open]');
     if (!opener) return;
-    if (opener.dataset.open === 'howto') openHowTo();
+    if (opener.dataset.open === 'howto') openHowTo(false);
     else if (opener.dataset.open === 'scoreboard') openScoreboard();
   });
 
@@ -356,8 +358,14 @@
     spellSync();
   }
 
+  // For analytics: the furthest card reached, and whether How to play opened by itself.
+  let furthest = 0;
+  let openedAuto = false;
+  let finishedHowTo = false; // closed with Play! or Got it on the last card
+
   function goTo(i) {
     page = Math.max(0, Math.min(cards.length - 1, i));
+    furthest = Math.max(furthest, page);
     track.scrollTo({ left: page * track.clientWidth, behavior: reduceMotion ? 'auto' : 'smooth' });
     syncNav();
   }
@@ -366,16 +374,22 @@
   track.addEventListener('scroll', () => {
     const i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
     if (i !== page) { page = i; syncNav(); }
+    furthest = Math.max(furthest, page);
   }, { passive: true });
 
   dots.forEach((d, i) => d.addEventListener('click', () => goTo(i)));
   backBtn.addEventListener('click', () => goTo(page - 1));
   nextBtn.addEventListener('click', () => {
     if (page < cards.length - 1) { goTo(page + 1); return; }
+    finishedHowTo = true;
     closeSheet(howto);
     if (game.state === 'ready') ui.start();
   });
   howto.addEventListener('close', () => {
+    trackEvent('tutorial_closed', {
+      auto: openedAuto, furthest_card: furthest + 1, cards: cards.length,
+      finished: finishedHowTo, first_visit: !store.get('seenHowTo', false),
+    });
     store.set('seenHowTo', true);
     demoSync();
     spellSync();
@@ -388,7 +402,11 @@
     else if (e.key === 'Enter' && !e.target.closest('button')) { e.preventDefault(); nextBtn.click(); }
   });
 
-  function openHowTo() {
+  // `auto` is true when it opens by itself on a first visit.
+  function openHowTo(auto) {
+    openedAuto = auto === true;
+    furthest = 0;
+    finishedHowTo = false;
     openSheet(howto);
     paintArt();
     page = 0;
@@ -547,6 +565,7 @@
       const result = await board.post(gameId, nick);
       store.set('nickname', nick);
       posted = { gameId, nickname: nick, rank: result && result.rank, players: result && result.players };
+      trackEvent('score_posted', { game_id: gameId, score: game.score, rank: posted.rank || null, players: posted.players || null });
       if (sound) sound.play('cheer');
       form.hidden = true;
       setStatus('');
@@ -565,6 +584,7 @@
 
   function openScoreboard() {
     const postable = canPost();
+    trackEvent('scoreboard_opened', { can_post: postable, game_state: game.state });
     form.hidden = !postable;
     setStatus('');
     if (postable) {
@@ -672,6 +692,7 @@
     if (!t) { countdown(); return; }
     seenTips.add(t.id);
     store.set('tips', [...seenTips]);
+    trackEvent('tip_shown', { tip: t.id, game_id: game.sessionId || null, pieces: game.log.pieces.length });
     tipSheet.className = `sheet tip-sheet tip-${t.id}`;
     tipTitle.textContent = t.title;
     tipBody.textContent = t.text;
@@ -763,8 +784,12 @@
     };
     sync(sound.on);
     sound.onChange(sync);
-    soundBtn.addEventListener('click', () => sound.set(!sound.on));
-    soundToggle.addEventListener('click', () => sound.set(!sound.on));
+    const toggle = () => {
+      sound.set(!sound.on);
+      trackEvent('sound_toggled', { on: sound.on });
+    };
+    soundBtn.addEventListener('click', toggle);
+    soundToggle.addEventListener('click', toggle);
   }
 
   // A soft tap for on-screen buttons (the control pad and the sound switches have their own).
@@ -795,5 +820,5 @@
   ui.refreshOverlay();
 
   // First visit: show how to play before the first game.
-  if (!store.get('seenHowTo', false) && game.state === 'ready') openHowTo();
+  if (!store.get('seenHowTo', false) && game.state === 'ready') openHowTo(true);
 })();

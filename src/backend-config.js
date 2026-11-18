@@ -18,6 +18,14 @@
     url: 'https://nkmgngaxequbzobhmalj.supabase.co',
     publishableKey: 'sb_publishable_xyOesUPqOz_JP9T13heljA_ewUVNoaS',
   };
+  // Product analytics (src/analytics.js): the PostHog project "Alphaboom" on the US cloud.
+  // The project key is meant to be public: it can only send events. Set key to '' to turn
+  // analytics off.
+  ST.ANALYTICS = {
+    key: 'phc_sBgDbw3GkmsxQdEchL9hPMQ4PaUEPMHxuRFdMqVU2JPF',
+    host: 'https://us.i.posthog.com',
+    uiHost: 'https://us.posthog.com',
+  };
   const env = (ST.DEPLOY && ST.DEPLOY.env) || 'unknown';
   ST.BACKEND.sandbox = env === 'preview' || env === 'development';
   if (typeof module !== 'undefined' && module.exports) module.exports = ST;

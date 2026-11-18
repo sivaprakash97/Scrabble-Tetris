@@ -179,6 +179,10 @@
         startedAt: startedAt.get(game.sessionId),
         savedAt: now,
         screen: { w: W.innerWidth, h: W.innerHeight },
+        // Which build played it (src/deploy.js), so games can be compared before and after a change.
+        build: ST.DEPLOY ? { env: ST.DEPLOY.env, branch: ST.DEPLOY.branch, commit: ST.DEPLOY.commit } : null,
+        // Control presses by kind: keyboard, touch or mouse (src/ui.js).
+        input: game.inputs || null,
       };
       pending = { id: game.sessionId, body: fit(body) };
       flush();
