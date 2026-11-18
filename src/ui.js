@@ -663,8 +663,9 @@
     o.text.hidden = game.state === 'over';
     o.results.hidden = game.state !== 'over';
     // After a game, Results already has the leaderboard, so a second Scoreboard button would
-    // only confuse. The full board stays in the Rules panel.
-    o.board.hidden = game.state === 'over';
+    // only confuse. The full board stays in the Rules panel. With no shared board (the Claude
+    // page, a local file with no backend) the Scoreboard has nothing to show.
+    o.board.hidden = game.state === 'over' || !(ST.scoreboard && ST.scoreboard.enabled);
     o.log.textContent = 'Copy game log';
     o.logText.hidden = true;
     // How to play is there before and during a game; after one, it is out of the way.

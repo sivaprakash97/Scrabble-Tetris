@@ -47,9 +47,9 @@
     // Where a score would stand: the top rows, plus the rows around yours, with your own game as a
     // 'you' row if posting it would give you a new best (supabase/standing.sql). Only places the
     // row: posting takes the score from the saved game.
-    standing(score) {
+    standing(score, top = 10) {
       return rpc('score_standing_v2', {
-        p_player: ST.playerId(), p_score: score, p_sandbox: !!backend.sandbox, p_top: 5, p_around: 1,
+        p_player: ST.playerId(), p_score: score, p_sandbox: !!backend.sandbox, p_top: top, p_around: 1,
       });
     },
     // Posts a finished game. The game's last save may still be on its way, so a game the

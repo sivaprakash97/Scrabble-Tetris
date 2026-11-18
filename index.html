@@ -100,7 +100,7 @@
     <h2>Rules</h2>
     <div class="panel-actions">
       <button type="button" class="btn-ghost btn-small" data-open="howto"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M8.6 9a3.5 3.5 0 1 1 4.9 3.2c-.9.4-1.5 1.1-1.5 2.1v.4"/><path d="M12 19h.01"/></g><g class="fl"><path d="M8.6 9a3.5 3.5 0 1 1 4.9 3.2c-.9.4-1.5 1.1-1.5 2.1v.4"/><path d="M12 19h.01"/></g></svg><span>How to play</span></button>
-      <button type="button" class="btn-ghost btn-small btn-gold" data-open="scoreboard"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path class="fill" d="M6.5 4h11v4a5.5 5.5 0 0 1-11 0Z"/><path d="M6.5 6H4.8a1.8 1.8 0 0 0 0 3.6h2.1"/><path d="M17.5 6h1.7a1.8 1.8 0 0 1 0 3.6h-2.1"/><path d="M12 14.5v3.5"/><path d="M7.5 19.5h9"/></g><g class="fl"><path class="fill" d="M6.5 4h11v4a5.5 5.5 0 0 1-11 0Z"/><path d="M6.5 6H4.8a1.8 1.8 0 0 0 0 3.6h2.1"/><path d="M17.5 6h1.7a1.8 1.8 0 0 1 0 3.6h-2.1"/><path d="M12 14.5v3.5"/><path d="M7.5 19.5h9"/></g></svg><span>Scoreboard</span></button>
+      <button type="button" class="btn-ghost btn-small btn-gold" id="rules-board" data-open="scoreboard"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path class="fill" d="M6.5 4h11v4a5.5 5.5 0 0 1-11 0Z"/><path d="M6.5 6H4.8a1.8 1.8 0 0 0 0 3.6h2.1"/><path d="M17.5 6h1.7a1.8 1.8 0 0 1 0 3.6h-2.1"/><path d="M12 14.5v3.5"/><path d="M7.5 19.5h9"/></g><g class="fl"><path class="fill" d="M6.5 4h11v4a5.5 5.5 0 0 1-11 0Z"/><path d="M6.5 6H4.8a1.8 1.8 0 0 0 0 3.6h2.1"/><path d="M17.5 6h1.7a1.8 1.8 0 0 1 0 3.6h-2.1"/><path d="M12 14.5v3.5"/><path d="M7.5 19.5h9"/></g></svg><span>Scoreboard</span></button>
     </div>
     <label class="setting" for="min-len">
       <span>Shortest word</span>
@@ -200,47 +200,34 @@
   </div>
 </dialog>
 
-<!-- Scoreboard: everyone's best posted games (website only), and your own best games. -->
+<!-- Scoreboard: everyone's best posted games (website only). For looking: posting is on the results screen. -->
 <dialog class="sheet" id="scoreboard" aria-labelledby="board-title">
   <div class="sheet-card" tabindex="-1">
     <h2 class="sheet-title gold" id="board-title">Scoreboard</h2>
     <p class="sandbox-note" id="sandbox-note" hidden><b>Sandbox board.</b> Scores posted here stay off the live scoreboard.</p>
     <button type="button" class="close-btn" data-close aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g><g class="fl"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g></svg></button>
     <p class="posted" id="posted-note" hidden></p>
-    <div class="tabs" role="tablist" id="board-tabs">
-      <button type="button" role="tab" id="tab-top" aria-controls="board-top" aria-selected="true" data-tab="top">Top players</button>
-      <button type="button" role="tab" id="tab-mine" aria-controls="board-mine" aria-selected="false" data-tab="mine">My scores</button>
-    </div>
     <div class="board-scroll">
-      <ol class="board-list" id="board-top" role="tabpanel" aria-labelledby="tab-top"></ol>
-      <ol class="board-list" id="board-mine" role="tabpanel" aria-labelledby="tab-mine" hidden></ol>
+      <ol class="board-list" id="board-top" aria-label="Top players"></ol>
     </div>
   </div>
 </dialog>
 
-<!-- Results: opens by itself when a game ends. Where you stand on the scoreboard first (with a box
-     for your name in your own row), then how the game went. Play again stays in view at the bottom. -->
+<!-- Results: opens by itself when a game ends. Two tabs. Performance (first): the score, how the
+     game went, and Play again. Leaderboard: the top scorers and where this game would stand, with a
+     box for your name in your own row; there the main button is "Add to the leaderboard". -->
 <dialog class="sheet" id="results" aria-labelledby="results-title">
   <div class="sheet-card results-card" tabindex="-1">
     <h2 class="sheet-title" id="results-title">Game over</h2>
     <button type="button" class="close-btn" data-close aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g><g class="fl"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g></svg></button>
-    <div class="results-scroll">
-      <section class="results-board" id="results-board" aria-label="Scores">
-        <div class="results-tabs" role="tablist">
-          <button type="button" role="tab" id="rtab-board" aria-controls="results-list" aria-selected="true">Leaderboard<span class="tab-count" id="rtab-count"></span></button>
-          <button type="button" role="tab" id="rtab-mine" aria-controls="results-mine" aria-selected="false">My scores</button>
-        </div>
-        <p class="posted" id="results-posted" hidden></p>
-        <ol class="board-list" id="results-list" role="tabpanel" aria-labelledby="rtab-board"></ol>
-        <p class="results-note" id="results-note" role="status" hidden></p>
-        <ol class="board-list" id="results-mine" role="tabpanel" aria-labelledby="rtab-mine" hidden></ol>
-      </section>
-      <section class="perf" aria-labelledby="perf-title">
-        <div class="perf-head">
-          <h3 class="results-h" id="perf-title">Performance</h3>
-          <p class="perf-score"><span class="perf-score-label">Score</span> <span id="perf-score">0</span></p>
-        </div>
-        <dl class="perf-grid">
+    <div class="tabs results-tabs" role="tablist" id="results-tabs">
+      <button type="button" role="tab" id="rtab-perf" aria-controls="rpanel-perf" aria-selected="true">Performance</button>
+      <button type="button" role="tab" id="rtab-board" aria-controls="rpanel-board" aria-selected="false">Leaderboard<span id="rtab-rank"></span></button>
+    </div>
+    <div class="results-scroll" id="results-scroll">
+      <section class="results-panel" id="rpanel-perf" role="tabpanel" aria-labelledby="rtab-perf">
+        <p class="results-score"><span class="results-score-label">Score</span><span id="perf-score">0</span></p>
+        <dl class="perf perf-grid">
           <div class="perf-stat" style="--i:0"><dt>Words</dt><dd id="perf-words">0</dd></div>
           <div class="perf-stat" style="--i:1"><dt>Level</dt><dd id="perf-level">1</dd></div>
           <div class="perf-stat" style="--i:2"><dt>Chains</dt><dd id="perf-chains">0</dd><small id="perf-chains-sub" hidden></small></div>
@@ -248,10 +235,16 @@
           <div class="perf-stat perf-wide" style="--i:4"><dt>Best word</dt><dd id="perf-best">–</dd><small id="perf-best-sub" hidden></small></div>
         </dl>
       </section>
+      <section class="results-panel results-board" id="rpanel-board" role="tabpanel" aria-labelledby="rtab-board" hidden>
+        <p class="posted" id="results-posted" hidden></p>
+        <ol class="board-list" id="results-list"></ol>
+        <p class="results-note" id="results-note" role="status" hidden></p>
+      </section>
     </div>
     <div class="results-foot">
-      <button type="button" class="btn-primary results-again" id="results-again">Play again</button>
-      <p class="key-tip" aria-hidden="true">or press <kbd>Space</kbd></p>
+      <button type="button" class="btn-primary results-again" id="results-primary">Play again</button>
+      <button type="button" class="link-btn" id="results-again-link" hidden>Play again</button>
+      <p class="key-tip" aria-hidden="true">or press <kbd>Space</kbd> to play again</p>
     </div>
   </div>
 </dialog>
