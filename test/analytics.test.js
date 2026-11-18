@@ -48,18 +48,16 @@ test('the live site loads PostHog without cookies, under the anonymous player id
   assert.equal(config.autocapture, false, 'control taps must not each become an event');
   assert.equal(config.session_recording.maskAllInputs, true);
   const [[, props]] = queued(window, 'register');
-  assert.equal(props.sandbox, false);
+  assert.equal(props.deploy_env, 'production');
   assert.equal(props.app_version, 'abc1234');
 });
 
-test('preview links send, marked as sandbox', () => {
-  const { window, analytics } = load({ env: 'preview' });
-  assert.equal(analytics.enabled, true);
-  assert.equal(queued(window, 'register')[0][1].sandbox, true);
+test('a Vercel build that cannot tell its environment counts as live, like the scoreboard', () => {
+  assert.equal(load({ env: 'unknown' }).analytics.enabled, true);
 });
 
-test('local copies, local files, the Claude page and an empty key send nothing', () => {
-  for (const opts of [{ env: 'development' }, { protocol: 'file:' }, { claude: { use() {} } }, { key: '' }]) {
+test('sandboxes (preview links, local copies), local files, the Claude page and an empty key send nothing', () => {
+  for (const opts of [{ env: 'preview' }, { env: 'development' }, { protocol: 'file:' }, { claude: { use() {} } }, { key: '' }]) {
     const { window, scripts, analytics } = load(opts);
     assert.equal(analytics.enabled, false, JSON.stringify(opts));
     assert.equal(scripts.length, 0);

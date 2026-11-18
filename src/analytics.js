@@ -11,9 +11,9 @@
 //
 // Plus page views, page leaves, session recordings (typing is masked) and JavaScript errors.
 //
-// Where it runs: only the website. Local copies (ST.DEPLOY.env 'development') and the Claude
-// page send nothing. Preview links send with sandbox: true, so filter on sandbox = false (or set
-// it as the project's test-account filter) to see real players only.
+// Where it runs: only the live site. Every sandbox sends nothing: preview links ('preview') and
+// local copies ('development'), the same rule that keeps them off the live scoreboard (see
+// src/backend-config.js). The Claude page and local files send nothing either.
 //
 // Privacy: no cookies and nothing stored on the device by PostHog (persistence: 'memory'). The
 // PostHog id is the same anonymous player id the saved games use (alphaboom.player), so the two
@@ -25,7 +25,8 @@
   const env = deploy.env || 'unknown';
   const onClaudePage = !!(W.claude && typeof W.claude.use === 'function');
   const onWeb = !!(W.location && /^https?:$/.test(W.location.protocol));
-  const enabled = !!settings.key && !onClaudePage && onWeb && env !== 'development' &&
+  const sandbox = env === 'preview' || env === 'development';
+  const enabled = !!settings.key && !onClaudePage && onWeb && !sandbox &&
     !!W.document && typeof ST.playerId === 'function';
 
   // ---- what a finished game adds up to (pure; tested in test/analytics.test.js) ------------
@@ -134,7 +135,6 @@
       const coarse = W.matchMedia && W.matchMedia('(pointer: coarse)').matches;
       ph.register({
         app: 'alphaboom',
-        sandbox: env !== 'production' && env !== 'unknown',
         deploy_env: env,
         branch: deploy.branch || null,
         app_version: deploy.commit || null,

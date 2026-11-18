@@ -330,7 +330,7 @@ select record from games where id = 'g-…';   -- the full game, same shape as t
 
 Supabase keeps every game in full; PostHog (`src/analytics.js`) answers the questions about players: where new players get stuck, which tutorial card they leave on, and whether they come back. It's the PostHog project "Alphaboom" on the US cloud; the project key in `src/backend-config.js` is meant to be public (it can only send events). Set it to `''` to turn analytics off.
 
-**Where it runs.** The live site, and preview links tagged `sandbox: true`. Local copies (`development`) and the Claude page send nothing. To see only real players, filter on `sandbox = false`, or add that as the project's "Filter out internal and test users" setting.
+**Where it runs.** Only the live site. Every sandbox sends nothing: preview links and local copies, by the same rule that keeps them off the live scoreboard (`src/deploy.js`). The Claude page and local files send nothing either. So everything in PostHog is real players, and testing on a preview link never shows up there. The first events arrive once a change reaches `main`.
 
 **Events.** A handful per visit; the per-piece detail stays in Supabase.
 
@@ -345,7 +345,7 @@ Supabase keeps every game in full; PostHog (`src/analytics.js`) answers the ques
 | `scoreboard_opened`, `score_posted` | The scoreboard opens; a score is posted | `can_post`; `score`, `rank`, `players` |
 | `game_log_copied`, `sound_toggled` | | `on` |
 
-Every event also carries `sandbox`, `deploy_env`, `branch`, `app_version` (the commit), `layout` (phone or wide) and `touch_screen`.
+Every event also carries `deploy_env`, `branch`, `app_version` (the commit), `layout` (phone or wide) and `touch_screen`.
 
 - **`full_row_tile_pct`**: of all tiles cleared in the game, the share that went in full rows, which score nothing. Playtest 8's 62% is this number. It uses `junkTiles`, so it's exact for games from this version on.
 - **`helper_hits`**: pieces given a helper letter that made a word on landing (chain 1). Divide by `helper_pieces` to see whether `HELPER_CHANCE` earns its place.
