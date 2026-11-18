@@ -247,10 +247,14 @@ Tests check these rules over 10,000 generated pieces (`test/tiles.test.js`, `tes
 
 Letters are picked when a piece spawns, so the adaptive nudge and the helper letters always react to the stack as it is right now.
 
-**Game log.** There is no "Copy game log" button any more: every game is saved with all of this (see "Saved sessions"), so players have nothing to copy, and it was clutter next to the results. `Game.logText()` is kept as a plain-text summary you can print from the browser console (`ST.ui.game.logText()`):
+**Game log.** After a game ends, "Copy game log" copies a text summary:
 - every piece's letters, with helper letters marked;
 - the words found;
 - the final board.
+
+Paste it into a conversation to look at what came up.
+
+It is a testing tool, so it is a quiet text link, not a button, and the live site never shows it. Every live game is already saved with all of this (see "Saved sessions"), so a player has nothing to copy. It shows on preview links and local copies only (`ST.BACKEND.sandbox`). See `showSaveStatus()` in `src/ui.js`.
 
 ## Saved sessions (playtesting)
 
@@ -382,7 +386,7 @@ Supabase keeps every game in full; PostHog (`src/analytics.js`) answers the ques
 | `tip_shown` | A first-time tip pops up | `tip` (word, chain, row, level, danger) |
 | `results_shown` | The results screen finds your place (once per game) | `score`, `rank`, `players`, `can_post` (it offered a name box), `has_board` |
 | `scoreboard_opened`, `score_posted` | The scoreboard opens; a score is posted | `can_post`; `score`, `rank`, `players` |
-| `sound_toggled` | | `on` |
+| `game_log_copied`, `sound_toggled` | | `on` |
 
 Every event also carries `deploy_env`, `branch`, `app_version` (the commit), `layout` (phone or wide) and `touch_screen`.
 
