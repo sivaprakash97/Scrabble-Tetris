@@ -42,7 +42,7 @@
       this.seed = seed;
       this.sessionId = null; // set by the page when it starts saving this game
       this.clock = 0; // ms of play (paused time excluded)
-      // What happened this game, piece by piece: for "Copy game log" and saved sessions.
+      // What happened this game, piece by piece: for the results screen and saved sessions.
       this.log = { pieces: [], words: [], pauses: 0 };
     }
 

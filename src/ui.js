@@ -632,7 +632,6 @@
   const overlay = {
     root: $('overlay'), eyebrow: $('overlay-eyebrow'), title: $('overlay-title'),
     text: $('overlay-text'), primary: $('overlay-primary'), secondary: $('overlay-secondary'),
-    log: $('overlay-log'), logText: $('log-text'),
     help: $('overlay-help'), board: $('overlay-board'), results: $('overlay-results'),
   };
   let overlayState = null;
@@ -662,8 +661,6 @@
     // when they're closed, so it only needs the score and a way back to them.
     o.text.hidden = game.state === 'over';
     o.results.hidden = game.state !== 'over';
-    o.log.textContent = 'Copy game log';
-    o.logText.hidden = true;
     // How to play is there before and during a game; after one, it is out of the way.
     o.help.hidden = game.state === 'over';
     if (game.state === 'ready') {
@@ -722,10 +719,6 @@
     const text = game.state === 'over' && game.sessionId ? SAVE_TEXT[saveState] : null;
     saveStatusEl.hidden = !text;
     if (text) saveStatusEl.textContent = text;
-    // "Copy game log" is a testing tool: preview links and local copies only, never the live site.
-    // Live games are saved for review anyway, so a player has nothing to copy.
-    const testing = !!(ST.BACKEND && ST.BACKEND.sandbox);
-    overlay.log.hidden = game.state !== 'over' || !testing;
   }
   // What the Rules panel says about saving, by where games are saved (see src/sessions.js).
   const HISTORY_NOTE = {
@@ -749,25 +742,6 @@
 
   overlay.primary.addEventListener('click', primaryAction);
   overlay.secondary.addEventListener('click', () => restart('pause_screen'));
-
-  // Copies a text summary of the game, so a tricky run can be shared and looked at.
-  // If the clipboard is blocked, the text appears in a box to select by hand.
-  overlay.log.addEventListener('click', () => {
-    if (ST.analytics) ST.analytics.track('game_log_copied', { game_id: game.sessionId || null });
-    const text = game.logText();
-    const showBox = () => {
-      overlay.logText.value = text;
-      overlay.logText.hidden = false;
-      overlay.logText.focus();
-      overlay.logText.select();
-      overlay.log.textContent = 'Select the text below to copy';
-    };
-    try {
-      navigator.clipboard.writeText(text).then(() => { overlay.log.textContent = 'Copied'; }, showBox);
-    } catch {
-      showBox();
-    }
-  });
 
   // Other parts of the page (src/screens.js: tips, your best games) listen to game events.
   const eventHooks = [];

@@ -622,25 +622,6 @@ textarea:focus-visible {
   color: var(--ink-soft);
 }
 
-.log-text {
-  box-sizing: border-box;
-  width: 100%;
-  height: 8.5em;
-  resize: none;
-  font-family: ui-monospace, Menlo, Consolas, monospace;
-  font-size: var(--step--2);
-  line-height: 1.4;
-  text-align: left;
-  color: #fff;
-  background: var(--well);
-  border: var(--line) solid var(--ink);
-  border-radius: 12px;
-  box-shadow: inset 0 3px 0 rgb(0 0 0 / 0.35);
-  padding: 6px 8px;
-  user-select: text;
-  -webkit-user-select: text;
-}
-
 /* ---- control pad ------------------------------------------------------- */
 
 .touch {

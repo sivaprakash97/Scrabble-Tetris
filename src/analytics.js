@@ -8,7 +8,7 @@
 //   tutorial_closed  How to play closed: how far the player got, and whether it opened by itself
 //   tip_shown        a first-time tip popped up
 //   results_shown    the results screen found your place on the scoreboard (once per game)
-//   scoreboard_opened, score_posted, game_log_copied, sound_toggled
+//   scoreboard_opened, score_posted, sound_toggled
 //
 // Plus page views, page leaves, session recordings (typing is masked) and JavaScript errors.
 //

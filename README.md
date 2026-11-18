@@ -16,7 +16,6 @@ Built for phones first, planned for release as a phone app, and it plays on a la
 - "Words found", below the board, shows each word with a short definition.
 - "How to play" shows four illustrated cards; they open by themselves on a first visit.
 - After a game, a results screen opens: the leaderboard first, with your own row in it and a box for your nickname (type it and tap "Post to scoreboard"), then a performance card with your words, level, chains, full rows and best word. "Play again" is at the bottom. "My best" keeps your 10 best games on the device.
-- On preview links and local copies, a small "Copy game log" link copies every piece's letters and the final board, so a tricky game can be shared and looked at. The live site doesn't show it: saved games already hold all of that.
 - On the hosted page, every game is also saved automatically for review. This covers each piece's letters, where it went, how long it took and what it spelled. See "Saved sessions" in DESIGN.md.
 - See [DESIGN.md](DESIGN.md) for the letter rules, the dictionary, the scoring and the benchmark.
 
