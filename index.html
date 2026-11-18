@@ -197,6 +197,7 @@
 <dialog class="sheet" id="scoreboard" aria-labelledby="board-title">
   <div class="sheet-card" tabindex="-1">
     <h2 class="sheet-title gold" id="board-title">Scoreboard</h2>
+    <p class="sandbox-note" id="sandbox-note" hidden><b>Sandbox board.</b> Scores posted here stay off the live scoreboard.</p>
     <button type="button" class="close-btn" data-close aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g><g class="fl"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g></svg></button>
     <p class="posted" id="posted-note" hidden></p>
     <form class="post" id="post-form" hidden>
@@ -219,6 +220,9 @@
   </div>
 </dialog>
 
+<!-- On preview links and local copies: games and scores go to the sandbox, not the live board. -->
+<div class="sandbox-tag" id="sandbox-tag" hidden>Sandbox<span id="sandbox-branch"></span></div>
+
 <script src="src/config.js"></script>
 <script src="src/sound.js"></script>
 <script src="src/tiles.js"></script>
@@ -228,6 +232,7 @@
 <script src="src/game.js"></script>
 <script src="data/words.js"></script>
 <script src="data/definitions.js"></script>
+<script src="src/deploy.js"></script>
 <script src="src/backend-config.js"></script>
 <script src="src/sessions.js"></script>
 <script src="src/scores.js"></script>

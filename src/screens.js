@@ -682,6 +682,15 @@
     }
   });
 
+  // ---- sandbox ----------------------------------------------------------------
+  // Preview links and local copies say so, so testing never gets mixed up with the live game.
+  if (board.sandbox) {
+    const branch = (ST.DEPLOY && ST.DEPLOY.branch) || '';
+    $('sandbox-branch').textContent = branch ? ' · ' + branch : '';
+    $('sandbox-tag').hidden = false;
+    $('sandbox-note').hidden = false;
+  }
+
   ST.screens = {
     openHowTo,
     openScoreboard,

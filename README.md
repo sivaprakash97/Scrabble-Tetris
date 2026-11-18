@@ -30,7 +30,9 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 
 ## Hosting
 
-The website runs on Vercel and saves games anonymously to Supabase so they can be reviewed. Players can post a finished game to the scoreboard under a nickname; the database side is in `supabase/scoreboard.sql`. The project URL and public key live in `src/backend-config.js`. See "Hosting and saving" in [DESIGN.md](DESIGN.md).
+The website runs on Vercel and saves games anonymously to Supabase so they can be reviewed. Players can post a finished game to the scoreboard under a nickname; the database side is in `supabase/scoreboard.sql`.
+
+**Sandbox.** Every preview link (each branch gets one) and every local copy is a sandbox: its games and scores go to a separate sandbox board, never the live one, and it shows a yellow "Sandbox" tag. Only the live site uses the live scoreboard. See "Sandbox" in DESIGN.md and `supabase/sandbox.sql`. The project URL and public key live in `src/backend-config.js`. See "Hosting and saving" in [DESIGN.md](DESIGN.md).
 
 ## Develop
 
@@ -65,6 +67,8 @@ Hand-written definitions for words WordNet lacks are in `scripts/supplement-defs
 | `src/sound.js` | Sound effects, made in the browser |
 | `src/scores.js` | Talks to the scoreboard functions in Supabase |
 | `supabase/scoreboard.sql` | The scoreboard's table and functions |
+| `supabase/sandbox.sql` | The sandbox board: what keeps testing off the live scoreboard |
+| `src/deploy.js` | Live site or sandbox (the website build fills it in) |
 
 ## Credits
 

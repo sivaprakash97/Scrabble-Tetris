@@ -54,12 +54,12 @@ async function play(saver, pieces) {
 
 const BACKEND = { url: 'https://example.supabase.co/', publishableKey: 'sb_publishable_test' };
 
-test('on the website it posts each save to the Supabase save_game function', async () => {
+test('on the website it posts each save to the Supabase save_game_v2 function', async () => {
   const { saver, requests, statuses } = load({ backend: BACKEND });
   const game = await play(saver, 9);
   assert.equal(requests.length, 4, 'start + every 3rd of 9 pieces');
   const { url, init, body } = requests[0];
-  assert.equal(url, 'https://example.supabase.co/rest/v1/rpc/save_game');
+  assert.equal(url, 'https://example.supabase.co/rest/v1/rpc/save_game_v2');
   assert.equal(init.method, 'POST');
   assert.equal(init.headers.apikey, 'sb_publishable_test');
   assert.equal(body.p_id, game.sessionId);
@@ -67,7 +67,14 @@ test('on the website it posts each save to the Supabase save_game function', asy
   assert.match(body.p_player, /^[0-9a-f-]{36}$/);
   assert.equal(body.p_record.score, 10);
   assert.ok(body.p_record.startedAt && body.p_record.savedAt);
+  assert.equal(body.p_sandbox, false, 'the live site saves to the live board');
   assert.deepEqual(statuses[0], { state: 'ready', info: { backend: 'web' } });
+});
+
+test('a sandbox copy (preview link or local) saves to the sandbox board', async () => {
+  const { saver, requests } = load({ backend: { ...BACKEND, sandbox: true } });
+  await play(saver, 0);
+  assert.equal(requests[0].body.p_sandbox, true);
 });
 
 test('the anonymous player id is kept between visits', async () => {

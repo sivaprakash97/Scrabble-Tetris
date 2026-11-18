@@ -6,7 +6,7 @@
 //   page's database. Layout: sessions/<player id>/games/<game id>, one document per game,
 //   and sessions/<player id> = { lastGame, lastPlayedAt } so players can be listed.
 // - On the website (ST.BACKEND, set in src/backend-config.js): the Supabase function
-//   save_game(), which keeps one row per game in the `games` table. Players are anonymous:
+//   save_game_v2(), which keeps one row per game in the `games` table. Players are anonymous:
 //   a random id kept in their browser, with no name or account.
 // - Anywhere else (a local file, a signed-out viewer): nothing is saved; the game plays on.
 (function (W) {
@@ -88,12 +88,13 @@
 
   function supabaseStore(backend) {
     const player = playerId();
-    const url = backend.url.replace(/\/+$/, '') + '/rest/v1/rpc/save_game';
+    // save_game_v2 takes p_sandbox: preview and local copies save to the sandbox board.
+    const url = backend.url.replace(/\/+$/, '') + '/rest/v1/rpc/save_game_v2';
     return {
       backend: 'web',
       player,
       async write(job) {
-        const body = JSON.stringify({ p_id: job.id, p_player: player, p_record: job.body });
+        const body = JSON.stringify({ p_id: job.id, p_player: player, p_record: job.body, p_sandbox: !!backend.sandbox });
         const post = () =>
           W.fetch(url, {
             method: 'POST',

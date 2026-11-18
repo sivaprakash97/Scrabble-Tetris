@@ -37,10 +37,12 @@
 
   ST.scoreboard = {
     enabled,
+    // Preview links and local copies use the sandbox board (see src/backend-config.js).
+    sandbox: enabled && !!backend.sandbox,
     cleanNickname,
     // Each player's best posted game, top `limit`, plus your own row if it's further down.
     top(limit = 20) {
-      return rpc('top_scores', { p_player: ST.playerId(), p_limit: limit });
+      return rpc('top_scores_v2', { p_player: ST.playerId(), p_limit: limit, p_sandbox: !!backend.sandbox });
     },
     // Posts a finished game. The game's last save may still be on its way, so a game the
     // database hasn't seen finish yet is retried for a few seconds.
@@ -48,7 +50,8 @@
     async post(gameId, nickname) {
       for (let attempt = 0; ; attempt++) {
         try {
-          const rows = await rpc('post_score', { p_game: gameId, p_player: ST.playerId(), p_nickname: nickname });
+          // The game's own board (live or sandbox) decides where the score goes.
+          const rows = await rpc('post_score_v2', { p_game: gameId, p_player: ST.playerId(), p_nickname: nickname });
           return (rows && rows[0]) || null;
         } catch (e) {
           if (attempt < 6 && /game not (found|finished)/.test(e.reason)) {
