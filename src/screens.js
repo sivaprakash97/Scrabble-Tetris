@@ -480,7 +480,7 @@
     const legacyBest = store.get('best', 0);
     if (!list.length && legacyBest > 0) list.push({ score: legacyBest, legacy: true });
     if (!list.length) {
-      ol.replaceChildren(note('Your best games on this device show up here.'));
+      ol.replaceChildren(note('Your scores on this device show up here.'));
       return;
     }
     ol.replaceChildren(...list.slice(0, limit).map((g, i) => {
@@ -496,20 +496,11 @@
 
   const LIMIT = 20;
   const sheet = $('scoreboard');
-  const form = $('post-form');
-  const nameInput = $('post-name');
-  const submitBtn = $('post-submit');
-  const statusEl = $('post-status');
   const postedNote = $('posted-note');
   const tabs = [...$('board-tabs').children];
   const lists = { top: $('board-top'), mine: $('board-mine') };
   let posted = null; // { gameId, nickname, rank, players } for the last game you posted
   let topRequest = 0;
-
-  function canPost() {
-    return board.enabled && game.state === 'over' && !!game.sessionId && game.score > 0 &&
-      !(posted && posted.gameId === game.sessionId);
-  }
 
   function selectTab(name) {
     for (const t of tabs) t.setAttribute('aria-selected', String(t.dataset.tab === name));
@@ -545,11 +536,6 @@
     }
   }
 
-  function setStatus(text, isError) {
-    statusEl.textContent = text;
-    statusEl.classList.toggle('error', !!isError);
-  }
-
   function showPosted() {
     const here = posted && posted.gameId === game.sessionId;
     postedNote.hidden = !here;
@@ -562,8 +548,8 @@
 
   const NICK_RULE = "Use 2–16 letters or numbers. Spaces and _ . ' - are fine too.";
 
-  // Posts a finished game under a nickname. The scoreboard's form and the results screen's row
-  // both use it.
+  // Posts a finished game under a nickname, from your row on the results screen. The scoreboard
+  // dialog is for looking only: every finished game is already kept in My scores.
   async function postGame(gameId, nick) {
     const result = await board.post(gameId, nick);
     store.set('nickname', nick);
@@ -576,41 +562,10 @@
     ? "That nickname can't be used. Try another."
     : "Couldn't post your score. Check your connection and try again.");
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const nick = board.cleanNickname(nameInput.value);
-    if (!nick) {
-      setStatus(NICK_RULE, true);
-      nameInput.focus();
-      return;
-    }
-    submitBtn.disabled = nameInput.disabled = true;
-    setStatus('Posting…');
-    try {
-      await postGame(game.sessionId, nick);
-      form.hidden = true;
-      setStatus('');
-      showPosted();
-      selectTab('top');
-      loadTop();
-    } catch (err) {
-      setStatus(postError(err), true);
-    } finally {
-      submitBtn.disabled = nameInput.disabled = false;
-    }
-  });
-
   function openScoreboard() {
-    const postable = canPost();
-    trackEvent('scoreboard_opened', { can_post: postable, game_state: game.state });
-    form.hidden = !postable;
-    setStatus('');
-    if (postable) {
-      $('post-score').textContent = fmt(game.score);
-      nameInput.value = store.get('nickname', '');
-    }
+    trackEvent('scoreboard_opened', { game_state: game.state });
     showPosted();
-    $('board-title').textContent = board.enabled ? 'Scoreboard' : 'My best games';
+    $('board-title').textContent = board.enabled ? 'Scoreboard' : 'My scores';
     $('board-tabs').hidden = !board.enabled;
     selectTab(board.enabled ? 'top' : 'mine');
     renderMine();
@@ -634,7 +589,7 @@
   const rTabMine = $('rtab-mine');
   const RESULTS_MINE = 5; // your best games shown here; the scoreboard has all 10
 
-  // Leaderboard (where this game stands) or My best (this device's best games).
+  // Leaderboard (where this game stands) or My scores (this device's best games).
   function selectResultsTab(name) {
     const mine = name === 'mine';
     rTabBoard.setAttribute('aria-selected', String(!mine));
@@ -646,7 +601,7 @@
   rTabBoard.addEventListener('click', () => selectResultsTab('board'));
   rTabMine.addEventListener('click', () => {
     selectResultsTab('mine');
-    trackEvent('results_my_best', { game_id: game.sessionId || null });
+    trackEvent('results_my_scores', { game_id: game.sessionId || null });
   });
   const RESULTS_DELAY = 900; // ms after the game ends, so the game-over sound and card land first
   const RESULTS_GUARD = 700; // ms in which a stray tap or Space can't close or skip it
@@ -773,7 +728,7 @@
   }
 
   async function showStanding() {
-    rTabBoard.hidden = !board.enabled; // no shared board here: My best only
+    rTabBoard.hidden = !board.enabled; // no shared board here: My scores only
     if (!board.enabled) {
       if (resultsTracked !== game.sessionId) {
         resultsTracked = game.sessionId;

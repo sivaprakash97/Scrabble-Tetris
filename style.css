@@ -1634,37 +1634,6 @@ dialog.sheet[open] .sheet-card {
   box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.55), 0 4px 0 var(--ink);
 }
 
-.post {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px 12px;
-  background: #fff;
-  border: var(--line) solid var(--ink);
-  border-radius: 18px;
-  box-shadow: inset 0 -4px 0 rgb(27 17 57 / 0.08), 0 4px 0 var(--ink);
-}
-
-.post-head {
-  font-family: var(--font-display);
-  font-size: var(--step-1);
-  line-height: 1.1;
-  letter-spacing: 0.02em;
-}
-
-.post-head strong {
-  font-weight: 400;
-  color: var(--yellow);
-  text-shadow: var(--outline-sm);
-}
-
-.post-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.post-row input,
 .you-form input {
   flex: 1;
   min-width: 0;
@@ -1681,34 +1650,13 @@ dialog.sheet[open] .sheet-card {
   box-shadow: inset 0 3px 0 rgb(27 17 57 / 0.12);
 }
 
-.post-row input::placeholder,
 .you-form input::placeholder {
   color: rgb(85 73 127 / 0.6);
 }
 
-.post-row input:focus-visible,
 .you-form input:focus-visible {
   outline: 3px solid var(--blue);
   outline-offset: 1px;
-}
-
-.post-row .btn-primary {
-  height: 42px;
-}
-
-.post-status {
-  margin: 0;
-  font-size: var(--step--1);
-  font-weight: 600;
-  color: var(--ink-soft);
-}
-
-.post-status:empty {
-  display: none;
-}
-
-.post-status.error {
-  color: var(--red-lo);
 }
 
 .tabs {
@@ -1912,7 +1860,7 @@ dialog.sheet[open] .sheet-card {
   text-underline-offset: 5px;
 }
 
-/* My best is about your games, not this one: the posted pill and the note belong to the leaderboard. */
+/* My scores is about your games, not this one: the posted pill and the note belong to the leaderboard. */
 .results-board.on-mine .posted,
 .results-board.on-mine .results-note {
   display: none;

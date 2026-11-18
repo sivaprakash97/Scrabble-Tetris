@@ -207,18 +207,9 @@
     <p class="sandbox-note" id="sandbox-note" hidden><b>Sandbox board.</b> Scores posted here stay off the live scoreboard.</p>
     <button type="button" class="close-btn" data-close aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g><g class="fl"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g></svg></button>
     <p class="posted" id="posted-note" hidden></p>
-    <form class="post" id="post-form" hidden>
-      <label class="post-head" for="post-name">Post your <strong id="post-score">0</strong></label>
-      <div class="post-row">
-        <input id="post-name" name="nickname" maxlength="16" autocomplete="nickname" autocapitalize="words"
-               spellcheck="false" enterkeyhint="send" placeholder="Your nickname">
-        <button type="submit" class="btn-primary btn-small" id="post-submit">Post</button>
-      </div>
-      <p class="post-status" id="post-status" role="status"></p>
-    </form>
     <div class="tabs" role="tablist" id="board-tabs">
       <button type="button" role="tab" id="tab-top" aria-controls="board-top" aria-selected="true" data-tab="top">Top players</button>
-      <button type="button" role="tab" id="tab-mine" aria-controls="board-mine" aria-selected="false" data-tab="mine">My best</button>
+      <button type="button" role="tab" id="tab-mine" aria-controls="board-mine" aria-selected="false" data-tab="mine">My scores</button>
     </div>
     <div class="board-scroll">
       <ol class="board-list" id="board-top" role="tabpanel" aria-labelledby="tab-top"></ol>
@@ -237,7 +228,7 @@
       <section class="results-board" id="results-board" aria-label="Scores">
         <div class="results-tabs" role="tablist">
           <button type="button" role="tab" id="rtab-board" aria-controls="results-list" aria-selected="true">Leaderboard<span class="tab-count" id="rtab-count"></span></button>
-          <button type="button" role="tab" id="rtab-mine" aria-controls="results-mine" aria-selected="false">My best</button>
+          <button type="button" role="tab" id="rtab-mine" aria-controls="results-mine" aria-selected="false">My scores</button>
         </div>
         <p class="posted" id="results-posted" hidden></p>
         <ol class="board-list" id="results-list" role="tabpanel" aria-labelledby="rtab-board"></ol>

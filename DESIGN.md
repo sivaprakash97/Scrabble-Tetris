@@ -90,17 +90,17 @@ Four illustrated cards in a dialog, swiped sideways or stepped through with Back
 Opened from "Scoreboard" on the start and pause screens, and in the Rules panel. The game-over card has no Scoreboard button: its "Results" button already shows the leaderboard, and two buttons that both open a leaderboard read as the same thing. Two tabs:
 
 - **Top players** (website only): each player's best posted game, under their latest nickname, top 20. Your own row is highlighted, and shown below the top 20 if you're further down.
-- **My best:** your 10 best games on this device (`localStorage alphaboom.games`), with date, level, words and best word. Kept for every finished game, posted or not.
+- **My scores:** your 10 best games on this device (`localStorage alphaboom.games`), with date, level, words and best word. Kept for every finished game, posted or not.
 
 **Posting a score.**
 - After a game, the results screen opens by itself (see "Results screen" below). Your row in its leaderboard has a box for your nickname, so posting is one step. The nickname is remembered on the device (`alphaboom.nickname`), so later posts are one tap.
-- The scoreboard dialog can still post the same game (its form shows when there's something to post), so closing the results doesn't lose the chance.
+- Posting happens only there. The Scoreboard dialog is for looking: it has no post form, and every finished game is kept in My scores whether it's posted or not. Closing the results and opening them again ("Results" on the game-over card) brings the box back.
 - Posting is optional, one game at a time. A player who never posts never appears.
 - Nicknames are 2–16 letters, numbers, spaces or `_ . ' -`. Both the page and the database check this.
 
 **Where it's kept.** The Supabase table `scores`, one row per posted game. See "Hosting and saving".
 
-**Where there's no shared board.** On the Claude page and in a local file, games aren't in Supabase, so the scoreboard shows only "My best games".
+**Where there's no shared board.** On the Claude page and in a local file, games aren't in Supabase, so the scoreboard shows only "My scores".
 
 ## Results screen
 
@@ -120,7 +120,7 @@ Playtest data showed the problem: in the first week, 11 games were finished on t
 - A score of 0 shows the top of the board and "Score some words to get on the scoreboard."
 - If the board can't be loaded, it says so with "Try again". The performance card still shows.
 
-**My best.** The leaderboard's heading is two tabs: "Leaderboard · 13 players" and "My best". My best lists this device's 5 best games (date, words, score), with the game just played highlighted if it made the list; the Scoreboard has all 10. Tabs instead of a heading cost no extra height. Where there is no shared board (the Claude page, a local file with no backend), only My best shows, above the performance card.
+**My scores.** The leaderboard's heading is two tabs: "Leaderboard · 13 players" and "My scores". My scores lists this device's 5 best games (date, words, score), with the game just played highlighted if it made the list; the Scoreboard has all 10. Tabs instead of a heading cost no extra height. Where there is no shared board (the Claude page, a local file with no backend), only My scores shows, above the performance card.
 
 **Where the rank comes from.** `score_standing_v2` (`supabase/standing.sql`) takes the score the page has and returns the rows above. It only places the row. Posting still takes the score from the saved game (`post_score_v2`), so a made-up score changes nothing but the preview. See "Hosting and saving".
 
@@ -167,7 +167,7 @@ Each tip shows once per device (`localStorage alphaboom.tips`); clear it to see 
 | First level up | Level 2! | Pieces fall faster now, and every word scores ×2. |
 | Stack reaches the top fifth | Careful! | The stack is near the top. Spell words to bring it back down. |
 
-**Game-over summary.** One fact per line: words, level and longest chain; best word; full rows. A beaten record turns "Game over" into "New best!". Your best games are listed in the scoreboard's My best tab.
+**Game-over summary.** One fact per line: words, level and longest chain; best word; full rows. A beaten record turns "Game over" into "New best!". Your best games are listed in the scoreboard's My scores tab.
 
 ## Sound
 
@@ -386,8 +386,8 @@ Supabase keeps every game in full; PostHog (`src/analytics.js`) answers the ques
 | `tutorial_closed` | How to play closes | `auto` (opened by itself), `furthest_card`, `finished`, `first_visit` |
 | `tip_shown` | A first-time tip pops up | `tip` (word, chain, row, level, danger) |
 | `results_shown` | The results screen finds your place (once per game) | `score`, `rank`, `players`, `can_post` (it offered a name box), `has_board` |
-| `results_my_best` | The My best tab on the results screen is tapped | `game_id` |
-| `scoreboard_opened`, `score_posted` | The scoreboard opens; a score is posted | `can_post`; `score`, `rank`, `players` |
+| `results_my_scores` | The My scores tab on the results screen is tapped | `game_id` |
+| `scoreboard_opened`, `score_posted` | The scoreboard opens; a score is posted (from the results screen) | `game_state`; `score`, `rank`, `players` |
 | `game_log_copied`, `sound_toggled` | | `on` |
 
 Every event also carries `deploy_env`, `branch`, `app_version` (the commit), `layout` (phone or wide) and `touch_screen`.
