@@ -570,7 +570,7 @@
       form.hidden = true;
       setStatus('');
       showPosted();
-      $('overlay-board').querySelector('span').textContent = 'Scoreboard';
+      ui.refreshOverlay(); // nothing left to post: Play again leads, and the Scoreboard button returns
       selectTab('top');
       loadTop();
     } catch (err) {
@@ -814,8 +814,8 @@
     openScoreboard,
     holding: () => holding,
     cancelHold,
-    // The label of the scoreboard button on the game-over screen.
-    boardLabel: () => (canPost() ? 'Post score' : 'Scoreboard'),
+    // Whether the game-over screen should lead with Post score.
+    canPost,
   };
   ui.refreshOverlay();
 

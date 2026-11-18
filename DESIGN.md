@@ -93,7 +93,9 @@ Opened from "Scoreboard" on the start, pause and game-over screens, and in the R
 - **My best:** your 10 best games on this device (`localStorage alphaboom.games`), with date, level, words and best word. Kept for every finished game, posted or not.
 
 **Posting a score.**
-- After a game, the game-over screen offers "Post score". It opens the scoreboard with a nickname box. The nickname is remembered on the device (`alphaboom.nickname`), so later posts are one tap.
+- After a game, the game-over screen leads with "Post score": the big green button. "Play again" is the smaller blue button under it. Post score opens the scoreboard with a nickname box. The nickname is remembered on the device (`alphaboom.nickname`), so later posts are one tap.
+- When there's nothing to post (a score of 0, a game already posted, or no shared board), Play again becomes the big button and a small Scoreboard button comes back under it.
+- Space and Enter always mean "play": at game over they play again, so a quick rematch doesn't open the nickname box. The hint under the buttons reads "or press Space to play again".
 - Posting is optional, one game at a time. A player who never posts never appears.
 - Nicknames are 2–16 letters, numbers, spaces or `_ . ' -`. Both the page and the database check this.
 
@@ -218,6 +220,8 @@ Letters are picked when a piece spawns, so the adaptive nudge and the helper let
 - the final board.
 
 Paste it into a conversation to look at what came up.
+
+It is a testing tool, so it is a quiet text link, not a button, and the live site hides it. Every live game is already saved with all of this (see "Saved sessions"), so a player has nothing to copy. It shows on preview links and local copies, and on any build where the game isn't being saved: the save failed ("This game could not be saved."), or there is nowhere to save to. See `showSaveStatus()` in `src/ui.js`.
 
 ## Saved sessions (playtesting)
 

@@ -15,8 +15,8 @@ Built for phones first, planned for release as a phone app, and it plays on a la
 - Letters use Scrabble values, and longer words multiply steeply.
 - "Words found", below the board, shows each word with a short definition.
 - "How to play" shows four illustrated cards; they open by themselves on a first visit.
-- After a game, "Post score" puts it on the scoreboard under a nickname. "My best" keeps your 10 best games on the device.
-- After a game, "Copy game log" copies every piece's letters and the final board, so a tricky game can be shared and looked at.
+- After a game, "Post score" is the big button: it puts the game on the scoreboard under a nickname. "Play again" sits under it. "My best" keeps your 10 best games on the device.
+- On preview links and local copies, a small "Copy game log" link copies every piece's letters and the final board, so a tricky game can be shared and looked at. On the live site it only appears when a game couldn't be saved, because saved games already hold all of that.
 - On the hosted page, every game is also saved automatically for review. This covers each piece's letters, where it went, how long it took and what it spelled. See "Saved sessions" in DESIGN.md.
 - See [DESIGN.md](DESIGN.md) for the letter rules, the dictionary, the scoring and the benchmark.
 
@@ -27,7 +27,7 @@ Built for phones first, planned for release as a phone app, and it plays on a la
 | Down | Wide button under Left and Right. Hold to drop faster. | Down or S. Hold to drop faster. |
 | Pause or resume | Pause button, top right | P or Esc |
 | Sound on or off | Speaker, under Pause | M |
-| Start, resume, play again | The big button on the screen | Space or Enter |
+| Start, resume, play again | The big button on the screen (after a game, Play again is under Post score) | Space or Enter |
 
 Rotating turns the piece clockwise and its letters turn with it. A piece locks a moment after it lands. There's no hard drop.
 

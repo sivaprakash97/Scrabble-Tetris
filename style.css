@@ -591,6 +591,13 @@ textarea:focus-visible {
   margin-top: 4px;
 }
 
+/* Game over with a score to post: Post score on top, Play again under it. */
+.overlay-actions.stacked {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
 .btn-primary,
 .btn-ghost {
   font-family: var(--font-display);
@@ -1141,7 +1148,7 @@ textarea:focus-visible {
   border-radius: 14px;
 }
 
-/* ---- small buttons: How to play, Scoreboard, Copy game log ------------- */
+/* ---- small buttons: How to play, Scoreboard ------------------------------ */
 
 .btn-small {
   --drop: 3px;

@@ -631,11 +631,16 @@
 
   const overlay = {
     root: $('overlay'), eyebrow: $('overlay-eyebrow'), title: $('overlay-title'),
-    text: $('overlay-text'), primary: $('overlay-primary'), secondary: $('overlay-secondary'),
+    text: $('overlay-text'), actions: $('overlay-actions'),
+    primary: $('overlay-primary'), secondary: $('overlay-secondary'),
     log: $('overlay-log'), logText: $('log-text'),
-    help: $('overlay-help'), board: $('overlay-board'),
+    help: $('overlay-help'), board: $('overlay-board'), keyTipPlay: $('key-tip-play'),
   };
   let overlayState = null;
+  // Game over with a score that can still be posted: Post score is the big button and Play again
+  // sits under it. With nothing to post (no score, already posted, no shared board), Play again leads.
+  let postFirst = false;
+  let overNewBest = false; // worked out once, when the game ends, so a redraw doesn't lose "New best!"
 
   // The start screen's one-line pitch; How to play has the details.
   function rulesLine() {
@@ -645,17 +650,23 @@
 
   function updateOverlay(force) {
     if (!force && overlayState === game.state) return;
+    const entering = overlayState !== game.state;
     overlayState = game.state;
     const o = overlay;
     const held = !!(ST.screens && ST.screens.holding());
+    postFirst = game.state === 'over' && !!(ST.screens && ST.screens.canPost());
     o.root.hidden = held || game.state === 'playing' || game.state === 'clearing';
-    o.secondary.hidden = game.state !== 'paused';
-    o.log.hidden = game.state !== 'over';
+    // Paused: Resume, then Restart beside it. Game over with a score to post: Post score, then
+    // Play again under it. The Scoreboard button is only needed when Post score isn't offered.
+    o.secondary.hidden = game.state !== 'paused' && !postFirst;
+    o.secondary.textContent = postFirst ? 'Play again' : 'Restart';
+    o.actions.classList.toggle('stacked', postFirst);
+    o.keyTipPlay.hidden = !postFirst;
+    o.board.hidden = postFirst;
     o.log.textContent = 'Copy game log';
     o.logText.hidden = true;
-    // How to play is there before and during a game; after one, the log takes its place.
+    // How to play is there before and during a game; after one, it is out of the way.
     o.help.hidden = game.state === 'over';
-    o.board.querySelector('span').textContent = (ST.screens && ST.screens.boardLabel()) || 'Scoreboard';
     if (game.state === 'ready') {
       o.eyebrow.textContent = 'Prototype';
       o.title.textContent = 'Alphaboom';
@@ -668,11 +679,12 @@
       o.text.textContent = `${game.words} ${game.words === 1 ? 'word' : 'words'} so far.`;
       o.primary.textContent = 'Resume';
     } else if (game.state === 'over') {
-      const before = store.get('best', 0);
-      const best = Math.max(before, game.score);
-      store.set('best', best);
-      const newBest = before > 0 && game.score > before;
-      o.eyebrow.textContent = newBest ? 'New best!' : 'Game over';
+      if (entering) {
+        const before = store.get('best', 0);
+        store.set('best', Math.max(before, game.score));
+        overNewBest = before > 0 && game.score > before;
+      }
+      o.eyebrow.textContent = overNewBest ? 'New best!' : 'Game over';
       o.title.textContent = fmt(game.score);
       // Full rows that cleared this game: they score nothing, so say so.
       const rows = game.log.pieces.reduce((n, p) => n + (p.junkRows || 0), 0);
@@ -687,11 +699,12 @@
         const [text, cls] = Array.isArray(l) ? l : [l, ''];
         return el('span', 'line' + (cls ? ' ' + cls : ''), text);
       }));
-      o.primary.textContent = 'Play again';
+      o.primary.textContent = postFirst ? 'Post score' : 'Play again';
     }
     showSaveStatus();
   }
 
+  // The big button: Start, Resume, and at game over Post score (or Play again, with nothing to post).
   function primaryAction() {
     if (game.state === 'ready') {
       game.inputs = {};
@@ -699,7 +712,17 @@
       saver.begin(game);
       if (ST.analytics) ST.analytics.gameStarted(game, 'start');
     } else if (game.state === 'paused') game.togglePause();
-    else if (game.state === 'over') restart('play_again');
+    else if (game.state === 'over') {
+      if (postFirst && ST.screens) ST.screens.openScoreboard();
+      else restart('play_again');
+    }
+  }
+
+  // Space and Enter mean "keep playing": the same as the big button, except at game over, where
+  // they play again even when Post score leads. A quick rematch shouldn't open the nickname box.
+  function playKey() {
+    if (game.state === 'over') restart('play_again');
+    else primaryAction();
   }
 
   // `from` says which button started the new game, for analytics.
@@ -728,6 +751,11 @@
     const text = game.state === 'over' && game.sessionId ? SAVE_TEXT[saveState] : null;
     saveStatusEl.hidden = !text;
     if (text) saveStatusEl.textContent = text;
+    // "Copy game log" is a testing tool. Preview and local copies always offer it. On the live
+    // site a game that is saved for review has nothing for a player to copy, so the button only
+    // appears when the game isn't being saved: the save failed, or there is nowhere to save to.
+    const testing = !!(ST.BACKEND && ST.BACKEND.sandbox);
+    overlay.log.hidden = game.state !== 'over' || !(testing || saveState === 'off' || saveState === 'error');
   }
   // What the Rules panel says about saving, by where games are saved (see src/sessions.js).
   const HISTORY_NOTE = {
@@ -750,7 +778,7 @@
   });
 
   overlay.primary.addEventListener('click', primaryAction);
-  overlay.secondary.addEventListener('click', () => restart('pause_screen'));
+  overlay.secondary.addEventListener('click', () => restart(game.state === 'over' ? 'play_again' : 'pause_screen'));
 
   // Copies a text summary of the game, so a tricky run can be shared and looked at.
   // If the clipboard is blocked, the text appears in a box to select by hand.
@@ -918,7 +946,7 @@
 
   // ---- input: keyboard (laptops and desktops) ---------------------------------
   // Arrow keys or WASD steer: Up/W rotates, Down/S drops faster. P or Esc pauses, M mutes, and
-  // Space or Enter presses the big button on the start, pause and game-over screens. Keys go
+  // Space or Enter starts, resumes or plays again on the start, pause and game-over screens. Keys go
   // through the same press()/release() as the on-screen pad, so holding Left or Right repeats
   // the game's own way (DAS/ARR); the operating system's key repeat is ignored. The matching
   // on-screen button lights up while its key is down.
@@ -961,7 +989,7 @@
       // Go by the game's state, not by whether the screen has repainted yet. A tip's 3-2-1
       // countdown also leaves the game paused, and Space must not resume it from underneath.
       const onScreen = game.state === 'ready' || game.state === 'paused' || game.state === 'over';
-      if (onScreen && !e.repeat && !(ST.screens && ST.screens.holding())) primaryAction();
+      if (onScreen && !e.repeat && !(ST.screens && ST.screens.holding())) playKey();
     }
   });
 
