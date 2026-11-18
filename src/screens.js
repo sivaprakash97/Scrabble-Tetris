@@ -90,7 +90,7 @@
       const kind = art.dataset.art;
       art.querySelectorAll('.tile-row, .art-points, .score-row').forEach((n) => n.remove());
       if (kind === 'spell') {
-        spellBuild(art, size);
+        spellBuild(art, Math.min(size, 38));
       } else if (kind === 'steer') {
         demoBuild(art);
       } else if (kind === 'score') {
@@ -263,8 +263,9 @@
 
   const spell = { stage: null, host: null, timers: [], running: false };
   const SPELL_COLS = 6;
-  const SPELL_ROWS = 4;
-  const SPELL_GRID = ['', '', ' O N', 'KC TZL'];
+  const SPELL_ROWS = 6;
+  // Stacked tiles in the well. The falling L piece (Z, R, Y, T) lands with its T beside C and A.
+  const SPELL_GRID = ['', '', '', '', 'OBU', 'KCA'];
   const SPELL_WORD = ['C', 'A', 'T'];
 
   const spellAt = (ms, fn) => spell.timers.push(setTimeout(fn, ms));
@@ -279,25 +280,47 @@
     const st = spell.stage;
     spell.host.classList.remove('fading');
     st.setGrid(SPELL_GRID);
-    let y = -1;
-    const show = () => st.setPiece([{ x: 2, y, tile: { ch: 'A' } }], 3 - y);
+    const filled = SPELL_GRID.map((row) => Array.from({ length: SPELL_COLS }, (_, x) => !!row[x] && row[x] !== ' '));
+    const free = (cells) => cells.every((c) => c.x >= 0 && c.x < SPELL_COLS && c.y < SPELL_ROWS && (c.y < 0 || !filled[c.y][c.x]));
+    // A real piece: the game's L, letters in reading order, so it turns like one in play.
+    const piece = ST.makePiece('L', ['Z', 'R', 'Y', 'T'], cfg);
+    piece.x = 3;
+    piece.y = -1;
+    const cellsOf = (pc = piece, dx = 0, dy = 0) => ST.pieceCells({ ...pc, x: pc.x + dx, y: pc.y + dy });
+    const drop = () => { let d = 0; while (free(cellsOf(piece, 0, d + 1))) d++; return d; };
+    const show = () => st.setPiece(cellsOf(), drop());
+
+    const moves = ['fall', 'fall', 'rotate', 'left', 'fall'];
+    let i = 0;
     const step = () => {
-      if (y < 3) {
-        y++;
-        show();
-        spellAt(130, step);
+      let wait = 130;
+      let act = moves[i++] || 'fall';
+      if (act === 'rotate') {
+        piece.grid = ST.rotateGrid(piece.grid, 1);
+        wait = 220;
+        if (ST.sound) ST.sound.play('rotate');
+      } else if (act === 'left') {
+        piece.x -= 1;
+        wait = 200;
+        if (ST.sound) ST.sound.play('move');
+      } else if (free(cellsOf(piece, 0, 1))) {
+        piece.y += 1;
+      } else {
+        st.lock();
+        if (ST.sound) ST.sound.play('land');
+        spellAt(260, () => {
+          st.clear([1, 2, 3].map((x) => ({ x, y: SPELL_ROWS - 1 })), '+' + points(SPELL_WORD), SPELL_WORD.join(''));
+          if (ST.sound) ST.sound.play('word', { letters: SPELL_WORD.length });
+        });
+        spellAt(2300, () => spell.host.classList.add('fading'));
+        spellAt(2560, spellPlay);
         return;
       }
-      st.lock();
-      if (ST.sound) ST.sound.play('land');
-      spellAt(260, () => {
-        st.clear([1, 2, 3].map((x) => ({ x, y: 3 })), '+' + points(SPELL_WORD), SPELL_WORD.join(''));
-        if (ST.sound) ST.sound.play('word', { letters: SPELL_WORD.length });
-      });
-      spellAt(2700, () => spell.host.classList.add('fading'));
-      spellAt(2960, spellPlay);
+      show();
+      spellAt(wait, step);
     };
-    spellAt(600, step);
+    show();
+    spellAt(700, step);
   }
 
   function spellBuild(art, size) {
@@ -309,7 +332,7 @@
     spell.host.style.height = SPELL_ROWS * size + 'px';
     art.append(spell.host);
     spell.stage = ui.miniStage(spell.host, SPELL_COLS, SPELL_ROWS, size);
-    spell.stage.setGrid(['', '', ' O N', 'KC TZL']);
+    spell.stage.setGrid(SPELL_GRID);
     spell.stage.draw();
     spellSync();
   }
