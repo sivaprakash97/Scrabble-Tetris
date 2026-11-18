@@ -1851,6 +1851,8 @@ dialog.sheet[open] .sheet-card {
 
 .results-card {
   gap: 0;
+  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
 }
 
 /* The ribbon and close button hang over the card's edge, so only the middle scrolls and
@@ -1859,10 +1861,10 @@ dialog.sheet[open] .sheet-card {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   min-height: 0;
   margin: 0 -8px;
-  padding: 4px 8px 12px;
+  padding: 4px 8px 8px;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -1898,23 +1900,24 @@ dialog.sheet[open] .sheet-card {
 /* Compact rows, so the leaderboard and the performance card both fit on a phone:
    rank, name, date and score on one line. */
 #results-list {
-  gap: 6px;
+  gap: 5px;
 }
 
 #results-list .entry {
   gap: 8px;
-  padding: 4px 8px 5px 5px;
-  border-radius: 13px;
+  padding: 3px 8px 4px 4px;
+  border-radius: 12px;
 }
 
 /* A circle for ranks up to 99; a pill for #120 and beyond. */
 #results-list .rank {
-  min-width: 28px;
+  min-width: 24px;
   width: auto;
-  height: 28px;
+  height: 24px;
   padding: 0 5px;
   box-sizing: border-box;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+  border-width: 2px;
   border-radius: 999px;
 }
 
@@ -1927,7 +1930,7 @@ dialog.sheet[open] .sheet-card {
 
 #results-list .who .name {
   min-width: 0;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 #results-list .who .meta {
@@ -1936,7 +1939,8 @@ dialog.sheet[open] .sheet-card {
 }
 
 #results-list .coin {
-  font-size: 0.85rem;
+  padding: 0 9px 1px;
+  font-size: 0.8rem;
 }
 
 /* Your row, before you post: a box where the name goes, and Post under it. */
@@ -1986,7 +1990,7 @@ dialog.sheet[open] .sheet-card {
 
 /* How the game went: a dark panel with big numbers, like a video game's end-of-match card. */
 .perf {
-  padding: 12px;
+  padding: 10px;
   color: #fff;
   background:
     radial-gradient(rgb(255 255 255 / 0.06) 1.5px, transparent 2px) 0 0 / 14px 14px,
@@ -2032,14 +2036,14 @@ dialog.sheet[open] .sheet-card {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin: 10px 0 0;
+  margin: 8px 0 0;
 }
 
 .perf-stat {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 6px 9px 7px;
+  padding: 5px 9px 6px;
   background: rgb(255 255 255 / 0.07);
   border: 2px solid rgb(255 255 255 / 0.14);
   border-radius: 14px;
@@ -2110,7 +2114,7 @@ dialog.sheet[open] .perf-stat {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding-top: 8px;
+  padding-top: 6px;
 }
 
 .results-again {

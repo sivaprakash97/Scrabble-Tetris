@@ -49,7 +49,7 @@
     // row: posting takes the score from the saved game.
     standing(score) {
       return rpc('score_standing_v2', {
-        p_player: ST.playerId(), p_score: score, p_sandbox: !!backend.sandbox, p_top: 3, p_around: 1,
+        p_player: ST.playerId(), p_score: score, p_sandbox: !!backend.sandbox, p_top: 5, p_around: 1,
       });
     },
     // Posts a finished game. The game's last save may still be on its way, so a game the

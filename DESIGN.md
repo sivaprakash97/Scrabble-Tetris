@@ -111,7 +111,8 @@ Playtest data showed the problem: in the first week, 11 games were finished on t
 **Order: leaderboard first, then performance.** Players want to see their rank before their stats. On a phone it's one column, with Play again pinned at the bottom and the middle scrolling on short screens. On a wide screen (the same query as the wide layout) the card is wider, with the leaderboard on the left and the performance card on the right.
 
 **Leaderboard.**
-- The top 3, a "⋯" gap, then the row above yours, yours, and the row below. The heading shows how many players are on the board, counting you.
+- The top 5, a "⋯" gap, then the row above yours, yours, and the row below (at most 9 rows, however many players there are). The gap closes when your place is near the top. The heading shows how many players are on the board, counting you. The full top 20 is in the Scoreboard.
+- The size is `p_top` in `board.standing()` (`src/scores.js`). The top 3 would leave more room; the top 5 fits a 375×812 phone with the rows kept to one line and the card's spacing trimmed.
 - Rows are one line: rank, name, date posted, score. The top 3 get gold, silver and bronze badges.
 - Your row, before you post, is a box for your nickname (prefilled with the one remembered on the device), your score, and a "Post to scoreboard" button. Enter in the box posts too. The box is never focused automatically, so a phone keyboard doesn't cover the stats.
 - Posting redraws the board: your row is now a real row with your name, under a green "Posted as …: #8 of 13!" pill.
