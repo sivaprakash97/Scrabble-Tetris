@@ -90,8 +90,7 @@
       const kind = art.dataset.art;
       art.querySelectorAll('.tile-row, .art-points, .score-row').forEach((n) => n.remove());
       if (kind === 'spell') {
-        const word = ['C', 'A', 'T'];
-        art.append(el('div', 'art-points', '+' + points(word)), tileRow(['K', ...word, 'Z'], 'base', size, 1, 3));
+        spellBuild(art, size);
       } else if (kind === 'steer') {
         demoBuild(art);
       } else if (kind === 'score') {
@@ -117,7 +116,7 @@
   // and the player can tap the keys to try them; a tap pauses the loop for a few seconds.
   // It uses the game's own piece shapes and rotation, so letters turn the way they do in play.
 
-  const demo = { cols: 5, rows: 5, cell: 26, piece: null, x: 0, y: 0, tiles: new Map(), ghosts: new Map(), timer: null, busy: false, manualUntil: 0, step: 0 };
+  const demo = { cols: 5, rows: 5, cell: 26, piece: null, x: 0, y: 0, stage: null, fall: null, timer: null, busy: false, manualUntil: 0, step: 0 };
   const demoWell = $('demo-well');
   const demoKeys = [...howto.querySelectorAll('[data-demo]')];
   const DEMO_LOOP = [['rotate', 900], ['left', 650], ['right', 650], ['right', 650], ['rotate', 750], ['down', 1300], ['reset', 500]];
@@ -135,53 +134,30 @@
   }
 
   function demoPlace() {
-    const s = demo.cell;
-    const d = demoDrop();
-    for (const c of demoCells()) {
-      demo.tiles.get(c.tile.id).style.transform = `translate(${c.x * s}px, ${c.y * s}px)`;
-      demo.ghosts.get(c.tile.id).style.transform = `translate(${c.x * s}px, ${(c.y + d) * s}px)`;
-    }
+    demo.stage.setPiece(demoCells(), demoDrop());
+    demo.stage.draw();
   }
 
   function demoSpawn() {
+    clearTimeout(demo.fall);
+    demo.fall = null;
     demo.piece = ST.makePiece('T', ['S', 'C', 'A', 'T'], cfg);
     demo.x = 1;
     demo.y = -ST.pieceTopRow(demo.piece);
     demo.busy = false;
-    demoWell.classList.remove('fast', 'landed');
-    demoWell.replaceChildren();
-    for (let r = 0; r < demo.rows; r++) {
-      for (let c = 0; c < demo.cols; c++) {
-        const cellEl = el('span', 'demo-cell');
-        cellEl.style.transform = `translate(${c * demo.cell}px, ${r * demo.cell}px)`;
-        demoWell.append(cellEl);
-      }
-    }
-    demo.tiles.clear();
-    demo.ghosts.clear();
-    for (const c of demoCells()) {
-      const ghost = ui.tileCanvas(c.tile.ch, 'ghost', demo.cell);
-      ghost.className = 'demo-ghost';
-      const tile = ui.tileCanvas(c.tile.ch, 'base', demo.cell);
-      tile.className = 'demo-tile';
-      demo.ghosts.set(c.tile.id, ghost);
-      demo.tiles.set(c.tile.id, tile);
-      demoWell.append(ghost);
-    }
-    demo.tiles.forEach((t) => demoWell.append(t));
-    demoWell.classList.add('instant');
+    demo.stage.setGrid([]);
     demoPlace();
-    void demoWell.offsetWidth; // apply the start positions before turning transitions back on
-    demoWell.classList.remove('instant');
   }
 
   function demoBuild(art) {
     const keysW = 94;
     demo.cell = Math.max(18, Math.min(32, Math.floor((art.clientWidth - keysW - 42) / demo.cols)));
-    demoWell.style.setProperty('--c', demo.cell + 'px');
     demoWell.style.width = demo.cols * demo.cell + 'px';
     demoWell.style.height = demo.rows * demo.cell + 'px';
+    if (demo.stage) demo.stage.stop();
+    demo.stage = ui.miniStage(demoWell, demo.cols, demo.rows, demo.cell);
     demoSpawn();
+    if (demo.timer) demo.stage.start();
   }
 
   function pressKey(name, ms = 170) {
@@ -191,9 +167,24 @@
     setTimeout(() => key.classList.remove('on'), ms);
   }
 
+  // Down drops one row every SOFT_DROP_INTERVAL, as holding Down does in play, then the piece squashes in.
+  function demoDown() {
+    if (demoFits(demoCells(demo.piece, demo.x, demo.y + 1))) {
+      demo.y++;
+      demoPlace();
+      demo.fall = setTimeout(demoDown, cfg.SOFT_DROP_INTERVAL);
+    } else {
+      demo.fall = null;
+      demo.stage.lock();
+      demo.stage.draw();
+      if (ST.sound) ST.sound.play('land');
+    }
+  }
+
   function demoAct(name) {
     if (!demo.piece) return;
     if (name === 'reset') {
+      clearTimeout(demo.fall);
       demoWell.classList.add('fading');
       setTimeout(() => { demoWell.classList.remove('fading'); demoSpawn(); }, 260);
       return;
@@ -219,16 +210,10 @@
       }
       pressKey(name);
     } else if (name === 'down') {
-      const d = demoDrop();
       pressKey('down', 420);
       demo.busy = true;
-      demoWell.classList.add('fast');
-      demo.y += d;
-      setTimeout(() => {
-        demoWell.classList.remove('fast');
-        demoWell.classList.add('landed');
-        if (ST.sound) ST.sound.play('land');
-      }, d ? 300 : 0);
+      demoDown();
+      return;
     }
     demoPlace();
   }
@@ -263,10 +248,85 @@
       demo.step = 0;
       demo.manualUntil = 0;
       demoSpawn();
+      demo.stage.start();
       demo.timer = setTimeout(demoTick, 500);
     } else if (!showing && demo.timer) {
       clearTimeout(demo.timer);
+      clearTimeout(demo.fall);
       demo.timer = null;
+      demo.stage.stop();
+    }
+  }
+
+  // ---- the spelling demo: a tile drops in, a word pops, the tiles above fall into the gap ----
+  // The same stage as the steering demo, so it falls, squashes, flashes and closes up like play.
+
+  const spell = { stage: null, host: null, timers: [], running: false };
+  const SPELL_COLS = 6;
+  const SPELL_ROWS = 4;
+  const SPELL_GRID = ['', '', ' O N', 'KC TZL'];
+  const SPELL_WORD = ['C', 'A', 'T'];
+
+  const spellAt = (ms, fn) => spell.timers.push(setTimeout(fn, ms));
+  function spellStop() {
+    spell.timers.forEach(clearTimeout);
+    spell.timers = [];
+    spell.running = false;
+    if (spell.stage) spell.stage.stop();
+  }
+
+  function spellPlay() {
+    const st = spell.stage;
+    spell.host.classList.remove('fading');
+    st.setGrid(SPELL_GRID);
+    let y = -1;
+    const show = () => st.setPiece([{ x: 2, y, tile: { ch: 'A' } }], 3 - y);
+    const step = () => {
+      if (y < 3) {
+        y++;
+        show();
+        spellAt(130, step);
+        return;
+      }
+      st.lock();
+      if (ST.sound) ST.sound.play('land');
+      spellAt(260, () => {
+        st.clear([1, 2, 3].map((x) => ({ x, y: 3 })), '+' + points(SPELL_WORD), SPELL_WORD.join(''));
+        if (ST.sound) ST.sound.play('word', { letters: SPELL_WORD.length });
+      });
+      spellAt(2700, () => spell.host.classList.add('fading'));
+      spellAt(2960, spellPlay);
+    };
+    spellAt(600, step);
+  }
+
+  function spellBuild(art, size) {
+    spellStop();
+    art.querySelectorAll('.demo-well').forEach((n) => n.remove());
+    spell.host = el('div', 'demo-well');
+    spell.host.setAttribute('aria-hidden', 'true');
+    spell.host.style.width = SPELL_COLS * size + 'px';
+    spell.host.style.height = SPELL_ROWS * size + 'px';
+    art.append(spell.host);
+    spell.stage = ui.miniStage(spell.host, SPELL_COLS, SPELL_ROWS, size);
+    spell.stage.setGrid(['', '', ' O N', 'KC TZL']);
+    spell.stage.draw();
+    spellSync();
+  }
+
+  // Plays only while the first card is showing; under reduced motion it stays a still picture.
+  function spellSync() {
+    if (!spell.stage) return;
+    const showing = howto.open && page === 0;
+    if (showing && !spell.running && !reduceMotion) {
+      spell.running = true;
+      spell.stage.start();
+      spellPlay();
+    } else if (!showing && spell.running) {
+      spellStop();
+      spell.host.classList.remove('fading');
+      spell.stage.setGrid(SPELL_GRID);
+      spell.stage.draw();
     }
   }
 
@@ -276,6 +336,7 @@
     backBtn.style.visibility = page > 0 ? 'visible' : 'hidden';
     nextBtn.textContent = page < cards.length - 1 ? 'Next' : game.state === 'ready' ? 'Play!' : 'Got it';
     demoSync();
+    spellSync();
   }
 
   function goTo(i) {
@@ -300,6 +361,7 @@
   howto.addEventListener('close', () => {
     store.set('seenHowTo', true);
     demoSync();
+    spellSync();
   });
 
   function openHowTo() {

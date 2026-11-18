@@ -936,9 +936,255 @@
     return canvas;
   }
 
+  // A small well for the how-to-play cards. It draws with the game's own tile painter, easing,
+  // squash, flash-and-shrink, falling gaps, stars and score text, so it moves exactly like play.
+  // src/screens.js scripts it: setGrid / setPiece / lock / clear.
+  function miniStage(host, cols, rows, s) {
+    const r = Math.min(window.devicePixelRatio || 1, 3);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(cols * s * r);
+    canvas.height = Math.round(rows * s * r);
+    canvas.style.width = cols * s + 'px';
+    canvas.style.height = rows * s + 'px';
+    canvas.setAttribute('aria-hidden', 'true');
+    host.replaceChildren(canvas);
+    const ctx = canvas.getContext('2d');
+    const imgs = new Map();
+    let uid = 0;
+    let grid = [];
+    let piece = null; // { cells: [{x, y, tile}], d: ghost drop distance }
+    let landed = null;
+    let clearing = null;
+    let rowOf = new Map();
+    const falls = new Map();
+    let parts = [];
+    let fx = [];
+    let last = 0;
+    let raf = 0;
+
+    const img = (tile, look) => {
+      const key = tile.ch + '|' + look;
+      let c = imgs.get(key);
+      if (!c) {
+        c = document.createElement('canvas');
+        c.width = c.height = Math.max(1, Math.round(s * r));
+        const g = c.getContext('2d');
+        g.scale(r, r);
+        paintTile(g, s, { ch: tile.ch, value: cfg.LETTER_VALUES[tile.ch] || 0 }, look);
+        imgs.set(key, c);
+      }
+      return c;
+    };
+    function stamp(px, py, tile, o = {}) {
+      const alpha = o.alpha == null ? 1 : o.alpha;
+      if (alpha <= 0) return;
+      const w = s * (o.sx || o.scale || 1);
+      const h = s * (o.sy || o.scale || 1);
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(img(tile, o.ghost ? 'ghost' : o.flash ? 'flash' : 'base'), px + (s - w) / 2, o.foot ? py + s - h : py + (s - h) / 2, w, h);
+      ctx.globalAlpha = 1;
+    }
+
+    function burstAt(now, x, y) {
+      for (let i = 0; i < 3 && parts.length < 60; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const v = (5.5 * s / 1000) * (0.4 + Math.random() * 0.8);
+        parts.push({
+          x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - (5.5 * s / 1000) * 0.5,
+          rot: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 0.016,
+          size: s * (0.15 + Math.random() * 0.13), color: CONFETTI[(Math.random() * CONFETTI.length) | 0],
+          born: now, life: 620 + Math.random() * 480,
+        });
+      }
+    }
+
+    function drawParts(now, dt) {
+      const gravity = (s * 11) / 1e6;
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        const t = (now - p.born) / p.life;
+        if (t >= 1) { parts.splice(i, 1); continue; }
+        p.vy += gravity * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += p.spin * dt;
+        ctx.save();
+        ctx.globalAlpha = t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        const grow = t < 0.15 ? t / 0.15 : 1;
+        ctx.scale(grow, grow);
+        starPath(ctx, 0, 0, p.size, 5, 0.5);
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = Math.max(1.5, p.size * 0.5);
+        ctx.strokeStyle = INK;
+        ctx.stroke();
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Closes the gaps left by a clear: every column's tiles settle to the bottom.
+    function collapse() {
+      for (let x = 0; x < cols; x++) {
+        const col = [];
+        for (let y = rows - 1; y >= 0; y--) if (grid[y][x]) col.push(grid[y][x]);
+        for (let y = rows - 1, i = 0; y >= 0; y--, i++) grid[y][x] = col[i] || null;
+      }
+    }
+
+    function render(now) {
+      const dt = Math.min(50, Math.max(0, now - last));
+      last = now;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.scale(r, r);
+      ctx.fillStyle = 'rgba(122,92,255,0.14)';
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          roundRect(ctx, x * s + 2, y * s + 2, s - 4, s - 4, (s - 4) * 0.28);
+          ctx.fill();
+        }
+      }
+      let p = 0;
+      const flash = new Set();
+      if (clearing) {
+        p = Math.min(1, (now - clearing.born) / cfg.CLEAR_FLASH);
+        clearing.cells.forEach(({ x, y }) => flash.add(x + ',' + y));
+        if (p >= 1) {
+          clearing.cells.forEach(({ x, y }) => { grid[y][x] = null; });
+          collapse();
+          clearing = null;
+          p = 0;
+          flash.clear();
+        }
+      }
+      const squash = landed ? (now - landed.born) / 200 : 1;
+      if (squash >= 1) landed = null;
+      const nextRowOf = new Map();
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const t = grid[y][x];
+          if (!t) continue;
+          nextRowOf.set(t.id, y);
+          const was = rowOf.get(t.id);
+          if (was != null && was < y) falls.set(t.id, { from: was, born: now, dur: 190 + 55 * Math.min(4, y - was) });
+          if (flash.has(x + ',' + y)) {
+            const scale = 1 + 0.16 * Math.sin(Math.min(1, p * 1.6) * Math.PI) - 0.25 * Math.pow(p, 4);
+            stamp(x * s, y * s, t, { flash: true, scale, alpha: 1 - Math.pow(p, 4) });
+          } else {
+            let py = y * s;
+            const f = falls.get(t.id);
+            if (f) {
+              const k = (now - f.born) / f.dur;
+              if (k >= 1) falls.delete(t.id);
+              else py += (f.from - y) * s * (1 - bounceOut(k));
+            }
+            if (landed && landed.ids.has(t.id)) {
+              const q = Math.sin(squash * Math.PI) * 0.14;
+              stamp(x * s, py, t, { sx: 1 + q * 0.45, sy: 1 - q, foot: true });
+            } else {
+              stamp(x * s, py, t);
+            }
+          }
+        }
+      }
+      rowOf = nextRowOf;
+      for (const id of falls.keys()) if (!rowOf.has(id)) falls.delete(id);
+
+      if (piece) {
+        if (piece.d > 0) {
+          for (const { x, y, tile } of piece.cells) if (y + piece.d >= 0) stamp(x * s, (y + piece.d) * s, tile, { ghost: true });
+        }
+        ctx.fillStyle = 'rgba(8,3,36,0.4)';
+        for (const { x, y } of piece.cells) {
+          if (y < 0) continue;
+          roundRect(ctx, x * s + s * 0.04, y * s + s * 0.16, s * 0.92, s * 0.92, s * 0.26);
+          ctx.fill();
+        }
+        for (const { x, y, tile } of piece.cells) if (y >= 0) stamp(x * s, y * s, tile);
+      }
+
+      drawParts(now, dt);
+
+      for (let i = fx.length - 1; i >= 0; i--) {
+        const e = fx[i];
+        const t = (now - e.born) / e.life;
+        if (t >= 1) { fx.splice(i, 1); continue; }
+        const pop = t < 0.14 ? 0.35 + 0.65 * backOut(t / 0.14) : 1;
+        ctx.save();
+        ctx.globalAlpha = t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
+        const size = Math.round(s * 0.8);
+        ctx.translate(e.x, e.y - t * s * 1.6);
+        ctx.scale(pop, pop);
+        chunkyText(ctx, e.text, 0, 0, size, `${size}px ${TILE_FONT}`, '#fff6b0', '#ffc20f');
+        const sub = Math.round(s * 0.46);
+        chunkyText(ctx, e.sub, 0, s * 0.68, sub, `${sub}px ${TILE_FONT}`, '#ffffff', '#e6deff');
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    function loop(now) {
+      render(now);
+      raf = requestAnimationFrame(loop);
+    }
+
+    const api = {
+      canvas,
+      // Rows of letters, one character per cell; a space is empty.
+      setGrid(lines) {
+        grid = Array.from({ length: rows }, (_, y) => Array.from({ length: cols }, (_, x) => {
+          const ch = (lines[y] || '')[x];
+          return ch && ch !== ' ' ? { id: 'm' + (++uid), ch, value: cfg.LETTER_VALUES[ch] || 0 } : null;
+        }));
+        rowOf = new Map();
+        falls.clear();
+        parts = [];
+        fx = [];
+        landed = null;
+        clearing = null;
+        piece = null;
+      },
+      setPiece(cells, d = 0) { piece = cells ? { cells, d } : null; },
+      // The piece settles into the grid, with the game's little squash.
+      lock() {
+        if (!piece) return;
+        const ids = new Set();
+        for (const { x, y, tile } of piece.cells) {
+          if (y < 0) continue;
+          const t = { id: 'm' + (++uid), ch: tile.ch, value: cfg.LETTER_VALUES[tile.ch] || 0 };
+          grid[y][x] = t;
+          ids.add(t.id);
+        }
+        piece = null;
+        landed = { ids, born: performance.now() };
+      },
+      // A word flashes gold and shrinks away, stars fly, the points float up, the gap closes.
+      clear(cells, text, sub) {
+        const now = performance.now();
+        clearing = { cells, born: now };
+        for (const c of cells) burstAt(now, (c.x + 0.5) * s, (c.y + 0.5) * s);
+        const xs = cells.map((c) => c.x);
+        const ys = cells.map((c) => c.y);
+        const mid = ((Math.min(...xs) + Math.max(...xs) + 1) / 2) * s;
+        fx.push({
+          text, sub, born: now, life: 1300,
+          x: Math.min(Math.max(mid, s * 1.4), s * (cols - 1.4)),
+          y: ((Math.min(...ys) + Math.max(...ys)) / 2) * s,
+        });
+      },
+      start() { if (!raf) raf = requestAnimationFrame(loop); },
+      stop() { if (raf) cancelAnimationFrame(raf); raf = 0; },
+      draw() { render(performance.now()); },
+    };
+    return api;
+  }
+
   // What src/screens.js (how to play, scoreboard) uses.
   ST.ui = {
-    fit, restart, game, store, tileCanvas,
+    fit, restart, game, store, tileCanvas, miniStage,
     start: primaryAction,
     refreshOverlay: () => updateOverlay(true),
     onEvent: (fn) => eventHooks.push(fn),
