@@ -67,6 +67,12 @@ Four illustrated cards in a dialog, swiped sideways or stepped through with Back
 - **Seen once:** `localStorage alphaboom.seenHowTo`. Clear it to see the first-visit flow again.
 - **Numbers come from `src/config.js`:** the shortest word, words per level and the example scores (CAT +50, TRAINS +300), so the cards stay right when the rules change.
 - The pictures are painted by the game's own tile painter.
+- **The first card shows the game in one look.** A little 6 × 5 well with a few tiles in it:
+  - A piece falls a row at a time toward its dashed landing outline, then lands and completes K-C-A-T in the bottom row.
+  - CAT lights up gold and pops with "+50", then disappears.
+  - Every tile above the gap tumbles down with a bounce, column by column. It fades and starts again.
+  - It's scripted, not run by the real rules, so it always tells the same clear story.
+  - It runs only while that card is showing. Under reduced motion it's one still frame, with CAT lit and +50 showing.
 - **The steering card is a live demo.** A little 5 × 5 well has a T piece (S over CAT) that plays a loop: rotate, left, right, right, rotate, drop with a squash, start again. Its keys press as it goes.
   - The player can tap the mini keys to try them, with the game's own sounds. A tap pauses the loop for 5 seconds.
   - It uses the game's shapes, rotation and kicks, so letters turn the way they do in play.

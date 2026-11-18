@@ -90,8 +90,7 @@
       const kind = art.dataset.art;
       art.querySelectorAll('.tile-row, .art-points, .score-row').forEach((n) => n.remove());
       if (kind === 'spell') {
-        const word = ['C', 'A', 'T'];
-        art.append(el('div', 'art-points', '+' + points(word)), tileRow(['K', ...word, 'Z'], 'base', size, 1, 3));
+        spellBuild(art);
       } else if (kind === 'steer') {
         demoBuild(art);
       } else if (kind === 'score') {
@@ -110,6 +109,164 @@
     }
     howto.querySelectorAll('[data-minlen]').forEach((n) => { n.textContent = game.settings.minLen; });
     howto.querySelectorAll('[data-perlevel]').forEach((n) => { n.textContent = cfg.WORDS_PER_LEVEL; });
+  }
+
+  // ---- the first card's demo: the whole game in one look ----------------------
+  // A piece falls into a little well and completes CAT in the bottom row. CAT lights up and
+  // pops for +50, then every tile above it tumbles down into the gap. Then it starts again.
+  // Scripted (not the real rules), so it always plays the same, clear story.
+
+  const SPELL = {
+    cols: 6,
+    rows: 5,
+    board: ['......', '......', '.D....', '.OU..I', 'KCA.ZL'],
+    piece: [[3, 2, 'R'], [3, 3, 'E'], [4, 3, 'N'], [3, 4, 'T']], // [column, row it lands in, letter]
+    word: ['1,4', '2,4', '3,4'], // C A T
+    fallFrom: -4, // rows above its landing spot that the piece starts
+  };
+  const spell = { well: null, cell: 32, tiles: [], piece: [], timers: [], running: false, points: null };
+
+  function spellAt(t, x, y) {
+    t.x = x;
+    t.y = y;
+    t.el.style.transform = `translate(${x * spell.cell}px, ${y * spell.cell}px)`;
+  }
+
+  function spellTile(ch, x, y, kind) {
+    const wrap = el('div', 'spell-tile' + (kind ? ' ' + kind : ''));
+    wrap.append(ui.tileCanvas(ch, 'base', spell.cell));
+    if (kind && kind.includes('word')) {
+      const lit = ui.tileCanvas(ch, 'flash', spell.cell);
+      lit.className = 'flash';
+      wrap.append(lit);
+    }
+    const t = { el: wrap, x, y };
+    spellAt(t, x, y);
+    spell.well.append(wrap);
+    spell.tiles.push(t);
+    return t;
+  }
+
+  // Lays out the opening position: the board, the piece above it, and its landing outline.
+  function spellReset() {
+    const { cols, rows } = SPELL;
+    const w = spell.well;
+    if (!w) return;
+    w.className = 'demo-well spell-well instant';
+    w.replaceChildren();
+    spell.tiles = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cellEl = el('span', 'demo-cell');
+        cellEl.style.transform = `translate(${c * spell.cell}px, ${r * spell.cell}px)`;
+        w.append(cellEl);
+      }
+    }
+    for (const [x, y, ch] of SPELL.piece) {
+      const g = ui.tileCanvas(ch, 'ghost', spell.cell);
+      g.className = 'spell-ghost';
+      g.style.transform = `translate(${x * spell.cell}px, ${y * spell.cell}px)`;
+      w.append(g);
+    }
+    SPELL.board.forEach((line, y) => [...line].forEach((ch, x) => {
+      if (ch !== '.') spellTile(ch, x, y, SPELL.word.includes(`${x},${y}`) ? 'word' : '');
+    }));
+    spell.piece = SPELL.piece.map(([x, y, ch]) => {
+      const t = spellTile(ch, x, y + SPELL.fallFrom, 'piece' + (SPELL.word.includes(`${x},${y}`) ? ' word' : ''));
+      t.land = y;
+      return t;
+    });
+    spell.points = el('div', 'spell-points', '+' + points(['C', 'A', 'T']));
+    spell.points.style.left = 1 * spell.cell + 'px';
+    spell.points.style.top = 2.75 * spell.cell + 'px';
+    spell.points.style.width = 3 * spell.cell + 'px';
+    w.append(spell.points);
+    void w.offsetWidth; // apply the start positions before turning transitions back on
+    w.classList.remove('instant');
+  }
+
+  function spellBuild(art) {
+    let well = art.querySelector('.spell-well');
+    if (!well) {
+      well = el('div', 'demo-well spell-well');
+      well.setAttribute('aria-hidden', 'true');
+      art.append(well);
+    }
+    spell.well = well;
+    const maxCell = window.innerHeight < 700 ? 26 : 34;
+    spell.cell = Math.max(20, Math.min(maxCell, Math.floor((art.clientWidth - 28) / SPELL.cols)));
+    well.style.setProperty('--c', spell.cell + 'px');
+    well.style.width = SPELL.cols * spell.cell + 'px';
+    well.style.height = SPELL.rows * spell.cell + 'px';
+    spellReset();
+    if (reduceMotion) spellStill();
+  }
+
+  // Under reduced motion: one still frame, with CAT lit up and its points showing.
+  function spellStill() {
+    spell.well.classList.add('instant');
+    for (const t of spell.piece) spellAt(t, t.x, t.land);
+    spell.well.querySelectorAll('.spell-tile.word').forEach((n) => n.classList.add('lit'));
+    spell.points.classList.add('still');
+  }
+
+  function spellLater(ms, fn) {
+    spell.timers.push(setTimeout(fn, ms));
+  }
+
+  function spellPlay() {
+    spell.timers = [];
+    spellReset();
+    const STEP = 260;
+    let t = 500;
+    // The piece falls a row at a time, like in the game.
+    for (let k = SPELL.fallFrom + 1; k <= 0; k++) {
+      spellLater(t, () => { for (const p of spell.piece) spellAt(p, p.x, p.land + k); });
+      t += STEP;
+    }
+    spellLater(t - STEP + 200, () => spell.well.classList.add('landed'));
+    t += 250;
+    // CAT lights up and pops, with its points.
+    spellLater(t, () => {
+      spell.well.querySelectorAll('.spell-tile.word').forEach((n) => n.classList.add('lit'));
+      spell.points.classList.add('show');
+    });
+    t += 750;
+    spellLater(t, () => spell.well.querySelectorAll('.spell-tile.word').forEach((n) => n.classList.add('gone')));
+    t += 320;
+    // Every tile above the gap tumbles down, column by column.
+    spellLater(t, () => {
+      spell.well.classList.add('tumbling');
+      const left = spell.tiles.filter((x) => !x.el.classList.contains('word'));
+      for (let c = 0; c < SPELL.cols; c++) {
+        const col = left.filter((x) => x.x === c).sort((a, b) => b.y - a.y);
+        col.forEach((x, i) => {
+          const to = SPELL.rows - 1 - i;
+          if (to !== x.y) {
+            x.el.style.transitionDelay = `${Math.max(0, c - 1) * 70 + i * 40}ms`;
+            spellAt(x, x.x, to);
+          }
+        });
+      }
+    });
+    t += 1700;
+    spellLater(t, () => spell.well.classList.add('fading'));
+    t += 380;
+    spellLater(t, spellPlay);
+  }
+
+  // Runs only while the first card is the one showing.
+  function spellSync() {
+    const showing = howto.open && page === 0 && !!spell.well;
+    if (showing && !spell.running && !reduceMotion) {
+      spell.running = true;
+      spellPlay();
+    } else if (!showing && spell.running) {
+      spell.running = false;
+      spell.timers.forEach(clearTimeout);
+      spell.timers = [];
+      spellReset();
+    }
   }
 
   // ---- the steering demo: a tiny well whose piece obeys the mini keys --------
@@ -276,6 +433,7 @@
     backBtn.style.visibility = page > 0 ? 'visible' : 'hidden';
     nextBtn.textContent = page < cards.length - 1 ? 'Next' : game.state === 'ready' ? 'Play!' : 'Got it';
     demoSync();
+    spellSync();
   }
 
   function goTo(i) {
@@ -300,6 +458,7 @@
   howto.addEventListener('close', () => {
     store.set('seenHowTo', true);
     demoSync();
+    spellSync();
   });
 
   function openHowTo() {

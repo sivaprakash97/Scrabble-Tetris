@@ -1548,6 +1548,100 @@ dialog.sheet[open] .sheet-card {
   color: var(--ink-soft);
 }
 
+/* The first card's demo: a piece falls, CAT pops, the tiles above tumble down. */
+.spell-well {
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.spell-tile {
+  transform-origin: 50% 100%;
+  transition: transform 200ms cubic-bezier(0.5, 0, 0.9, 0.5), opacity 300ms ease;
+}
+
+.spell-tile canvas {
+  display: block;
+}
+
+.spell-tile .flash {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.spell-tile.lit .flash {
+  opacity: 1;
+}
+
+.spell-tile.lit {
+  animation: spell-lit 520ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes spell-lit {
+  0% { scale: 1; }
+  40% { scale: 1.16; }
+  100% { scale: 1; }
+}
+
+.spell-tile.gone {
+  scale: 0.2;
+  opacity: 0;
+  transition: scale 260ms ease-in, opacity 260ms ease-in;
+}
+
+/* The tumble: tiles drop into the gap and bounce as they land. */
+.spell-well.tumbling .spell-tile {
+  transition: transform 460ms cubic-bezier(0.34, 1.45, 0.5, 1), opacity 300ms ease;
+}
+
+.spell-well.landed .spell-tile.piece {
+  animation: demo-land 280ms ease-out;
+}
+
+.spell-ghost {
+  display: block;
+  transition: opacity 200ms ease;
+}
+
+.spell-well.landed .spell-ghost {
+  opacity: 0;
+}
+
+.spell-points {
+  position: absolute;
+  z-index: 2;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1;
+  text-align: center;
+  color: var(--yellow);
+  text-shadow: var(--outline-md);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.spell-points.show {
+  animation: spell-points 1.3s ease-out forwards;
+}
+
+.spell-points.still {
+  opacity: 1;
+}
+
+@keyframes spell-points {
+  0% { opacity: 0; transform: translateY(10px) scale(0.5); }
+  18% { opacity: 1; transform: translateY(0) scale(1.2); }
+  30% { transform: scale(1); }
+  75% { opacity: 1; transform: translateY(-12px); }
+  100% { opacity: 0; transform: translateY(-20px); }
+}
+
+.spell-well.fading .spell-tile,
+.spell-well.fading .spell-ghost {
+  opacity: 0;
+}
+
 /* The points card: a short word and a long one, with what each is worth. */
 .score-row {
   display: flex;
@@ -1880,6 +1974,9 @@ dialog.sheet[open] .sheet-card {
   .art-points,
   .art-coin,
   .demo-well.landed .demo-tile,
+  .spell-tile.lit,
+  .spell-well.landed .spell-tile.piece,
+  .spell-points.show,
   .countdown span.pop,
   .level-badge,
   .danger-badge {
