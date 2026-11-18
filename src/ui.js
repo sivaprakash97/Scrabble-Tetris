@@ -662,6 +662,9 @@
     // when they're closed, so it only needs the score and a way back to them.
     o.text.hidden = game.state === 'over';
     o.results.hidden = game.state !== 'over';
+    // After a game, Results already has the leaderboard, so a second Scoreboard button would
+    // only confuse. The full board stays in the Rules panel.
+    o.board.hidden = game.state === 'over';
     o.log.textContent = 'Copy game log';
     o.logText.hidden = true;
     // How to play is there before and during a game; after one, it is out of the way.

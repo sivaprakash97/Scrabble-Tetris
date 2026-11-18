@@ -87,7 +87,7 @@ Four illustrated cards in a dialog, swiped sideways or stepped through with Back
 
 ## Scoreboard
 
-Opened from "Scoreboard" on the start, pause and game-over screens, and in the Rules panel. Two tabs:
+Opened from "Scoreboard" on the start and pause screens, and in the Rules panel. The game-over card has no Scoreboard button: its "Results" button already shows the leaderboard, and two buttons that both open a leaderboard read as the same thing. Two tabs:
 
 - **Top players** (website only): each player's best posted game, under their latest nickname, top 20. Your own row is highlighted, and shown below the top 20 if you're further down.
 - **My best:** your 10 best games on this device (`localStorage alphaboom.games`), with date, level, words and best word. Kept for every finished game, posted or not.
@@ -106,12 +106,12 @@ Opened from "Scoreboard" on the start, pause and game-over screens, and in the R
 
 Playtest data showed the problem: in the first week, 11 games were finished on the live site and none were posted. A "Post score" button on the game-over card was easy to skip. So the page now shows where you stand before asking for anything.
 
-**When.** It opens by itself 0.9 seconds after a game ends (the game-over card and sound land first). Closing it leaves the game-over card, with Play again, a "Results" button to open it again, and Scoreboard. For the first 0.7 seconds a tap on the backdrop or a Space press is ignored, so a player still tapping the pad as the game ends doesn't dismiss it.
+**When.** It opens by itself 0.9 seconds after a game ends (the game-over card and sound land first). Closing it leaves the game-over card, with Play again and a "Results" button to open it again (no Scoreboard button: see "Scoreboard"). For the first 0.7 seconds a tap on the backdrop or a Space press is ignored, so a player still tapping the pad as the game ends doesn't dismiss it.
 
 **Order: leaderboard first, then performance.** Players want to see their rank before their stats. On a phone it's one column, with Play again pinned at the bottom and the middle scrolling on short screens. On a wide screen (the same query as the wide layout) the card is wider, with the leaderboard on the left and the performance card on the right.
 
 **Leaderboard.**
-- The top 5, a "⋯" gap, then the row above yours, yours, and the row below (at most 9 rows, however many players there are). The gap closes when your place is near the top. The heading shows how many players are on the board, counting you. The full top 20 is in the Scoreboard.
+- The top 5, a "⋯" gap, then the row above yours, yours, and the row below (at most 9 rows, however many players there are). The gap closes when your place is near the top. The heading shows how many players are on the board, counting you. The full top 20 is in the Scoreboard, from the Rules panel.
 - The size is `p_top` in `board.standing()` (`src/scores.js`). The top 3 would leave more room; the top 5 fits a 375×812 phone with the rows kept to one line and the card's spacing trimmed.
 - Rows are one line: rank, name, date posted, score. The top 3 get gold, silver and bronze badges.
 - Your row, before you post, is a box for your nickname (prefilled with the one remembered on the device), your score, and a "Post to scoreboard" button. Enter in the box posts too. The box is never focused automatically, so a phone keyboard doesn't cover the stats.
