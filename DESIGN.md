@@ -119,7 +119,8 @@ Playtest data showed the problem: in the first week, 11 games were finished on t
 - The board holds each player's **best** game, so a game only gets a new row if it beats your best. If it doesn't, your existing row shows with a note: "This game didn't beat your best (50,300), so you stay at #1."
 - A score of 0 shows the top of the board and "Score some words to get on the scoreboard."
 - If the board can't be loaded, it says so with "Try again". The performance card still shows.
-- Where there is no shared board (the Claude page, a local file with no backend), only the performance card shows.
+
+**My best.** The leaderboard's heading is two tabs: "Leaderboard · 13 players" and "My best". My best lists this device's 5 best games (date, words, score), with the game just played highlighted if it made the list; the Scoreboard has all 10. Tabs instead of a heading cost no extra height. Where there is no shared board (the Claude page, a local file with no backend), only My best shows, above the performance card.
 
 **Where the rank comes from.** `score_standing_v2` (`supabase/standing.sql`) takes the score the page has and returns the rows above. It only places the row. Posting still takes the score from the saved game (`post_score_v2`), so a made-up score changes nothing but the preview. See "Hosting and saving".
 
@@ -385,6 +386,7 @@ Supabase keeps every game in full; PostHog (`src/analytics.js`) answers the ques
 | `tutorial_closed` | How to play closes | `auto` (opened by itself), `furthest_card`, `finished`, `first_visit` |
 | `tip_shown` | A first-time tip pops up | `tip` (word, chain, row, level, danger) |
 | `results_shown` | The results screen finds your place (once per game) | `score`, `rank`, `players`, `can_post` (it offered a name box), `has_board` |
+| `results_my_best` | The My best tab on the results screen is tapped | `game_id` |
 | `scoreboard_opened`, `score_posted` | The scoreboard opens; a score is posted | `can_post`; `score`, `rank`, `players` |
 | `game_log_copied`, `sound_toggled` | | `on` |
 

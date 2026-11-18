@@ -473,18 +473,21 @@
     return parts.join(' · ');
   }
 
-  function renderMine() {
+  // Your best games on this device. The scoreboard shows all of them; the results screen shows
+  // the first `limit`, with a shorter line under each so a row stays on one line.
+  function renderMine(ol = $('board-mine'), { limit = KEEP, short = false } = {}) {
     const list = store.get(HISTORY, []).filter((x) => x && x.score > 0);
     const legacyBest = store.get('best', 0);
     if (!list.length && legacyBest > 0) list.push({ score: legacyBest, legacy: true });
-    const ol = $('board-mine');
     if (!list.length) {
       ol.replaceChildren(note('Your best games on this device show up here.'));
       return;
     }
-    ol.replaceChildren(...list.map((g, i) => {
-      if (g.legacy) return entry(i + 1, 'Earlier game', 'Before the scoreboard', g.score, false);
-      const meta = [`level ${g.level}`, wordsMeta(g.words, g.best, g.bestPoints)].filter(Boolean).join(' · ');
+    ol.replaceChildren(...list.slice(0, limit).map((g, i) => {
+      if (g.legacy) return entry(i + 1, 'Earlier game', short ? '' : 'Before the scoreboard', g.score, false);
+      const meta = short
+        ? `${g.words} ${g.words === 1 ? 'word' : 'words'}`
+        : [`level ${g.level}`, wordsMeta(g.words, g.best, g.bestPoints)].filter(Boolean).join(' · ');
       return entry(i + 1, when(g.at), meta, g.score, g.at === lastGameAt);
     }));
   }
@@ -626,6 +629,25 @@
   const resultsList = $('results-list');
   const resultsNote = $('results-note');
   const resultsPosted = $('results-posted');
+  const resultsMine = $('results-mine');
+  const rTabBoard = $('rtab-board');
+  const rTabMine = $('rtab-mine');
+  const RESULTS_MINE = 5; // your best games shown here; the scoreboard has all 10
+
+  // Leaderboard (where this game stands) or My best (this device's best games).
+  function selectResultsTab(name) {
+    const mine = name === 'mine';
+    rTabBoard.setAttribute('aria-selected', String(!mine));
+    rTabMine.setAttribute('aria-selected', String(mine));
+    $('results-board').classList.toggle('on-mine', mine);
+    resultsList.hidden = mine;
+    resultsMine.hidden = !mine;
+  }
+  rTabBoard.addEventListener('click', () => selectResultsTab('board'));
+  rTabMine.addEventListener('click', () => {
+    selectResultsTab('mine');
+    trackEvent('results_my_best', { game_id: game.sessionId || null });
+  });
   const RESULTS_DELAY = 900; // ms after the game ends, so the game-over sound and card land first
   const RESULTS_GUARD = 700; // ms in which a stray tap or Space can't close or skip it
   let resultsOpenedAt = 0;
@@ -733,9 +755,7 @@
     resultsList.replaceChildren(...items);
 
     const players = rows.length ? rows[0].players : 0;
-    $('results-board-title').textContent = players
-      ? `Leaderboard · ${fmt(players)} ${players === 1 ? 'player' : 'players'}`
-      : 'Leaderboard';
+    $('rtab-count').textContent = players ? ` · ${fmt(players)} ${players === 1 ? 'player' : 'players'}` : '';
     const mine = rows.find((r) => r.mine && r.kind !== 'you');
     if (score <= 0) setResultsNote('Score some words to get on the scoreboard.');
     else if (mine && mine.score > score) {
@@ -753,7 +773,7 @@
   }
 
   async function showStanding() {
-    $('results-board').hidden = !board.enabled;
+    rTabBoard.hidden = !board.enabled; // no shared board here: My best only
     if (!board.enabled) {
       if (resultsTracked !== game.sessionId) {
         resultsTracked = game.sessionId;
@@ -786,6 +806,8 @@
 
   function openResults() {
     showStats();
+    renderMine(resultsMine, { limit: RESULTS_MINE, short: true });
+    selectResultsTab(board.enabled ? 'board' : 'mine');
     resultsOpenedAt = Date.now();
     openSheet(results);
     focusCard(results); // no phone keyboard popping up over the stats

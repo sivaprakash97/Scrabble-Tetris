@@ -234,11 +234,15 @@
     <h2 class="sheet-title" id="results-title">Game over</h2>
     <button type="button" class="close-btn" data-close aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g><g class="fl"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g></svg></button>
     <div class="results-scroll">
-      <section class="results-board" id="results-board" aria-labelledby="results-board-title" hidden>
-        <h3 class="results-h" id="results-board-title">Leaderboard</h3>
+      <section class="results-board" id="results-board" aria-label="Scores">
+        <div class="results-tabs" role="tablist">
+          <button type="button" role="tab" id="rtab-board" aria-controls="results-list" aria-selected="true">Leaderboard<span class="tab-count" id="rtab-count"></span></button>
+          <button type="button" role="tab" id="rtab-mine" aria-controls="results-mine" aria-selected="false">My best</button>
+        </div>
         <p class="posted" id="results-posted" hidden></p>
-        <ol class="board-list" id="results-list"></ol>
+        <ol class="board-list" id="results-list" role="tabpanel" aria-labelledby="rtab-board"></ol>
         <p class="results-note" id="results-note" role="status" hidden></p>
+        <ol class="board-list" id="results-mine" role="tabpanel" aria-labelledby="rtab-mine" hidden></ol>
       </section>
       <section class="perf" aria-labelledby="perf-title">
         <div class="perf-head">
