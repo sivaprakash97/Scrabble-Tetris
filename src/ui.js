@@ -1,4 +1,4 @@
-// Rendering, touch input and HUD for the phone layout. Talks to ST.Game; holds no game rules of its own.
+// Rendering, touch and keyboard input and HUD, for the phone layout and the laptop layout. Talks to ST.Game; holds no game rules of its own.
 (function () {
   const ST = window.ST;
   const cfg = ST.CONFIG;
@@ -57,7 +57,9 @@
     return ctx;
   }
 
-  // Sizes the board so the score strip, board and control pad fit on one phone screen.
+  // Sizes the board. On a phone, so the score strip, board and control pad fit on one screen.
+  // On a laptop (the wide grid layout in style.css), so the whole board fits the window's height,
+  // as large as the room beside the two side columns allows.
   function fit() {
     const app = $('app');
     const appStyle = getComputedStyle(app);
@@ -65,22 +67,35 @@
     const wellStyle = getComputedStyle(wellEl);
     const px = (s, prop) => parseFloat(s[prop]) || 0;
     const viewH = window.visualViewport ? window.visualViewport.height : innerHeight;
+    const wide = appStyle.display === 'grid';
 
     // The tray around the board: padding and outline on both sides, and the drop under it.
     const frameW = px(wellStyle, 'paddingLeft') + px(wellStyle, 'paddingRight') +
       px(wellStyle, 'borderLeftWidth') + px(wellStyle, 'borderRightWidth');
-    const frameH = px(wellStyle, 'paddingTop') + px(wellStyle, 'paddingBottom') +
-      px(wellStyle, 'borderTopWidth') + px(wellStyle, 'borderBottomWidth') + px(wellStyle, 'marginBottom');
+    const trayH = px(wellStyle, 'paddingTop') + px(wellStyle, 'paddingBottom') +
+      px(wellStyle, 'borderTopWidth') + px(wellStyle, 'borderBottomWidth');
+    const frameH = trayH + px(wellStyle, 'marginBottom');
 
-    const innerW = app.clientWidth - px(appStyle, 'paddingLeft') - px(appStyle, 'paddingRight');
-    const byW = (innerW - frameW) / cfg.COLS;
+    const padX = px(appStyle, 'paddingLeft') + px(appStyle, 'paddingRight');
+    let byW;
+    let byH;
+    if (wide) {
+      const side = parseFloat(appStyle.getPropertyValue('--side-min')) || 280;
+      byW = (app.clientWidth - padX - 2 * side - 2 * px(appStyle, 'columnGap') - frameW) / cfg.COLS;
+      byH = (viewH - px(appStyle, 'paddingTop') - 24 - frameH) / cfg.ROWS;
+    } else {
+      byW = (app.clientWidth - padX - frameW) / cfg.COLS;
+      const chrome =
+        $('top').offsetHeight + $('touch').offsetHeight + 2 * GAP + frameH +
+        px(appStyle, 'paddingTop') + px(rootStyle, 'paddingTop') + px(rootStyle, 'paddingBottom') + 20;
+      byH = (viewH - chrome) / cfg.ROWS;
+    }
 
-    const chrome =
-      $('top').offsetHeight + $('touch').offsetHeight + 2 * GAP + frameH +
-      px(appStyle, 'paddingTop') + px(rootStyle, 'paddingTop') + px(rootStyle, 'paddingBottom') + 20;
-    const byH = (viewH - chrome) / cfg.ROWS;
-
-    cell = Math.max(14, Math.min(40, Math.floor(Math.min(byW, byH))));
+    cell = wide
+      ? Math.max(28, Math.min(96, Math.floor(Math.min(byW, byH))))
+      : Math.max(14, Math.min(40, Math.floor(Math.min(byW, byH))));
+    // The Words found panel is as tall as the board, and scrolls inside.
+    app.style.setProperty('--board-h', (cell * cfg.ROWS + trayH) + 'px');
     bctx = setupCanvas(boardEl, cell * cfg.COLS, cell * cfg.ROWS);
     sprites.clear();
     paintBackdrop();
@@ -885,6 +900,71 @@
     btn.addEventListener('lostpointercapture', up);
     btn.addEventListener('contextmenu', (e) => e.preventDefault());
   }
+
+  // ---- input: keyboard (laptops and desktops) ---------------------------------
+  // Arrow keys or WASD steer: Up/W rotates, Down/S drops faster. P or Esc pauses, M mutes, and
+  // Space or Enter presses the big button on the start, pause and game-over screens. Keys go
+  // through the same press()/release() as the on-screen pad, so holding Left or Right repeats
+  // the game's own way (DAS/ARR); the operating system's key repeat is ignored. The matching
+  // on-screen button lights up while its key is down.
+
+  const KEY_ACTION = {
+    ArrowLeft: 'left', a: 'left',
+    ArrowRight: 'right', d: 'right',
+    ArrowDown: 'down', s: 'down',
+    ArrowUp: 'rotate', w: 'rotate',
+    p: 'pause', Escape: 'pause',
+  };
+  const keyOf = (e) => (e.key.length === 1 ? e.key.toLowerCase() : e.key);
+  const padButton = (action) => document.querySelector(`button[data-action="${action}"]`);
+  const keysDown = new Set();
+
+  // Typing a nickname, picking from the menu, or a dialog being open: the game keeps out of the way.
+  function keysBlocked(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return true;
+    if (document.querySelector('dialog[open]')) return true;
+    return e.target instanceof Element && !!e.target.closest('input, textarea, select, [contenteditable]');
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (keysBlocked(e)) return;
+    const k = keyOf(e);
+    const action = KEY_ACTION[k];
+    if (action) {
+      e.preventDefault(); // arrow keys must not scroll the page
+      if (e.repeat || keysDown.has(k)) return;
+      keysDown.add(k);
+      const btn = padButton(action);
+      if (btn) btn.classList.add('on');
+      press(action);
+    } else if (k === 'm') {
+      $('sound-btn').click();
+    } else if (k === ' ' || k === 'Enter') {
+      // A focused button keeps its own Space/Enter behaviour.
+      if (e.target instanceof Element && e.target.closest('button, a')) return;
+      e.preventDefault(); // Space must not scroll the page either
+      // Go by the game's state, not by whether the screen has repainted yet. A tip's 3-2-1
+      // countdown also leaves the game paused, and Space must not resume it from underneath.
+      const onScreen = game.state === 'ready' || game.state === 'paused' || game.state === 'over';
+      if (onScreen && !e.repeat && !(ST.screens && ST.screens.holding())) primaryAction();
+    }
+  });
+
+  window.addEventListener('keyup', (e) => {
+    const k = keyOf(e);
+    if (!keysDown.delete(k)) return;
+    const action = KEY_ACTION[k];
+    if ([...keysDown].some((other) => KEY_ACTION[other] === action)) return; // its other key is still down
+    const btn = padButton(action);
+    if (btn) btn.classList.remove('on');
+    release(action);
+  });
+
+  // Switching windows can swallow the keyup, so let everything go.
+  window.addEventListener('blur', () => {
+    keysDown.clear();
+    document.querySelectorAll('button[data-action].on').forEach((b) => b.classList.remove('on'));
+  });
 
   // ---- main loop -----------------------------------------------------------
 

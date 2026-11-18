@@ -3,7 +3,7 @@
 A falling-block game where every block cell is a Scrabble-style letter tile, and you clear lines by spelling words. It was called Scrabble-Tetris while it was a prototype; it was renamed Alphaboom for hosting, to keep both trademarks out of the name.
 This doc records the rules the prototype uses and why. Every number in it lives in `src/config.js`.
 
-**Platform:** mobile only, for a future phone app. There's no desktop layout and no keyboard controls. On a computer the page shows the phone layout, and the buttons work with a mouse.
+**Platform:** built for phones first, for a future phone app, and it also plays on a laptop or desktop. A window 1000 px wide or more with a mouse gets a three-column layout and keyboard controls (see "Laptop and desktop" below); phones and tablets keep the single phone column.
 
 ## Controls
 
@@ -15,6 +15,16 @@ The layout follows the player's own sketch (v0.6), which had Down alone on the l
 - Down doesn't carry over: if you keep holding it after a piece locks, the next piece still falls at normal speed until you press Down again.
 - **The landing shadow shows the letters.** Each outline holds the letter that will land there, drawn lighter than a real tile, so you can see the word you'll make before the piece drops (v0.7).
 - There's no Hold and no preview of upcoming pieces. Both were removed in v0.3 because they weren't used, and removing them gave the board more room.
+
+### Laptop and desktop
+
+Pointer-and-keyboard devices (`min-width: 1000px`, `hover: hover`, `pointer: fine`; the block at the end of `style.css`) get a wide layout. A touch screen of any size, an iPad in landscape included, keeps the phone layout and its on-screen pad.
+- **Three columns.** Score, keys and rules on the left; the board in the middle, sized to the window's height (up to 96 px a cell, so a projected screen gets a big board); found words and their definitions on the right, as tall as the board.
+- **Keys.** Arrow keys or WASD: Left/Right (A/D) move, Up (W) rotates, Down (S) drops faster. P or Esc pauses and resumes, M mutes. Space or Enter presses the big button on the start, pause and game-over screens, and inside How to play, Enter goes on and Left/Right turn the cards. Space on a tip is "Got it". There is still no hard drop; Space never drops a piece.
+- **The pad becomes a keyboard diagram.** The same buttons, laid out as ↑ over ← ↓ →, each labelled with its keys, and each lights up while its key is down. They still work by clicking.
+- **Same rules as the buttons.** Keys go through the same code as the on-screen pad (`press`/`release` in `src/ui.js`), so Left and Right repeat the game's own way (DAS/ARR), and Down doesn't carry over to the next piece. The operating system's key repeat is ignored.
+- **Keys stay out of the way** while a dialog is open, while typing in a text box or the Shortest word menu, and when Ctrl, Cmd or Alt is held. After a dialog closes, focus is released so Space starts or resumes the game instead of re-opening the dialog.
+- `fit()` in `src/ui.js` knows which layout is showing from whether `.app` is a grid, so there's one place (the media query) that decides.
 
 ## Look
 
