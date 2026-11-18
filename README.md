@@ -1,12 +1,12 @@
 # Alphaboom
 
-A falling-block word game for phones. Pieces of four letter tiles fall into a 10 × 10 well; spell a word across any row and it clears.
+A falling-block word game for phones and laptops. Pieces of four letter tiles fall into a 10 × 10 well; spell a word across any row and it clears.
 
 Where it started: "it's a tetris game but instead of tetris blocks, they would be alphabet scrabble pieces. the way to clear a row would be to create a word with those letters as they fall down"
 
 ## Play
 
-This is a **mobile game**, planned for release as a phone app. Open `index.html` on a phone, or in a browser's phone view. There's no build step and no server needed.
+Built for phones first, planned for release as a phone app, and it plays on a laptop too. Open `index.html` on a phone, or in a browser on a laptop or desktop (a window 1000 px wide or more gets the wide layout and keyboard controls). There's no build step and no server needed.
 
 - The board is 10 × 10 tiles.
 - Spell words **left to right in any row**. Words reading down a column don't count.
@@ -20,13 +20,16 @@ This is a **mobile game**, planned for release as a phone app. Open `index.html`
 - On the hosted page, every game is also saved automatically for review. This covers each piece's letters, where it went, how long it took and what it spelled. See "Saved sessions" in DESIGN.md.
 - See [DESIGN.md](DESIGN.md) for the letter rules, the dictionary, the scoring and the benchmark.
 
-| Control | Action |
-|---|---|
-| Rotate (red, alone on the left) | Turn the piece clockwise. Its letters turn with it. |
-| Left / Right (top row on the right) | Move. Hold to keep moving. |
-| Down (wide button under Left and Right) | Hold to drop faster. The piece locks a moment after it lands. |
-| Pause (top right) | Pause or resume |
-| Speaker (under Pause) | Sound on or off |
+| Control | Phone | Keyboard |
+|---|---|---|
+| Rotate | Red button, alone on the left | Up or W |
+| Left / Right | Top row on the right. Hold to keep moving. | Left / Right or A / D. Hold to keep moving. |
+| Down | Wide button under Left and Right. Hold to drop faster. | Down or S. Hold to drop faster. |
+| Pause or resume | Pause button, top right | P or Esc |
+| Sound on or off | Speaker, under Pause | M |
+| Start, resume, play again | The big button on the screen | Space or Enter |
+
+Rotating turns the piece clockwise and its letters turn with it. A piece locks a moment after it lands. There's no hard drop.
 
 ## Hosting
 
@@ -62,7 +65,7 @@ Hand-written definitions for words WordNet lacks are in `scripts/supplement-defs
 | `src/words.js` | Word finding, scoring and definition lookup |
 | `src/board.js` | The grid and gravity |
 | `src/game.js` | Rules and state |
-| `src/ui.js` | Canvas rendering and touch input |
+| `src/ui.js` | Canvas rendering, touch and keyboard input |
 | `src/screens.js` | How to play cards, the scoreboard dialog and the one-time tips |
 | `src/sound.js` | Sound effects, made in the browser |
 | `src/scores.js` | Talks to the scoreboard functions in Supabase |

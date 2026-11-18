@@ -43,6 +43,12 @@
     // A tap on the dimmed backdrop (outside the card) closes it, as Escape does.
     dlg.addEventListener('click', (e) => { if (e.target === dlg) closeSheet(dlg); });
     dlg.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => closeSheet(dlg)));
+    // The browser hands focus back to the button that opened the dialog. Let go of it, so on a
+    // keyboard Space or Enter means "start / resume" again instead of re-opening the dialog.
+    dlg.addEventListener('close', () => {
+      const a = document.activeElement;
+      if (a && a !== document.body && a.blur) a.blur();
+    });
   }
 
   document.addEventListener('click', (e) => {
@@ -374,6 +380,13 @@
     demoSync();
     spellSync();
   });
+  // On a keyboard: left and right turn the cards, Enter goes on (and starts the game on the last).
+  howto.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); goTo(page + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(page - 1); }
+    else if (e.key === 'Enter' && !e.target.closest('button')) { e.preventDefault(); nextBtn.click(); }
+  });
 
   function openHowTo() {
     openSheet(howto);
@@ -671,6 +684,13 @@
 
   // Closing a tip (Got it, Escape, or a tap outside) shows the next, or counts down.
   $('tip-ok').addEventListener('click', () => closeSheet(tipSheet));
+  // On a keyboard, Enter or Space is "Got it".
+  tipSheet.addEventListener('keydown', (e) => {
+    if ((e.key === 'Enter' || e.key === ' ') && !e.ctrlKey && !e.metaKey && !e.altKey && !e.target.closest('button')) {
+      e.preventDefault();
+      closeSheet(tipSheet);
+    }
+  });
   tipSheet.addEventListener('close', () => { if (holding) nextTip(); });
 
   function countdown() {

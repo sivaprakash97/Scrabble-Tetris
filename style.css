@@ -1876,6 +1876,246 @@ dialog.sheet[open] .sheet-card {
   }
 }
 
+/* ---- laptop and desktop ---------------------------------------------------
+   A wide window (1000px and up) with a mouse gets three columns: score, keys and rules on the left, the board
+   in the middle, found words on the right. It plays from the keyboard (src/ui.js); the pad
+   becomes a keyboard diagram whose keys light up as they are pressed, and still works by click.
+   Phones and tablets keep the single column above. src/ui.js tells which layout is showing by
+   whether .app is a grid, and sizes the board to the window's height. */
+
+/* Keyboard hints: the phone layout has no use for them. */
+.keyhint,
+.keys-note,
+.key-tip {
+  display: none;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.45em;
+  padding: 0 0.4em 0.08em;
+  font-family: var(--font-body);
+  font-size: 0.88em;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--ink);
+  background: linear-gradient(180deg, #fff 0%, var(--cream) 100%);
+  border: 2px solid var(--ink);
+  border-radius: 7px;
+  box-shadow: 0 2px 0 var(--ink);
+}
+
+@media (min-width: 1000px) and (hover: hover) and (pointer: fine) {
+  :root {
+    --well-pad: 14px;
+  }
+
+  .app {
+    --side-min: 250px; /* src/ui.js reads this and the column gap to size the board */
+    display: grid;
+    grid-template-columns: minmax(var(--side-min), 380px) auto minmax(var(--side-min), 380px);
+    justify-content: center;
+    grid-template-areas:
+      "top   well  words"
+      "keys  well  words"
+      "rules well  words";
+    grid-template-rows: auto auto 1fr;
+    align-items: start;
+    column-gap: 20px;
+    row-gap: 0;
+    max-width: 1760px; /* a big or projected screen gets a big board */
+    padding-top: 24px;
+    padding-bottom: 40px;
+  }
+
+  .well {
+    grid-area: well;
+    align-self: start;
+  }
+
+  /* Left: score cards stacked, pause and sound side by side under them. */
+  .top {
+    grid-area: top;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .stats {
+    flex: none;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .stat {
+    padding: 3px 14px 6px;
+    border-radius: 18px;
+  }
+
+  .stat:nth-child(1) {
+    grid-column: 1 / -1;
+  }
+
+  .stat .label {
+    font-size: var(--step--1);
+  }
+
+  .stat .value {
+    font-size: 1.6rem;
+  }
+
+  .stat:nth-child(1) .value {
+    font-size: var(--step-2);
+  }
+
+  .stat-best {
+    padding: 4px 16px 6px;
+  }
+
+  .stat-best .value {
+    font-size: var(--step-1);
+  }
+
+  .top-btns {
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .top-btns .icon-btn,
+  .top-btns .sound-btn {
+    flex: 1;
+    width: auto;
+    height: 44px;
+    border-radius: 16px;
+  }
+
+  .top-btns .sound-btn {
+    --drop: 4px;
+  }
+
+  .top-btns .icon-btn .ico,
+  .top-btns .sound-btn .ico {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* The pad as a keyboard diagram: Up above, then Left, Down, Right. */
+  .touch {
+    grid-area: keys;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      ".    up    ."
+      "left down  right"
+      "note note  note";
+    gap: 10px;
+    margin-top: 22px;
+    padding: 16px 14px 12px;
+    background: rgb(27 17 57 / 0.32);
+    border-radius: 26px;
+    box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.12), inset 0 -3px 0 rgb(27 17 57 / 0.25);
+  }
+
+  .pad-group {
+    display: contents;
+  }
+
+  .touch button,
+  .touch .pad-solo {
+    width: auto;
+    min-height: 74px;
+    gap: 1px;
+    border-radius: 20px;
+  }
+
+  .touch .pad-solo { grid-area: up; }
+  .touch button[data-action="left"] { grid-area: left; }
+  .touch button[data-action="down"] { grid-area: down; flex-direction: column; gap: 1px; }
+  .touch button[data-action="right"] { grid-area: right; }
+
+  .touch button.primary .ico {
+    width: 26px;
+    height: 26px;
+  }
+
+  .touch button .ico {
+    width: 24px;
+    height: 24px;
+  }
+
+  .touch .keyhint {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 0 7px 1px;
+    min-width: 0;
+    white-space: nowrap;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    text-shadow: none;
+    text-transform: none;
+    border-width: 1.5px;
+    border-radius: 6px;
+    box-shadow: 0 1.5px 0 var(--ink);
+  }
+
+  .touch .keys-note {
+    display: block;
+    grid-area: note;
+    margin: 4px 0 0;
+    text-align: center;
+    font-size: var(--step--1);
+    color: #e4dcff;
+  }
+
+  .touch .keys-note kbd {
+    font-size: 0.82em;
+  }
+
+  /* Rules sit under the keys; the found-words list takes the whole right column. */
+  #rules-panel {
+    grid-area: rules;
+    margin-top: 34px;
+  }
+
+  #found-panel {
+    grid-area: words;
+    box-sizing: border-box;
+    height: var(--board-h, 600px);
+    margin-top: 0;
+    min-height: 0;
+  }
+
+  #found-panel .recent {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 2px 6px 8px 2px;
+    scrollbar-width: thin;
+  }
+
+  /* A little more room on the start / pause / game-over card, for the bigger board. */
+  .card {
+    width: min(100%, 380px);
+    padding: 26px 20px 18px;
+    gap: 10px;
+    font-size: 1.05rem;
+  }
+
+  .key-tip {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.9em;
+  }
+}
+
+@media (min-width: 1280px) and (hover: hover) and (pointer: fine) {
+  .app {
+    --side-min: 290px;
+    column-gap: 30px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body::after,
   .card h1,
