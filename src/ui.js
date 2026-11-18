@@ -751,11 +751,10 @@
     const text = game.state === 'over' && game.sessionId ? SAVE_TEXT[saveState] : null;
     saveStatusEl.hidden = !text;
     if (text) saveStatusEl.textContent = text;
-    // "Copy game log" is a testing tool. Preview and local copies always offer it. On the live
-    // site a game that is saved for review has nothing for a player to copy, so the button only
-    // appears when the game isn't being saved: the save failed, or there is nowhere to save to.
+    // "Copy game log" is a testing tool: preview links and local copies only, never the live site.
+    // Live games are saved for review anyway, so a player has nothing to copy.
     const testing = !!(ST.BACKEND && ST.BACKEND.sandbox);
-    overlay.log.hidden = game.state !== 'over' || !(testing || saveState === 'off' || saveState === 'error');
+    overlay.log.hidden = game.state !== 'over' || !testing;
   }
   // What the Rules panel says about saving, by where games are saved (see src/sessions.js).
   const HISTORY_NOTE = {

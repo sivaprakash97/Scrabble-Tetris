@@ -221,7 +221,7 @@ Letters are picked when a piece spawns, so the adaptive nudge and the helper let
 
 Paste it into a conversation to look at what came up.
 
-It is a testing tool, so it is a quiet text link, not a button, and the live site hides it. Every live game is already saved with all of this (see "Saved sessions"), so a player has nothing to copy. It shows on preview links and local copies, and on any build where the game isn't being saved: the save failed ("This game could not be saved."), or there is nowhere to save to. See `showSaveStatus()` in `src/ui.js`.
+It is a testing tool, so it is a quiet text link, not a button, and the live site never shows it. Every live game is already saved with all of this (see "Saved sessions"), so a player has nothing to copy. It shows on preview links and local copies only (`ST.BACKEND.sandbox`). See `showSaveStatus()` in `src/ui.js`.
 
 ## Saved sessions (playtesting)
 
