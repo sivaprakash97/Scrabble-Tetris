@@ -351,7 +351,7 @@
 
   const effects = []; // floating score text and banners
   const BANNER_SLOT = 1.95; // banner rows, in cells: a title plus its second line
-  const ROW_BANNERS = 2; // how many times a device sees the "ROW CLEARED · 0 POINTS" banner
+  const ROW_BANNERS = 2; // how many times a device sees the "ROW CLEARED · +0 POINTS" banner
 
   // Banners that show at the same time stack top to bottom, oldest first, in the first free row.
   function addBanner(now, b) {
@@ -666,7 +666,7 @@
         [`${game.words} ${game.words === 1 ? 'word' : 'words'}`, `level ${game.level}`,
           game.maxChain > 1 ? `chain ×${game.maxChain}` : null].filter(Boolean).join(' · '),
         game.bestWord ? `Best word ${game.bestWord.display} for ${fmt(game.bestWord.points)}` : null,
-        rows ? [`${rows} full ${rows === 1 ? 'row' : 'rows'}: 0 points`, 'warn'] : null,
+        rows ? [`${rows} full ${rows === 1 ? 'row' : 'rows'}: +0 points`, 'warn'] : null,
       ].filter(Boolean);
       o.text.replaceChildren(...lines.map((l) => {
         const [text, cls] = Array.isArray(l) ? l : [l, ''];
@@ -792,7 +792,7 @@
           const withWords = !!(game.clearing && game.clearing.found.length);
           addBanner(now, {
             text: e.count > 1 ? `${e.count} ROWS CLEARED` : 'ROW CLEARED',
-            sub: withWords ? 'ONLY WORDS SCORE' : '0 POINTS', colors: BANNER.rows, life: 1300,
+            sub: withWords ? 'ONLY WORDS SCORE' : '+0 POINTS', colors: BANNER.rows, life: 1300,
           });
         }
         sfx.play('row');

@@ -96,10 +96,10 @@ Opened from "Scoreboard" on the start, pause and game-over screens, and in the R
 Playtest 8 showed the risk: 62% of the tiles cleared went in full rows, which score nothing. Players need to learn that words are the goal, and that falling tiles can spell more words. The cards say both, but most people skip cards, so the game also says it at the moment it happens.
 
 **Full rows.**
-- The banner reads "ROW CLEARED" with "0 POINTS" under it, or "ONLY WORDS SCORE" if a word cleared in the same wave, since the word did score.
+- The banner reads "ROW CLEARED" with "+0 POINTS" under it (written "+0" so it reads as "added nothing", not "your score is now 0"), or "ONLY WORDS SCORE" if a word cleared in the same wave, since the word did score.
 - It shows only the first two times on a device (`localStorage alphaboom.rowBanners`), then stops. A banner every time got tiresome.
 - The full row's tiles always fade to grey, and the row always has its dull whoosh, plainly less fun than a word's.
-- The game-over summary adds "19 full rows: 0 points" in red when any full rows cleared. This counts `junkRows` from the game log.
+- The game-over summary adds "19 full rows: +0 points" in red when any full rows cleared. This counts `junkRows` from the game log.
 
 **Banners stack.** When several happen at once (row cleared, chain, level), each takes the first free row, top to bottom, oldest first, instead of drawing over each other.
 
