@@ -1842,29 +1842,6 @@ dialog.sheet[open] .sheet-card {
   line-height: 1;
 }
 
-.results-score-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* A new best on this device: a small gold badge beside "Score". */
-.new-best {
-  padding: 2px 9px 3px;
-  font-family: var(--font-display);
-  font-size: var(--step--1);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: #fff;
-  text-shadow: var(--outline-sm);
-  background: linear-gradient(180deg, var(--yellow-hi) 0%, var(--yellow) 50%, var(--orange-lo) 100%);
-  border: 2.5px solid var(--ink);
-  border-radius: 999px;
-  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.55), 0 3px 0 var(--ink);
-  transform: rotate(-4deg);
-}
-
 .results-score-label {
   font-family: var(--font-body);
   font-size: var(--step--1);
@@ -1874,8 +1851,15 @@ dialog.sheet[open] .sheet-card {
   color: var(--ink-soft);
 }
 
+/* The number, with room for the New best sticker on its lower right. */
+.score-num {
+  position: relative;
+  display: inline-block;
+  margin: 4px 0 14px;
+}
+
 #perf-score {
-  margin-top: 4px;
+  display: inline-block;
   font-size: 3.4rem;
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
@@ -2064,6 +2048,87 @@ dialog.sheet[open] .perf-stat {
 @keyframes stat-in {
   from { transform: translateY(10px) scale(0.85); opacity: 0; }
   to { transform: none; opacity: 1; }
+}
+
+/* New best on this device: a starburst sticker slapped onto the score's lower right corner.
+   It lands 0.2s after the card has bounced in, and the number jolts as it hits. */
+.new-best {
+  position: absolute;
+  right: -60px;
+  bottom: -24px;
+  display: grid;
+  place-items: center;
+  width: 70px;
+  height: 70px;
+  pointer-events: none;
+  transform: rotate(-12deg);
+}
+
+.new-best svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 3px 0 var(--ink));
+}
+
+.new-best polygon {
+  fill: var(--green);
+  stroke: var(--ink);
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+
+.new-best span {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  line-height: 0.95;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: var(--outline-sm);
+}
+
+/* Narrow phones: a smaller number and sticker, so a five-digit score and its sticker fit. */
+@media (max-width: 359px) {
+  #perf-score {
+    font-size: 2.4rem;
+  }
+
+  .new-best {
+    right: -50px;
+    bottom: -22px;
+    width: 60px;
+    height: 60px;
+  }
+
+  .new-best span {
+    font-size: 0.7rem;
+  }
+}
+
+dialog.sheet[open] .new-best:not([hidden]) {
+  animation: smack 420ms cubic-bezier(0.2, 1.5, 0.4, 1) 580ms both;
+}
+
+dialog.sheet[open] .score-num:has(.new-best:not([hidden])) #perf-score {
+  animation: jolt 220ms ease-out 760ms;
+}
+
+@keyframes smack {
+  0% { opacity: 0; transform: scale(2.8) rotate(-40deg); }
+  55% { opacity: 1; transform: scale(0.82) rotate(-6deg); }
+  78% { transform: scale(1.08) rotate(-15deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-12deg); }
+}
+
+@keyframes jolt {
+  0%, 100% { transform: rotate(-2deg) translate(0, 0); }
+  35% { transform: rotate(-3.5deg) translate(-3px, 3px); }
+  70% { transform: rotate(-1deg) translate(1px, -1px); }
 }
 
 .results-foot {
@@ -2371,6 +2436,8 @@ kbd {
   .value.bump,
   dialog.sheet[open] .sheet-card,
   dialog.sheet[open] .perf-stat,
+  dialog.sheet[open] .new-best:not([hidden]),
+  dialog.sheet[open] .score-num:has(.new-best:not([hidden])) #perf-score,
   .tile-row .pop,
   .art-points,
   .art-coin,
