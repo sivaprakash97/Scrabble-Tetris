@@ -212,7 +212,7 @@
 <!-- Results: the game-over screen. Opens by itself when a game ends; it can't be closed, only left
      with Play again, since there is nothing behind it to go back to. Two tabs. Performance (first): the score, how the
      game went, and Play again. Leaderboard: the top scorers and where this game would stand, with a
-     box for your name in your own row; there the main button is "Add to the leaderboard". -->
+     box for your name in your own row; there the main button is "Add to leaderboard". -->
 <dialog class="sheet" id="results" aria-labelledby="results-title">
   <div class="sheet-card results-card" tabindex="-1">
     <h2 class="sheet-title" id="results-title">Game over</h2>
@@ -230,6 +230,11 @@
           <div class="perf-stat" style="--i:3"><dt>Full rows</dt><dd id="perf-rows">0</dd><small id="perf-rows-sub" hidden>+0 points</small></div>
           <div class="perf-stat perf-wide" style="--i:4"><dt>Best word</dt><dd id="perf-best">–</dd><small id="perf-best-sub" hidden></small></div>
         </dl>
+        <!-- Shown while this game can go on the leaderboard: many players never opened the tab. -->
+        <div class="rank-prompt" id="rank-prompt" hidden>
+          <p class="rank-prompt-title">See where you rank</p>
+          <button type="button" class="btn-primary btn-gold rank-prompt-btn" id="rank-prompt-btn">Add to leaderboard</button>
+        </div>
       </section>
       <section class="results-panel results-board" id="rpanel-board" role="tabpanel" aria-labelledby="rtab-board" hidden>
         <p class="posted" id="results-posted" hidden></p>

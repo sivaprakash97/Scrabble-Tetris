@@ -94,7 +94,7 @@ It lists each player's best posted game, under their latest nickname, top 20. Yo
 **Your own games.** Every finished game with a score is still saved on the device (`localStorage alphaboom.games`, the 10 best, with date, level, words and best word), but nothing shows them now: the "My scores" tab was taken out of both the results and the Scoreboard, since right after a game it added little. It's kept for a start menu later.
 
 **Posting a score.**
-- After a game, the results screen opens by itself (see "Results screen" below). On its Leaderboard tab your row has a box for your name, and the main button is "Add to the leaderboard". The nickname is remembered on the device (`alphaboom.nickname`), so later posts are one tap.
+- After a game, the results screen opens by itself (see "Results screen" below). On its Leaderboard tab your row has a box for your name, and the main button is "Add to leaderboard". The nickname is remembered on the device (`alphaboom.nickname`), so later posts are one tap.
 - Posting happens only there; the Scoreboard dialog has no post form. 
 - Posting is optional, one game at a time. A player who never posts never appears.
 - Nicknames are 2–16 letters, numbers, spaces or `_ . ' -`. Both the page and the database check this.
@@ -121,12 +121,14 @@ The footer also has "This game is saved for review." and, on preview links and l
 | Full rows | Full rows that cleared | "+0 points" underneath: they score nothing. Counts `junkRows`, as the `game_over` analytics event does |
 | Best word | The word that earned the most points | With its points underneath |
 
+Under the tiles, while the game can still go on the leaderboard, "See where you rank" with a gold **Add to leaderboard** button. It opens the Leaderboard tab with the cursor in your name box. In playtests with a handful of players nobody opened the Leaderboard tab on their own, so nobody posted; this puts the choice on the screen everyone sees. It's hidden once the game is added, and when it can't be (no words, or not your best).
+
 The tiles sit on a dark panel, like a video game's end-of-match card, with plain numbers and no grades. Letter grades (S/A/B/C) were left out for now: thresholds need more real games to set fairly. If they come, `Game.stats()` already has what they'd use.
 
-**Leaderboard.** The top scorers, and where this game would stand. The main button is **Add to the leaderboard**, with Play again as a link under it.
+**Leaderboard.** The top scorers, and where this game would stand. The main button is **Add to leaderboard**, with Play again as a link under it.
 - The top 10, a "⋯" gap, then the row above yours, yours, and the row below. The gap closes when you're near the top. The tab's label shows your place ("Leaderboard · #12"), so there's a reason to open it.
 - Rows are one line: rank, name, date posted, score. The top 3 get gold, silver and bronze badges.
-- Your row, before you add it, is a box for your name (prefilled with the one remembered on the device) and your score. The box is never focused automatically, so a phone keyboard doesn't pop up. "Add to the leaderboard" with an empty box puts the cursor in it; with a name, it adds the game. Enter in the box does too.
+- Your row, before you add it, is a box for your name (prefilled with the one remembered on the device) and your score. The box is never focused automatically, so a phone keyboard doesn't pop up. "Add to leaderboard" with an empty box puts the cursor in it; with a name, it adds the game. Enter in the box does too.
 - Adding redraws the board: your row now has your name, under a green "Added as …: #12 of 20!" pill, and the main button turns back into Play again.
 - **When the game can't be added, there's no box and the main button stays Play again:**
   - a game with no words (its points all came from holding Down): "Make at least one word to get on the leaderboard."
@@ -389,7 +391,7 @@ Supabase keeps every game in full; PostHog (`src/analytics.js`) answers the ques
 | `tutorial_closed` | How to play closes | `auto` (opened by itself), `furthest_card`, `finished`, `first_visit` |
 | `tip_shown` | A first-time tip pops up | `tip` (word, chain, row, level, danger) |
 | `results_shown` | The results screen finds your place (once per game) | `score`, `rank`, `players`, `can_post` (it offered a name box), `has_board` |
-| `results_leaderboard_opened` | The Leaderboard tab on the results screen is opened | `game_id`, `can_add` (it offered a name box) |
+| `results_leaderboard_opened` | The Leaderboard tab on the results screen is opened | `game_id`, `can_add` (it offered a name box), `from` (`tab`, or `prompt` for the Add to leaderboard button on Performance) |
 | `scoreboard_opened`, `score_posted` | The scoreboard opens; a score is posted (from the results screen) | `game_state`; `score`, `rank`, `players` |
 | `game_log_copied`, `sound_toggled` | | `on` |
 

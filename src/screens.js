@@ -566,12 +566,15 @@
   let resultsTab = 'perf';
   let youForm = null; // the name box's form, while this game can be added to the board
 
-  // The main button follows the tab: Play again, or "Add to the leaderboard" on the Leaderboard
+  // The main button follows the tab: Play again, or "Add to leaderboard" on the Leaderboard
   // tab while this game can still be added (Play again then moves to a link under it).
   function updateResultsButtons() {
     const adding = resultsTab === 'board' && !!youForm;
-    resultsPrimary.textContent = adding ? 'Add to the leaderboard' : 'Play again';
+    resultsPrimary.textContent = adding ? 'Add to leaderboard' : 'Play again';
     resultsAgainLink.hidden = !adding;
+    // On Performance, a "See where you rank" prompt while the game can still be added. In
+    // playtests nobody opened the Leaderboard tab on their own, so nobody posted.
+    $('rank-prompt').hidden = !youForm;
   }
 
   function selectResultsTab(name) {
@@ -588,7 +591,19 @@
   rTabBoard.addEventListener('click', () => {
     if (resultsTab === 'board') return;
     selectResultsTab('board');
-    trackEvent('results_leaderboard_opened', { game_id: game.sessionId || null, can_add: !!youForm });
+    trackEvent('results_leaderboard_opened', { game_id: game.sessionId || null, can_add: !!youForm, from: 'tab' });
+  });
+
+  // "Add to leaderboard" on Performance: over to the Leaderboard tab, with the cursor in your
+  // name box (the remembered name already in it), so one more tap or Enter adds the game.
+  $('rank-prompt-btn').addEventListener('click', () => {
+    selectResultsTab('board');
+    trackEvent('results_leaderboard_opened', { game_id: game.sessionId || null, can_add: !!youForm, from: 'prompt' });
+    const input = youForm && youForm.querySelector('input');
+    if (!input) return;
+    input.scrollIntoView({ block: 'center' });
+    input.focus({ preventScroll: true });
+    input.setSelectionRange(input.value.length, input.value.length);
   });
 
   // The Performance tab: the score, then plain numbers from the game (Game.stats in src/game.js).
@@ -625,7 +640,7 @@
     }
   }
 
-  // Your row before you've added this game: the name goes in a box. "Add to the leaderboard"
+  // Your row before you've added this game: the name goes in a box. "Add to leaderboard"
   // (or Enter in the box) sends it.
   function youRow(r, gameId) {
     const li = el('li', 'entry mine you');

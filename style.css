@@ -2131,6 +2131,28 @@ dialog.sheet[open] .score-num:has(.new-best:not([hidden])) #perf-score {
   70% { transform: rotate(-1deg) translate(1px, -1px); }
 }
 
+/* On Performance: "See where you rank" and a gold Add to leaderboard button, between the stats
+   and Play again. No box around it, so it reads as part of the card. */
+.rank-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.rank-prompt-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.rank-prompt-btn {
+  width: 100%;
+}
+
 .results-foot {
   display: flex;
   flex-direction: column;
