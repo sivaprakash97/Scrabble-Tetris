@@ -1,6 +1,6 @@
 # Alphaboom
 
-A falling-block word game for phones and laptops. Pieces of four letter tiles fall into a 10 × 10 well; spell a word across any row and it clears.
+A falling-block word game for phones and laptops. Pieces of four letter tiles fall into a 10-wide, 14-tall well; spell a word across any row and it clears.
 
 Where it started: "it's a tetris game but instead of tetris blocks, they would be alphabet scrabble pieces. the way to clear a row would be to create a word with those letters as they fall down"
 
@@ -8,7 +8,7 @@ Where it started: "it's a tetris game but instead of tetris blocks, they would b
 
 Built for phones first, planned for release as a phone app, and it plays on a laptop too. Open `index.html` on a phone, or in a browser on a laptop or desktop (a window 1000 px wide or more gets the wide layout and keyboard controls). There's no build step and no server needed.
 
-- The board is 10 × 10 tiles.
+- The board is 10 tiles wide and 14 tall.
 - Spell words **left to right in any row**. Words reading down a column don't count.
 - Any common everyday English word of 3 or more letters vanishes (38,790 words; abbreviation-like words such as EMS or SIS don't count), and every tile drops to fill the gaps below, so buried gaps don't build up. Drops that spell new words score chain bonuses.
 - A completely full row also clears, but only words score.

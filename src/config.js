@@ -4,7 +4,9 @@
 
   ST.CONFIG = {
     COLS: 10,
-    ROWS: 10, // halved after playtest 3: at 20 rows the stack rarely passed row 4
+    // 20 until playtest 3 (the stack rarely passed row 4), then 10. Friends then found 10 too
+    // fast, so it's 14: more fall distance means more time per piece, without touching gravity.
+    ROWS: 14,
 
     // Scrabble face values. 'QU' is a single tile; '*' is the blank wildcard.
     LETTER_VALUES: {

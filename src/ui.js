@@ -447,7 +447,7 @@
     ctx.globalAlpha = 1;
     ctx.drawImage(backdrop, 0, 0, W, H);
 
-    // Warn when the stack reaches the top fifth of the board (2 rows on a 10-row board).
+    // Warn when the stack reaches the top fifth of the board (3 rows on a 14-row board).
     const grid = game.board.grid;
     const warnRows = Math.max(2, Math.round(cfg.ROWS / 5));
     const danger = grid.slice(0, warnRows).some((row) => row.some(Boolean));

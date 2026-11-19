@@ -199,7 +199,7 @@ Made in the browser with the Web Audio API (`src/sound.js`): no audio files to l
 
 ## Core loop
 
-- **The board is 10 × 10 (v0.8).** It was 10 wide by 20 tall until playtest 3, when the stack rarely got past the fourth row.
+- **The board is 10 wide and 14 tall.** It was 20 tall until playtest 3, when the stack rarely got past the fourth row, so v0.8 cut it to 10. Playtest feedback on 19 Nov then found 10 too fast, and it went to 14 (see below).
 - The 7 classic tetrominoes fall, each carrying 4 letter tiles.
 - Rotating a piece rotates its letters with it, so an I-piece flipped 180° reads backwards.
 - **Word clear.** When a piece locks, every row is read left to right. Any word of 3 or more letters inside a run of touching tiles disappears. Rows don't need to be full.
@@ -534,6 +534,37 @@ One game on a phone. Words were read across and down, and gaps closed after ever
 - The game ended when the middle columns grew into a tower (the board's top rows held ITCS and EI in columns 3–6), while the sides stayed low.
 
 **Change (v0.7):** vertical words removed. Gaps still close, and full rows still clear. The control buttons were also swapped: Rotate alone on the left, and Down wide under Left and Right.
+
+## Playtest feedback (19 Nov 2026): too fast and difficult, so a taller board
+
+Two friends played and found it a bit too fast and difficult. The fall speed itself felt right, so gravity is unchanged and the board got taller instead: 10 rows to 14 (`ROWS` in `src/config.js`).
+
+**Why height.** A piece's thinking time is how far it has to fall times the fall interval. A taller board adds fall distance without making anything move slower. It also helps most when the stack is high, which is when players feel rushed. Seconds from spawn to lock with no input, average of 30 seeds, 10 rows against 14:
+
+| Stack height | Level 1 | Level 5 |
+|---|---|---|
+| Empty | 7.9 s → 11.5 s | 4.4 s → 6.3 s |
+| 4 rows | 4.3 s → 7.9 s | 2.5 s → 4.4 s |
+| 6 rows | 2.5 s → 6.1 s | 1.6 s → 3.4 s |
+
+The gain is a fixed 4 rows of fall, so it shrinks in seconds as levels speed up (4 × 900 ms at level 1, 4 × 470 ms at level 5, 4 × 340 ms at level 7). It helps new players most, which is who the feedback came from.
+
+**Why 14, not 20.** Playtest 3 found 20 rows too easy (the stack rarely passed row 4). 14 sits between that and the 10 that was too fast; 20 would likely bring back the problem. The 20-row board gives 16.9 s at level 1 on an empty well.
+
+**Phone cost.** The board is 10 wide, so on a phone a taller board is limited by screen height rather than width. Tile size (px) with the whole screen (score strip, board, buttons) kept in view:
+
+| Screen | 10 rows | 12 rows | 14 rows |
+|---|---|---|---|
+| Pixel 7, Chrome (412 × 780) | 35 | 35 | 33 |
+| iPhone 14, full screen (390 × 844) | 33 | 33 | 33 |
+| iPhone 14, Safari with bars (390 × 664) | 33 | 29 | 25 |
+| Small Android (360 × 600) | 29 | 24 | 21 |
+| iPhone SE, Safari with bars (375 × 553) | 24 | 20 | 17 |
+| Laptop 1440 × 900 | 73 | 67 | 57 |
+
+On tall phones 14 rows costs almost nothing. On short screens the tiles get small; if playtesters on those say the letters are hard to read, 12 rows is the fallback (it's one number). The danger warning is still the top fifth of the board, now 3 rows instead of 2.
+
+**What to check next.** Saved sessions record `thinkMs` for every piece, so think time before and after can be compared from real games (the board's row count shows in each piece's saved `board`). If the stack again rarely passes the middle of the board, as in playtest 3, go back down. A game saved on the old 10-row board can't be resumed after this change (`Game.restore` rejects it).
 
 ## Playtest 7 (7 Nov 2026): vowel floor, and EMU
 
