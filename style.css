@@ -2063,6 +2063,10 @@ dialog.sheet[open] .perf-stat {
   font-size: var(--step-0);
 }
 
+.results-foot .save-status {
+  margin: 0;
+}
+
 .link-btn {
   padding: 0;
   font: inherit;

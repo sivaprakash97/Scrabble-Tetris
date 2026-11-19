@@ -632,8 +632,7 @@
   const overlay = {
     root: $('overlay'), eyebrow: $('overlay-eyebrow'), title: $('overlay-title'),
     text: $('overlay-text'), primary: $('overlay-primary'), secondary: $('overlay-secondary'),
-    log: $('overlay-log'), logText: $('log-text'),
-    help: $('overlay-help'), board: $('overlay-board'), results: $('overlay-results'),
+    help: $('overlay-help'), board: $('overlay-board'),
   };
   let overlayState = null;
   let overNewBest = false; // set once, when the game ends: did it beat this device's best?
@@ -656,20 +655,12 @@
     overlayState = game.state;
     const o = overlay;
     const held = !!(ST.screens && ST.screens.holding());
-    o.root.hidden = held || game.state === 'playing' || game.state === 'clearing';
+    // After a game this card stays away: the results (src/screens.js) are the game-over screen.
+    o.root.hidden = held || game.state === 'playing' || game.state === 'clearing' || game.state === 'over';
     o.secondary.hidden = game.state !== 'paused';
-    // After a game the results (src/screens.js) open by themselves; this card is what's left
-    // when they're closed, so it only needs the score and a way back to them.
-    o.text.hidden = game.state === 'over';
-    o.results.hidden = game.state !== 'over';
-    // After a game, Results already has the leaderboard, so a second Scoreboard button would
-    // only confuse. The full board stays in the Rules panel. With no shared board (the Claude
-    // page, a local file with no backend) the Scoreboard has nothing to show.
-    o.board.hidden = game.state === 'over' || !(ST.scoreboard && ST.scoreboard.enabled);
-    o.log.textContent = 'Copy game log';
-    o.logText.hidden = true;
-    // How to play is there before and during a game; after one, it is out of the way.
-    o.help.hidden = game.state === 'over';
+    // With no shared board (the Claude page, a local file with no backend) the Scoreboard has
+    // nothing to show.
+    o.board.hidden = !(ST.scoreboard && ST.scoreboard.enabled);
     if (game.state === 'ready') {
       o.eyebrow.textContent = 'Prototype';
       o.title.textContent = 'Alphaboom';
@@ -681,15 +672,11 @@
       o.title.textContent = fmt(game.score);
       o.text.textContent = `${game.words} ${game.words === 1 ? 'word' : 'words'} so far.`;
       o.primary.textContent = 'Resume';
-    } else if (game.state === 'over') {
-      o.eyebrow.textContent = overNewBest ? 'New best!' : 'Game over';
-      o.title.textContent = fmt(game.score);
-      o.primary.textContent = 'Play again';
     }
     showSaveStatus();
   }
 
-  // The big button: Start, Resume, or Play again.
+  // The big button: Start or Resume. (After a game, Play again is on the results screen.)
   function primaryAction() {
     if (game.state === 'ready') {
       game.inputs = {};
@@ -697,7 +684,6 @@
       saver.begin(game);
       if (ST.analytics) ST.analytics.gameStarted(game, 'start');
     } else if (game.state === 'paused') game.togglePause();
-    else if (game.state === 'over') restart('play_again');
   }
 
   // `from` says which button started the new game, for analytics.
@@ -714,6 +700,8 @@
 
   // ---- saved sessions ------------------------------------------------------
 
+  const logBtn = $('results-log');
+  const logBox = $('log-text');
   const saveStatusEl = $('save-status');
   const historyNoteEl = $('history-note');
   let saveState = 'off';
@@ -722,6 +710,12 @@
     saved: 'This game is saved for review.',
     error: 'This game could not be saved.',
   };
+  // A fresh results screen: the game log link reads "Copy game log" again, with its box closed.
+  function resetLog() {
+    logBtn.textContent = 'Copy game log';
+    logBox.hidden = true;
+  }
+
   function showSaveStatus() {
     const text = game.state === 'over' && game.sessionId ? SAVE_TEXT[saveState] : null;
     saveStatusEl.hidden = !text;
@@ -729,7 +723,7 @@
     // "Copy game log" is a testing tool: preview links and local copies only, never the live site.
     // Live games are saved for review anyway, so a player has nothing to copy.
     const testing = !!(ST.BACKEND && ST.BACKEND.sandbox);
-    overlay.log.hidden = game.state !== 'over' || !testing;
+    logBtn.hidden = game.state !== 'over' || !testing;
   }
   // What the Rules panel says about saving, by where games are saved (see src/sessions.js).
   const HISTORY_NOTE = {
@@ -756,18 +750,18 @@
 
   // Copies a text summary of the game, so a tricky run can be shared and looked at.
   // If the clipboard is blocked, the text appears in a box to select by hand.
-  overlay.log.addEventListener('click', () => {
+  logBtn.addEventListener('click', () => {
     if (ST.analytics) ST.analytics.track('game_log_copied', { game_id: game.sessionId || null });
     const text = game.logText();
     const showBox = () => {
-      overlay.logText.value = text;
-      overlay.logText.hidden = false;
-      overlay.logText.focus();
-      overlay.logText.select();
-      overlay.log.textContent = 'Select the text below to copy';
+      logBox.value = text;
+      logBox.hidden = false;
+      logBox.focus();
+      logBox.select();
+      logBtn.textContent = 'Select the text below to copy';
     };
     try {
-      navigator.clipboard.writeText(text).then(() => { overlay.log.textContent = 'Copied'; }, showBox);
+      navigator.clipboard.writeText(text).then(() => { logBtn.textContent = 'Copied'; }, showBox);
     } catch {
       showBox();
     }
@@ -783,7 +777,7 @@
 
   function drainEvents(now) {
     for (const e of game.events) {
-      if (e.type === 'over') recordBest(); // before the hooks: the results ask whether it's a new best
+      if (e.type === 'over') { recordBest(); resetLog(); } // before the hooks: the results ask whether it's a new best
       saver.onEvent(game, e);
       if (ST.analytics) ST.analytics.onEvent(game, e);
       emit(e);
@@ -963,7 +957,8 @@
       e.preventDefault(); // Space must not scroll the page either
       // Go by the game's state, not by whether the screen has repainted yet. A tip's 3-2-1
       // countdown also leaves the game paused, and Space must not resume it from underneath.
-      const onScreen = game.state === 'ready' || game.state === 'paused' || game.state === 'over';
+      // After a game the results screen handles its own keys.
+      const onScreen = game.state === 'ready' || game.state === 'paused';
       if (onScreen && !e.repeat && !(ST.screens && ST.screens.holding())) primaryAction();
     }
   });

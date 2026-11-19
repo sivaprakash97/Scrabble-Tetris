@@ -53,12 +53,8 @@
         <p class="key-tip" aria-hidden="true">or press <kbd>Space</kbd></p>
         <div class="overlay-more">
           <button type="button" id="overlay-help" class="btn-ghost btn-small" data-open="howto"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M8.6 9a3.5 3.5 0 1 1 4.9 3.2c-.9.4-1.5 1.1-1.5 2.1v.4"/><path d="M12 19h.01"/></g><g class="fl"><path d="M8.6 9a3.5 3.5 0 1 1 4.9 3.2c-.9.4-1.5 1.1-1.5 2.1v.4"/><path d="M12 19h.01"/></g></svg><span>How to play</span></button>
-          <button type="button" id="overlay-results" class="btn-ghost btn-small" data-open="results" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M6.5 19v-6M12 19V5M17.5 19v-9"/></g><g class="fl"><path d="M6.5 19v-6M12 19V5M17.5 19v-9"/></g></svg><span>Results</span></button>
           <button type="button" id="overlay-board" class="btn-ghost btn-small btn-gold" data-open="scoreboard"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path class="fill" d="M6.5 4h11v4a5.5 5.5 0 0 1-11 0Z"/><path d="M6.5 6H4.8a1.8 1.8 0 0 0 0 3.6h2.1"/><path d="M17.5 6h1.7a1.8 1.8 0 0 1 0 3.6h-2.1"/><path d="M12 14.5v3.5"/><path d="M7.5 19.5h9"/></g><g class="fl"><path class="fill" d="M6.5 4h11v4a5.5 5.5 0 0 1-11 0Z"/><path d="M6.5 6H4.8a1.8 1.8 0 0 0 0 3.6h2.1"/><path d="M17.5 6h1.7a1.8 1.8 0 0 1 0 3.6h-2.1"/><path d="M12 14.5v3.5"/><path d="M7.5 19.5h9"/></g></svg><span>Scoreboard</span></button>
-          <button type="button" id="overlay-log" class="link-btn" hidden>Copy game log</button>
         </div>
-        <textarea id="log-text" class="log-text" readonly hidden aria-label="Game log"></textarea>
-        <p id="save-status" class="save-status" role="status" hidden></p>
       </div>
     </div>
   </section>
@@ -213,13 +209,13 @@
   </div>
 </dialog>
 
-<!-- Results: opens by itself when a game ends. Two tabs. Performance (first): the score, how the
+<!-- Results: the game-over screen. Opens by itself when a game ends; it can't be closed, only left
+     with Play again, since there is nothing behind it to go back to. Two tabs. Performance (first): the score, how the
      game went, and Play again. Leaderboard: the top scorers and where this game would stand, with a
      box for your name in your own row; there the main button is "Add to the leaderboard". -->
 <dialog class="sheet" id="results" aria-labelledby="results-title">
   <div class="sheet-card results-card" tabindex="-1">
     <h2 class="sheet-title" id="results-title">Game over</h2>
-    <button type="button" class="close-btn" data-close aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><g class="ol"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g><g class="fl"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g></svg></button>
     <div class="tabs results-tabs" role="tablist" id="results-tabs">
       <button type="button" role="tab" id="rtab-perf" aria-controls="rpanel-perf" aria-selected="true">Performance</button>
       <button type="button" role="tab" id="rtab-board" aria-controls="rpanel-board" aria-selected="false">Leaderboard<span id="rtab-rank"></span></button>
@@ -245,6 +241,9 @@
       <button type="button" class="btn-primary results-again" id="results-primary">Play again</button>
       <button type="button" class="link-btn" id="results-again-link" hidden>Play again</button>
       <p class="key-tip" aria-hidden="true">or press <kbd>Space</kbd> to play again</p>
+      <p id="save-status" class="save-status" role="status" hidden></p>
+      <button type="button" id="results-log" class="link-btn" hidden>Copy game log</button>
+      <textarea id="log-text" class="log-text" readonly hidden aria-label="Game log"></textarea>
     </div>
   </div>
 </dialog>

@@ -20,7 +20,7 @@ The layout follows the player's own sketch (v0.6), which had Down alone on the l
 
 Pointer-and-keyboard devices (`min-width: 1000px`, `hover: hover`, `pointer: fine`; the block at the end of `style.css`) get a wide layout. A touch screen of any size, an iPad in landscape included, keeps the phone layout and its on-screen pad.
 - **Three columns.** Score, keys and rules on the left; the board in the middle, sized to the window's height (up to 96 px a cell, so a projected screen gets a big board); found words and their definitions on the right, as tall as the board.
-- **Keys.** Arrow keys or WASD: Left/Right (A/D) move, Up (W) rotates, Down (S) drops faster. P or Esc pauses and resumes, M mutes. Space or Enter presses the big button on the start, pause and game-over screens (and plays again from the results screen, unless a box or button has the focus), and inside How to play, Enter goes on and Left/Right turn the cards. Space on a tip is "Got it". There is still no hard drop; Space never drops a piece.
+- **Keys.** Arrow keys or WASD: Left/Right (A/D) move, Up (W) rotates, Down (S) drops faster. P or Esc pauses and resumes, M mutes. Space or Enter presses the big button on the start and pause screens, and plays again from the results screen (unless a box or button has the focus), and inside How to play, Enter goes on and Left/Right turn the cards. Space on a tip is "Got it". There is still no hard drop; Space never drops a piece.
 - **The pad becomes a keyboard diagram.** The same buttons, laid out as ↑ over ← ↓ →, each labelled with its keys, and each lights up while its key is down. They still work by clicking.
 - **Same rules as the buttons.** Keys go through the same code as the on-screen pad (`press`/`release` in `src/ui.js`), so Left and Right repeat the game's own way (DAS/ARR), and Down doesn't carry over to the next piece. The operating system's key repeat is ignored.
 - **Keys stay out of the way** while a dialog is open, while typing in a text box or the Shortest word menu, and when Ctrl, Cmd or Alt is held. After a dialog closes, focus is released so Space starts or resumes the game instead of re-opening the dialog.
@@ -87,7 +87,7 @@ Four illustrated cards in a dialog, swiped sideways or stepped through with Back
 
 ## Scoreboard
 
-Opened from "Scoreboard" on the start and pause screens, and in the Rules panel. The game-over card has no Scoreboard button: its "Results" button already shows the leaderboard, and two buttons that both open a leaderboard read as the same thing.
+Opened from "Scoreboard" on the start and pause screens, and in the Rules panel. After a game the results screen has its own Leaderboard tab.
 
 It lists each player's best posted game, under their latest nickname, top 20. Your own row is highlighted, and shown below the top 20 if you're further down. It is for looking only.
 
@@ -95,7 +95,7 @@ It lists each player's best posted game, under their latest nickname, top 20. Yo
 
 **Posting a score.**
 - After a game, the results screen opens by itself (see "Results screen" below). On its Leaderboard tab your row has a box for your name, and the main button is "Add to the leaderboard". The nickname is remembered on the device (`alphaboom.nickname`), so later posts are one tap.
-- Posting happens only there; the Scoreboard dialog has no post form. Closing the results and opening them again ("Results" on the game-over card) brings the box back.
+- Posting happens only there; the Scoreboard dialog has no post form. 
 - Posting is optional, one game at a time. A player who never posts never appears.
 - Nicknames are 2–16 letters, numbers, spaces or `_ . ' -`. Both the page and the database check this.
 
@@ -107,7 +107,9 @@ It lists each player's best posted game, under their latest nickname, top 20. Yo
 
 Opens by itself after every game. Two tabs, in the scoreboard's pill style.
 
-**When.** It opens 0.9 seconds after a game ends (the game-over card and sound land first). Closing it leaves the game-over card, with Play again and a "Results" button to open it again. For the first 0.7 seconds a tap on the backdrop or a Space press is ignored, so a player still tapping the pad as the game ends doesn't dismiss it.
+**When.** It is the game-over screen. When a game ends the board stays in view for 0.7 seconds with nothing over it (the game-over sound plays), then the results open. There's no separate game-over card any more: it showed the score and Play again for a moment before the results covered it, which repeated itself. The results can't be closed (no close button; Escape and backdrop taps do nothing), only left with Play again, since there's nothing behind them to go back to. For the first 0.7 seconds after they open a Space press is ignored, so a player still pressing keys as the game ends doesn't skip them.
+
+The footer also has "This game is saved for review." and, on preview links and local copies only, the "Copy game log" link.
 
 **Performance (opens first).** Your score is the main information, so it comes first, big. Then how the game went, then **Play again** as the main button.
 

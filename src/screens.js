@@ -42,13 +42,10 @@
   }
 
   for (const dlg of document.querySelectorAll('dialog.sheet')) {
-    // A tap on the dimmed backdrop (outside the card) closes it, as Escape does. The results
-    // ignore one in their first moments: a player still tapping the pad as the game ends would
-    // close them before they appear.
+    // A tap on the dimmed backdrop (outside the card) closes it, as Escape does. Not the
+    // results: they are the game-over screen, left only by playing again.
     dlg.addEventListener('click', (e) => {
-      if (e.target !== dlg) return;
-      if (dlg.id === 'results' && Date.now() - resultsOpenedAt < RESULTS_GUARD) return;
-      closeSheet(dlg);
+      if (e.target === dlg && dlg.id !== 'results') closeSheet(dlg);
     });
     dlg.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => closeSheet(dlg)));
     // The browser hands focus back to the button that opened the dialog. Let go of it, so on a
@@ -64,7 +61,6 @@
     if (!opener) return;
     if (opener.dataset.open === 'howto') openHowTo(false);
     else if (opener.dataset.open === 'scoreboard') openScoreboard();
-    else if (opener.dataset.open === 'results') openResults();
   });
 
   // ---- how to play ----------------------------------------------------------
@@ -551,8 +547,8 @@
   // Opens by itself a moment after a game ends, on the Performance tab: the score, how the game
   // went, and Play again. The Leaderboard tab shows the top scorers and where this game would
   // stand, with a box for your name in your own row; there the main button is "Add to the
-  // leaderboard", with Play again as a link under it. "Results" on the game-over card opens it
-  // again. Where there's no shared board, only Performance shows.
+  // leaderboard", with Play again as a link under it. It is the game-over screen: it can't be
+  // closed, only left by playing again. Where there's no shared board, only Performance shows.
 
   const results = $('results');
   const resultsList = $('results-list');
@@ -562,8 +558,8 @@
   const rTabBoard = $('rtab-board');
   const resultsPrimary = $('results-primary');
   const resultsAgainLink = $('results-again-link');
-  const RESULTS_DELAY = 900; // ms after the game ends, so the game-over sound and card land first
-  const RESULTS_GUARD = 700; // ms in which a stray tap or Space can't close or skip it
+  const RESULTS_DELAY = 700; // ms after the game ends: a beat to see the final board and hear the sound
+  const RESULTS_GUARD = 700; // ms in which a stray Space can't skip it
   let resultsOpenedAt = 0;
   let standingRequest = 0; // a newer request makes an older answer stale
   let resultsTracked = null; // the game id `results_shown` was last sent for
@@ -784,15 +780,23 @@
     if (!e.repeat && Date.now() - resultsOpenedAt > RESULTS_GUARD) playAgain();
   });
 
+  // Escape doesn't close the results: there's nothing behind them to go back to.
+  results.addEventListener('cancel', (e) => e.preventDefault());
+
+  // The results are the game-over screen, so they always open. If another dialog is somehow
+  // open when the game ends, they wait for it.
   ui.onGameOver((g) => {
     const id = g.sessionId;
-    setTimeout(() => {
-      if (game.state === 'over' && game.sessionId === id && !document.querySelector('dialog[open]')) openResults();
-    }, RESULTS_DELAY);
+    const tryOpen = () => {
+      if (game.state !== 'over' || game.sessionId !== id) return;
+      if (document.querySelector('dialog[open]')) setTimeout(tryOpen, 300);
+      else openResults();
+    };
+    setTimeout(tryOpen, RESULTS_DELAY);
   });
 
   // With no shared board (the Claude page, a local file with no backend) the Scoreboard has
-  // nothing to show, now that it has no "My scores" tab. (src/ui.js hides the one on the card.)
+  // nothing to show, now that it has no "My scores" tab. (src/ui.js hides the one on the start card.)
   if (!board.enabled) $('rules-board').hidden = true;
 
   // ---- tips for first-time players ---------------------------------------------
