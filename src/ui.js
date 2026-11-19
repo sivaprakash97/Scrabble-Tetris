@@ -638,10 +638,12 @@
   let overNewBest = false; // set once, when the game ends: did it beat this device's best?
 
   // Remembers the best score on this device. Called as a game ends, before the results show.
+  // The first game on a device is always its best, so it never says "New best!". `best` is saved
+  // after every finished game (even a 0), so its presence means an earlier game was played.
   function recordBest() {
-    const before = store.get('best', 0);
-    store.set('best', Math.max(before, game.score));
-    overNewBest = before > 0 && game.score > before;
+    const before = store.get('best', null);
+    store.set('best', Math.max(before || 0, game.score));
+    overNewBest = before !== null && game.score > before;
   }
 
   // The start screen's one-line pitch; How to play has the details.
