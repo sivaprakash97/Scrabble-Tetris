@@ -1855,7 +1855,7 @@ dialog.sheet[open] .sheet-card {
 .score-num {
   position: relative;
   display: inline-block;
-  margin: 4px 0 14px;
+  margin: 4px 0 6px;
 }
 
 #perf-score {
@@ -2050,12 +2050,12 @@ dialog.sheet[open] .perf-stat {
   to { transform: none; opacity: 1; }
 }
 
-/* New best on this device: a starburst sticker slapped onto the score's lower right corner.
+/* New best on this device: a starburst sticker slapped on beside the score, on the same line.
    It lands 0.2s after the card has bounced in, and the number jolts as it hits. */
 .new-best {
   position: absolute;
-  right: -60px;
-  bottom: -24px;
+  top: calc(50% - 35px); /* centred on the number's line */
+  right: -68px;
   display: grid;
   place-items: center;
   width: 70px;
@@ -2099,8 +2099,8 @@ dialog.sheet[open] .perf-stat {
   }
 
   .new-best {
-    right: -50px;
-    bottom: -22px;
+    top: calc(50% - 30px);
+    right: -56px;
     width: 60px;
     height: 60px;
   }

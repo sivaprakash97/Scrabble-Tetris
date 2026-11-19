@@ -111,7 +111,7 @@ Opens by itself after every game. Two tabs, in the scoreboard's pill style.
 
 The footer also has "This game is saved for review." and, on preview links and local copies only, the "Copy game log" link.
 
-**Performance (opens first).** Your score is the main information, so it comes first, big. The ribbon on top always says "Game over"; when the score beats this device's best, a green starburst "New best!" sticker is slapped onto the lower right of the number: it lands 0.2 seconds after the card has bounced in, and the number jolts as it hits. With reduced motion it just appears. Then how the game went, then **Play again** as the main button.
+**Performance (opens first).** Your score is the main information, so it comes first, big. The ribbon on top always says "Game over"; when the score beats this device's best, a green starburst "New best!" sticker is slapped on right beside the number, on the same line: it lands 0.2 seconds after the card has bounced in, and the number jolts as it hits. With reduced motion it just appears. Then how the game went, then **Play again** as the main button.
 
 | Tile | What it counts | Notes |
 |---|---|---|
