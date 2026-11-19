@@ -111,7 +111,7 @@ Opens by itself after every game. Two tabs, in the scoreboard's pill style.
 
 The footer also has "This game is saved for review." and, on preview links and local copies only, the "Copy game log" link.
 
-**Performance (opens first).** Your score is the main information, so it comes first, big. Then how the game went, then **Play again** as the main button.
+**Performance (opens first).** Your score is the main information, so it comes first, big. The ribbon on top always says "Game over"; when the score beats this device's best, a gold "New best!" badge sits beside the "Score" label. Then how the game went, then **Play again** as the main button.
 
 | Tile | What it counts | Notes |
 |---|---|---|

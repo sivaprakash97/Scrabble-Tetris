@@ -594,10 +594,8 @@
   // The Performance tab: the score, then plain numbers from the game (Game.stats in src/game.js).
   function showStats() {
     const s = game.stats();
-    const best = ui.newBest();
-    const title = $('results-title');
-    title.textContent = best ? 'New best!' : 'Game over';
-    title.classList.toggle('gold', best);
+    // The ribbon always says Game over; a new best is a badge beside "Score".
+    $('results-new-best').hidden = !ui.newBest();
     $('perf-score').textContent = fmt(s.score);
     $('perf-words').textContent = fmt(s.words);
     $('perf-level').textContent = fmt(s.level);
