@@ -42,8 +42,11 @@
   }
 
   for (const dlg of document.querySelectorAll('dialog.sheet')) {
-    // A tap on the dimmed backdrop (outside the card) closes it, as Escape does.
-    dlg.addEventListener('click', (e) => { if (e.target === dlg) closeSheet(dlg); });
+    // A tap on the dimmed backdrop (outside the card) closes it, as Escape does. Not the
+    // results: they are the game-over screen, left only by playing again.
+    dlg.addEventListener('click', (e) => {
+      if (e.target === dlg && dlg.id !== 'results') closeSheet(dlg);
+    });
     dlg.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => closeSheet(dlg)));
     // The browser hands focus back to the button that opened the dialog. Let go of it, so on a
     // keyboard Space or Enter means "start / resume" again instead of re-opening the dialog.
@@ -418,18 +421,20 @@
   // The first paint may come before the web fonts arrive.
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (howto.open) paintArt(); });
 
-  // ---- your best games (this device) ----------------------------------------
+  // ---- your games (this device) --------------------------------------------------
+  // Every finished game with a score is kept on the device (the 10 best), though nothing shows
+  // them for now: "My scores" was taken out of the results and the scoreboard. Kept so a start
+  // menu can list them later.
 
   const HISTORY = 'games';
   const KEEP = 10;
-  let lastGameAt = null;
 
   ui.onGameOver((g) => {
     if (!(g.score > 0)) return;
-    lastGameAt = new Date().toISOString();
+    const at = new Date().toISOString();
     const list = store.get(HISTORY, []).filter((x) => x && x.score > 0);
     list.push({
-      score: g.score, words: g.words, level: g.level, at: lastGameAt,
+      score: g.score, words: g.words, level: g.level, at,
       best: g.bestWord ? g.bestWord.display : null, bestPoints: g.bestWord ? g.bestWord.points : null,
     });
     list.sort((a, b) => b.score - a.score);
@@ -466,46 +471,14 @@
     return parts.join(' · ');
   }
 
-  function renderMine() {
-    const list = store.get(HISTORY, []).filter((x) => x && x.score > 0);
-    const legacyBest = store.get('best', 0);
-    if (!list.length && legacyBest > 0) list.push({ score: legacyBest, legacy: true });
-    const ol = $('board-mine');
-    if (!list.length) {
-      ol.replaceChildren(note('Your best games on this device show up here.'));
-      return;
-    }
-    ol.replaceChildren(...list.map((g, i) => {
-      if (g.legacy) return entry(i + 1, 'Earlier game', 'Before the scoreboard', g.score, false);
-      const meta = [`level ${g.level}`, wordsMeta(g.words, g.best, g.bestPoints)].filter(Boolean).join(' · ');
-      return entry(i + 1, when(g.at), meta, g.score, g.at === lastGameAt);
-    }));
-  }
-
   // ---- the shared scoreboard (website only) ---------------------------------
 
   const LIMIT = 20;
   const sheet = $('scoreboard');
-  const form = $('post-form');
-  const nameInput = $('post-name');
-  const submitBtn = $('post-submit');
-  const statusEl = $('post-status');
   const postedNote = $('posted-note');
-  const tabs = [...$('board-tabs').children];
-  const lists = { top: $('board-top'), mine: $('board-mine') };
+  const lists = { top: $('board-top') };
   let posted = null; // { gameId, nickname, rank, players } for the last game you posted
   let topRequest = 0;
-
-  function canPost() {
-    return board.enabled && game.state === 'over' && !!game.sessionId && game.score > 0 &&
-      !(posted && posted.gameId === game.sessionId);
-  }
-
-  function selectTab(name) {
-    for (const t of tabs) t.setAttribute('aria-selected', String(t.dataset.tab === name));
-    for (const [key, ol] of Object.entries(lists)) ol.hidden = key !== name;
-  }
-  tabs.forEach((t) => t.addEventListener('click', () => selectTab(t.dataset.tab)));
 
   async function loadTop() {
     if (!board.enabled) return;
@@ -535,11 +508,6 @@
     }
   }
 
-  function setStatus(text, isError) {
-    statusEl.textContent = text;
-    statusEl.classList.toggle('error', !!isError);
-  }
-
   function showPosted() {
     const here = posted && posted.gameId === game.sessionId;
     postedNote.hidden = !here;
@@ -550,57 +518,284 @@
     }
   }
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const nick = board.cleanNickname(nameInput.value);
-    if (!nick) {
-      setStatus("Use 2–16 letters or numbers. Spaces and _ . ' - are fine too.", true);
-      nameInput.focus();
-      return;
-    }
-    const gameId = game.sessionId;
-    submitBtn.disabled = nameInput.disabled = true;
-    setStatus('Posting…');
-    try {
-      const result = await board.post(gameId, nick);
-      store.set('nickname', nick);
-      posted = { gameId, nickname: nick, rank: result && result.rank, players: result && result.players };
-      trackEvent('score_posted', { game_id: gameId, score: game.score, rank: posted.rank || null, players: posted.players || null });
-      if (sound) sound.play('cheer');
-      form.hidden = true;
-      setStatus('');
-      showPosted();
-      $('overlay-board').querySelector('span').textContent = 'Scoreboard';
-      selectTab('top');
-      loadTop();
-    } catch (err) {
-      setStatus(/nickname/.test(err.reason || '')
-        ? "That nickname can't be used. Try another."
-        : "Couldn't post your score. Check your connection and try again.", true);
-    } finally {
-      submitBtn.disabled = nameInput.disabled = false;
-    }
-  });
+  const NICK_RULE = "Use 2–16 letters or numbers. Spaces and _ . ' - are fine too.";
+
+  // Posts a finished game under a nickname, from your row on the results screen's Leaderboard tab.
+  // The scoreboard dialog is for looking only.
+  async function postGame(gameId, nick) {
+    const result = await board.post(gameId, nick);
+    store.set('nickname', nick);
+    posted = { gameId, nickname: nick, rank: result && result.rank, players: result && result.players };
+    trackEvent('score_posted', { game_id: gameId, score: game.score, rank: posted.rank || null, players: posted.players || null });
+    if (sound) sound.play('cheer');
+  }
+
+  const postError = (err) => (/nickname/.test((err && err.reason) || '')
+    ? "That nickname can't be used. Try another."
+    : "Couldn't post your score. Check your connection and try again.");
 
   function openScoreboard() {
-    const postable = canPost();
-    trackEvent('scoreboard_opened', { can_post: postable, game_state: game.state });
-    form.hidden = !postable;
-    setStatus('');
-    if (postable) {
-      $('post-score').textContent = fmt(game.score);
-      nameInput.value = store.get('nickname', '');
-    }
+    trackEvent('scoreboard_opened', { game_state: game.state });
     showPosted();
-    $('board-title').textContent = board.enabled ? 'Scoreboard' : 'My best games';
-    $('board-tabs').hidden = !board.enabled;
-    selectTab(board.enabled ? 'top' : 'mine');
-    renderMine();
     loadTop();
     openSheet(sheet);
     // Focus the card itself: no phone keyboard popping up, and no focus ring on a button.
     focusCard(sheet);
   }
+
+  // ---- results: the screen after every game -------------------------------------
+  // Opens by itself a moment after a game ends, on the Performance tab: the score, how the game
+  // went, and Play again. The Leaderboard tab shows the top scorers and where this game would
+  // stand, with a box for your name in your own row; there the main button is "Add to the
+  // leaderboard", with Play again as a link under it. It is the game-over screen: it can't be
+  // closed, only left by playing again. Where there's no shared board, only Performance shows.
+
+  const results = $('results');
+  const resultsList = $('results-list');
+  const resultsNote = $('results-note');
+  const resultsPosted = $('results-posted');
+  const rTabPerf = $('rtab-perf');
+  const rTabBoard = $('rtab-board');
+  const resultsPrimary = $('results-primary');
+  const resultsAgainLink = $('results-again-link');
+  const RESULTS_DELAY = 700; // ms after the game ends: a beat to see the final board and hear the sound
+  const RESULTS_GUARD = 700; // ms in which a stray Space can't skip it
+  let resultsOpenedAt = 0;
+  let standingRequest = 0; // a newer request makes an older answer stale
+  let resultsTracked = null; // the game id `results_shown` was last sent for
+  let resultsTab = 'perf';
+  let youForm = null; // the name box's form, while this game can be added to the board
+
+  // The main button follows the tab: Play again, or "Add to the leaderboard" on the Leaderboard
+  // tab while this game can still be added (Play again then moves to a link under it).
+  function updateResultsButtons() {
+    const adding = resultsTab === 'board' && !!youForm;
+    resultsPrimary.textContent = adding ? 'Add to the leaderboard' : 'Play again';
+    resultsAgainLink.hidden = !adding;
+  }
+
+  function selectResultsTab(name) {
+    resultsTab = name;
+    const onBoard = name === 'board';
+    rTabPerf.setAttribute('aria-selected', String(!onBoard));
+    rTabBoard.setAttribute('aria-selected', String(onBoard));
+    $('rpanel-perf').hidden = onBoard;
+    $('rpanel-board').hidden = !onBoard;
+    $('results-scroll').scrollTop = 0;
+    updateResultsButtons();
+  }
+  rTabPerf.addEventListener('click', () => selectResultsTab('perf'));
+  rTabBoard.addEventListener('click', () => {
+    if (resultsTab === 'board') return;
+    selectResultsTab('board');
+    trackEvent('results_leaderboard_opened', { game_id: game.sessionId || null, can_add: !!youForm });
+  });
+
+  // The Performance tab: the score, then plain numbers from the game (Game.stats in src/game.js).
+  function showStats() {
+    const s = game.stats();
+    // The ribbon always says Game over; a new best is a badge beside "Score".
+    $('results-new-best').hidden = !ui.newBest();
+    $('perf-score').textContent = fmt(s.score);
+    $('perf-words').textContent = fmt(s.words);
+    $('perf-level').textContent = fmt(s.level);
+    $('perf-chains').textContent = fmt(s.chains);
+    $('perf-chains-sub').hidden = !(s.longestChain > 1);
+    $('perf-chains-sub').textContent = `longest ×${s.longestChain}`;
+    $('perf-rows').textContent = fmt(s.fullRows);
+    $('perf-rows-sub').hidden = !s.fullRows; // full rows score nothing, so say so
+    $('perf-best').textContent = s.bestWord ? s.bestWord.display : '–';
+    $('perf-best-sub').hidden = !s.bestWord;
+    if (s.bestWord) $('perf-best-sub').textContent = `${fmt(s.bestWord.points)} points`;
+  }
+
+  function setResultsNote(text, isError) {
+    resultsNote.hidden = !text;
+    resultsNote.textContent = text || '';
+    resultsNote.classList.toggle('error', !!isError);
+  }
+
+  function showResultsPosted() {
+    const here = posted && posted.gameId === game.sessionId;
+    resultsPosted.hidden = !here;
+    if (here) {
+      resultsPosted.textContent = posted.rank
+        ? `Added as ${posted.nickname}: #${posted.rank} of ${posted.players}!`
+        : `Added as ${posted.nickname}!`;
+    }
+  }
+
+  // Your row before you've added this game: the name goes in a box. "Add to the leaderboard"
+  // (or Enter in the box) sends it.
+  function youRow(r, gameId) {
+    const li = el('li', 'entry mine you');
+    const formEl = el('form', 'you-form');
+    const input = el('input');
+    Object.assign(input, {
+      type: 'text', name: 'nickname', maxLength: 16, autocomplete: 'nickname', autocapitalize: 'words',
+      spellcheck: false, enterKeyHint: 'send', placeholder: 'Your name',
+    });
+    input.setAttribute('aria-label', 'Your name for the leaderboard');
+    input.value = store.get('nickname', ''); // returning players add in one tap
+    const who = el('div', 'who');
+    who.append(input);
+    const status = el('p', 'you-status');
+    status.setAttribute('role', 'status');
+    formEl.append(rankBadge(r.rank), who, el('span', 'coin', fmt(r.score)), status);
+    li.append(formEl);
+
+    const say = (text, isError) => {
+      status.textContent = text;
+      status.classList.toggle('error', !!isError);
+    };
+    formEl.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nick = board.cleanNickname(input.value);
+      if (!nick) {
+        say(NICK_RULE, true);
+        input.focus();
+        return;
+      }
+      input.disabled = resultsPrimary.disabled = true;
+      say('Adding…');
+      try {
+        await postGame(gameId, nick);
+      } catch (err) {
+        say(postError(err), true);
+        return;
+      } finally {
+        input.disabled = resultsPrimary.disabled = false;
+      }
+      // Draw the board again: your row is now a real one, with your name on it.
+      focusCard(results); // the box is about to go; keep Space and Enter working
+      showResultsPosted();
+      showStanding();
+    });
+    youForm = formEl;
+    return li;
+  }
+
+  function renderStanding(rows, gameId, score, addable) {
+    youForm = null;
+    const items = [];
+    let last = 0;
+    for (const r of rows) {
+      if (last && r.pos - last > 1) items.push(el('li', 'board-gap', '⋯'));
+      last = r.pos;
+      items.push(r.kind === 'you'
+        ? youRow(r, gameId)
+        : entry(r.rank, r.nickname || 'Player', when(r.posted_at), r.score, r.mine));
+    }
+    if (!items.length) items.push(note('No scores yet. Be the first!'));
+    resultsList.replaceChildren(...items);
+
+    const me = rows.find((r) => r.mine);
+    $('rtab-rank').textContent = me ? ` · #${me.rank}` : '';
+    const mine = rows.find((r) => r.mine && r.kind !== 'you');
+    if (!addable) setResultsNote('Make at least one word to get on the leaderboard.');
+    else if (mine && mine.score > score) {
+      setResultsNote(`This game didn't beat your best (${fmt(mine.score)}), so you stay at #${mine.rank}.`);
+    } else setResultsNote('');
+    updateResultsButtons();
+
+    if (resultsTracked !== gameId) {
+      resultsTracked = gameId;
+      trackEvent('results_shown', {
+        game_id: gameId, score, rank: me ? me.rank : null, players: rows.length ? rows[0].players : null,
+        can_post: !!youForm, has_board: true,
+      });
+    }
+  }
+
+  async function showStanding() {
+    if (!board.enabled) return;
+    const request = ++standingRequest;
+    const gameId = game.sessionId;
+    const score = game.score;
+    // A game with no words (its points all came from holding Down) can't go on the board.
+    const addable = score > 0 && game.words > 0;
+    showResultsPosted();
+    setResultsNote('');
+    youForm = null;
+    updateResultsButtons();
+    resultsList.replaceChildren(note('Loading…'));
+    let rows;
+    try {
+      rows = (await board.standing(addable ? score : 0, RESULTS_TOP)) || [];
+    } catch {
+      if (request !== standingRequest) return;
+      const li = note("Couldn't load the leaderboard. ");
+      const retry = el('button', 'link-btn', 'Try again');
+      retry.type = 'button';
+      retry.addEventListener('click', showStanding);
+      li.append(retry);
+      resultsList.replaceChildren(li);
+      return;
+    }
+    if (request !== standingRequest || game.sessionId !== gameId) return;
+    renderStanding(rows, gameId, score, addable);
+  }
+  const RESULTS_TOP = 10; // top scorers on the Leaderboard tab, before the rows around yours
+
+  function openResults() {
+    showStats();
+    youForm = null;
+    $('rtab-rank').textContent = '';
+    $('results-tabs').hidden = !board.enabled;
+    selectResultsTab('perf');
+    resultsOpenedAt = Date.now();
+    openSheet(results);
+    focusCard(results); // no phone keyboard popping up over the stats
+    if (board.enabled) showStanding();
+    else if (resultsTracked !== game.sessionId) {
+      resultsTracked = game.sessionId;
+      trackEvent('results_shown', { game_id: game.sessionId || null, score: game.score, has_board: false });
+    }
+  }
+
+  function playAgain() {
+    closeSheet(results);
+    ui.restart('play_again');
+  }
+
+  resultsPrimary.addEventListener('click', () => {
+    if (resultsTab === 'board' && youForm) {
+      // First tap with an empty box: put the cursor there. With a name in it: add the game.
+      const input = youForm.querySelector('input');
+      if (!input.value.trim()) input.focus();
+      else youForm.requestSubmit();
+      return;
+    }
+    playAgain();
+  });
+  resultsAgainLink.addEventListener('click', playAgain);
+
+  // Space or Enter plays again, unless a box or button has the focus (a name being typed, say).
+  results.addEventListener('keydown', (e) => {
+    if ((e.key !== ' ' && e.key !== 'Enter') || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target instanceof Element && e.target.closest('input, textarea, select, button, a')) return;
+    e.preventDefault();
+    if (!e.repeat && Date.now() - resultsOpenedAt > RESULTS_GUARD) playAgain();
+  });
+
+  // Escape doesn't close the results: there's nothing behind them to go back to.
+  results.addEventListener('cancel', (e) => e.preventDefault());
+
+  // The results are the game-over screen, so they always open. If another dialog is somehow
+  // open when the game ends, they wait for it.
+  ui.onGameOver((g) => {
+    const id = g.sessionId;
+    const tryOpen = () => {
+      if (game.state !== 'over' || game.sessionId !== id) return;
+      if (document.querySelector('dialog[open]')) setTimeout(tryOpen, 300);
+      else openResults();
+    };
+    setTimeout(tryOpen, RESULTS_DELAY);
+  });
+
+  // With no shared board (the Claude page, a local file with no backend) the Scoreboard has
+  // nothing to show, now that it has no "My scores" tab. (src/ui.js hides the one on the start card.)
+  if (!board.enabled) $('rules-board').hidden = true;
 
   // ---- tips for first-time players ---------------------------------------------
   // The first time each moment comes up (a word, a chain, a full row, a new level, the stack
@@ -814,8 +1009,6 @@
     openScoreboard,
     holding: () => holding,
     cancelHold,
-    // The label of the scoreboard button on the game-over screen.
-    boardLabel: () => (canPost() ? 'Post score' : 'Scoreboard'),
   };
   ui.refreshOverlay();
 

@@ -7,7 +7,9 @@
 //   game_over        a summary of the game (score, words, full-row share, chains, input, ...)
 //   tutorial_closed  How to play closed: how far the player got, and whether it opened by itself
 //   tip_shown        a first-time tip popped up
-//   scoreboard_opened, score_posted, game_log_copied, sound_toggled
+//   results_shown    the results screen found your place on the scoreboard (once per game)
+//   results_leaderboard_opened  the Leaderboard tab on the results screen was opened
+//   scoreboard_opened, score_posted (posting is from the results screen only), game_log_copied, sound_toggled
 //
 // Plus page views, page leaves, session recordings (typing is masked) and JavaScript errors.
 //

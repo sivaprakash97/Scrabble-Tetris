@@ -355,6 +355,23 @@
       return true;
     }
 
+    // What the results screen shows, worked out from the game so far.
+    // - chains: pieces whose words set off a chain of 2 or more waves ("chain reactions").
+    // - longestChain: the biggest chain in one go.
+    // - fullRows: full rows that cleared, which score nothing (see resolveWords).
+    stats() {
+      const pieces = this.log.pieces;
+      return {
+        score: this.score,
+        words: this.words,
+        level: this.level,
+        chains: pieces.filter((p) => (p.words || []).some((w) => w.chain > 1)).length,
+        longestChain: this.maxChain,
+        fullRows: pieces.reduce((n, p) => n + (p.junkRows || 0), 0),
+        bestWord: this.bestWord ? { display: this.bestWord.display, points: this.bestWord.points } : null,
+      };
+    }
+
     // Plain-text summary of this game: settings, every piece's letters, the words found,
     // and the board. [x] marks a helper letter; * is a blank.
     logText() {

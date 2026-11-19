@@ -632,10 +632,19 @@
   const overlay = {
     root: $('overlay'), eyebrow: $('overlay-eyebrow'), title: $('overlay-title'),
     text: $('overlay-text'), primary: $('overlay-primary'), secondary: $('overlay-secondary'),
-    log: $('overlay-log'), logText: $('log-text'),
     help: $('overlay-help'), board: $('overlay-board'),
   };
   let overlayState = null;
+  let overNewBest = false; // set once, when the game ends: did it beat this device's best?
+
+  // Remembers the best score on this device. Called as a game ends, before the results show.
+  // The first game on a device is always its best, so it never says "New best!". `best` is saved
+  // after every finished game (even a 0), so its presence means an earlier game was played.
+  function recordBest() {
+    const before = store.get('best', null);
+    store.set('best', Math.max(before || 0, game.score));
+    overNewBest = before !== null && game.score > before;
+  }
 
   // The start screen's one-line pitch; How to play has the details.
   function rulesLine() {
@@ -648,14 +657,12 @@
     overlayState = game.state;
     const o = overlay;
     const held = !!(ST.screens && ST.screens.holding());
-    o.root.hidden = held || game.state === 'playing' || game.state === 'clearing';
+    // After a game this card stays away: the results (src/screens.js) are the game-over screen.
+    o.root.hidden = held || game.state === 'playing' || game.state === 'clearing' || game.state === 'over';
     o.secondary.hidden = game.state !== 'paused';
-    o.log.hidden = game.state !== 'over';
-    o.log.textContent = 'Copy game log';
-    o.logText.hidden = true;
-    // How to play is there before and during a game; after one, the log takes its place.
-    o.help.hidden = game.state === 'over';
-    o.board.querySelector('span').textContent = (ST.screens && ST.screens.boardLabel()) || 'Scoreboard';
+    // With no shared board (the Claude page, a local file with no backend) the Scoreboard has
+    // nothing to show.
+    o.board.hidden = !(ST.scoreboard && ST.scoreboard.enabled);
     if (game.state === 'ready') {
       o.eyebrow.textContent = 'Prototype';
       o.title.textContent = 'Alphaboom';
@@ -667,31 +674,11 @@
       o.title.textContent = fmt(game.score);
       o.text.textContent = `${game.words} ${game.words === 1 ? 'word' : 'words'} so far.`;
       o.primary.textContent = 'Resume';
-    } else if (game.state === 'over') {
-      const before = store.get('best', 0);
-      const best = Math.max(before, game.score);
-      store.set('best', best);
-      const newBest = before > 0 && game.score > before;
-      o.eyebrow.textContent = newBest ? 'New best!' : 'Game over';
-      o.title.textContent = fmt(game.score);
-      // Full rows that cleared this game: they score nothing, so say so.
-      const rows = game.log.pieces.reduce((n, p) => n + (p.junkRows || 0), 0);
-      // (Your best games are in the scoreboard's My best tab; a new one is announced above.)
-      const lines = [
-        [`${game.words} ${game.words === 1 ? 'word' : 'words'}`, `level ${game.level}`,
-          game.maxChain > 1 ? `chain ×${game.maxChain}` : null].filter(Boolean).join(' · '),
-        game.bestWord ? `Best word ${game.bestWord.display} for ${fmt(game.bestWord.points)}` : null,
-        rows ? [`${rows} full ${rows === 1 ? 'row' : 'rows'}: +0 points`, 'warn'] : null,
-      ].filter(Boolean);
-      o.text.replaceChildren(...lines.map((l) => {
-        const [text, cls] = Array.isArray(l) ? l : [l, ''];
-        return el('span', 'line' + (cls ? ' ' + cls : ''), text);
-      }));
-      o.primary.textContent = 'Play again';
     }
     showSaveStatus();
   }
 
+  // The big button: Start or Resume. (After a game, Play again is on the results screen.)
   function primaryAction() {
     if (game.state === 'ready') {
       game.inputs = {};
@@ -699,7 +686,6 @@
       saver.begin(game);
       if (ST.analytics) ST.analytics.gameStarted(game, 'start');
     } else if (game.state === 'paused') game.togglePause();
-    else if (game.state === 'over') restart('play_again');
   }
 
   // `from` says which button started the new game, for analytics.
@@ -716,6 +702,8 @@
 
   // ---- saved sessions ------------------------------------------------------
 
+  const logBtn = $('results-log');
+  const logBox = $('log-text');
   const saveStatusEl = $('save-status');
   const historyNoteEl = $('history-note');
   let saveState = 'off';
@@ -724,10 +712,20 @@
     saved: 'This game is saved for review.',
     error: 'This game could not be saved.',
   };
+  // A fresh results screen: the game log link reads "Copy game log" again, with its box closed.
+  function resetLog() {
+    logBtn.textContent = 'Copy game log';
+    logBox.hidden = true;
+  }
+
   function showSaveStatus() {
     const text = game.state === 'over' && game.sessionId ? SAVE_TEXT[saveState] : null;
     saveStatusEl.hidden = !text;
     if (text) saveStatusEl.textContent = text;
+    // "Copy game log" is a testing tool: preview links and local copies only, never the live site.
+    // Live games are saved for review anyway, so a player has nothing to copy.
+    const testing = !!(ST.BACKEND && ST.BACKEND.sandbox);
+    logBtn.hidden = game.state !== 'over' || !testing;
   }
   // What the Rules panel says about saving, by where games are saved (see src/sessions.js).
   const HISTORY_NOTE = {
@@ -754,18 +752,18 @@
 
   // Copies a text summary of the game, so a tricky run can be shared and looked at.
   // If the clipboard is blocked, the text appears in a box to select by hand.
-  overlay.log.addEventListener('click', () => {
+  logBtn.addEventListener('click', () => {
     if (ST.analytics) ST.analytics.track('game_log_copied', { game_id: game.sessionId || null });
     const text = game.logText();
     const showBox = () => {
-      overlay.logText.value = text;
-      overlay.logText.hidden = false;
-      overlay.logText.focus();
-      overlay.logText.select();
-      overlay.log.textContent = 'Select the text below to copy';
+      logBox.value = text;
+      logBox.hidden = false;
+      logBox.focus();
+      logBox.select();
+      logBtn.textContent = 'Select the text below to copy';
     };
     try {
-      navigator.clipboard.writeText(text).then(() => { overlay.log.textContent = 'Copied'; }, showBox);
+      navigator.clipboard.writeText(text).then(() => { logBtn.textContent = 'Copied'; }, showBox);
     } catch {
       showBox();
     }
@@ -781,6 +779,7 @@
 
   function drainEvents(now) {
     for (const e of game.events) {
+      if (e.type === 'over') { recordBest(); resetLog(); } // before the hooks: the results ask whether it's a new best
       saver.onEvent(game, e);
       if (ST.analytics) ST.analytics.onEvent(game, e);
       emit(e);
@@ -960,7 +959,8 @@
       e.preventDefault(); // Space must not scroll the page either
       // Go by the game's state, not by whether the screen has repainted yet. A tip's 3-2-1
       // countdown also leaves the game paused, and Space must not resume it from underneath.
-      const onScreen = game.state === 'ready' || game.state === 'paused' || game.state === 'over';
+      // After a game the results screen handles its own keys.
+      const onScreen = game.state === 'ready' || game.state === 'paused';
       if (onScreen && !e.repeat && !(ST.screens && ST.screens.holding())) primaryAction();
     }
   });
@@ -1282,6 +1282,7 @@
     fit, restart, game, store, tileCanvas, miniStage,
     start: primaryAction,
     refreshOverlay: () => updateOverlay(true),
+    newBest: () => overNewBest,
     onEvent: (fn) => eventHooks.push(fn),
     onGameOver: (fn) => eventHooks.push((e, g) => { if (e.type === 'over') fn(g); }),
   };
