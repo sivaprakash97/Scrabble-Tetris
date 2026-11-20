@@ -15,7 +15,7 @@ Built for phones first, planned for release as a phone app, and it plays on a la
 - Letters use Scrabble values, and longer words multiply steeply.
 - "Words found", below the board, shows each word with a short definition.
 - "How to play" shows four illustrated cards; they open by themselves on a first visit.
-- After a game, a results screen opens on **Performance**: your score, then your words, level, chains, full rows and best word, and "Play again". The **Leaderboard** tab shows the top scorers and where your game would land; type your name in your row and tap "Add to the leaderboard".
+- After a game, a results screen opens: your score, then the **Leaderboard** tab with the top scorers, how many players are on it, and where your game lands. Adding your name is optional: type it in your row and tap "Add to leaderboard", or just "Play again". The **Performance** tab shows your words, level, chains, full rows and best word.
 - On preview links and local copies, a small "Copy game log" link copies every piece's letters and the final board, so a tricky game can be shared and looked at. The live site doesn't show it: saved games already hold all of that.
 - On the hosted page, every game is also saved automatically for review. This covers each piece's letters, where it went, how long it took and what it spelled. See "Saved sessions" in DESIGN.md.
 - See [DESIGN.md](DESIGN.md) for the letter rules, the dictionary, the scoring and the benchmark.

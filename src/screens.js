@@ -544,11 +544,12 @@
   }
 
   // ---- results: the screen after every game -------------------------------------
-  // Opens by itself a moment after a game ends, on the Performance tab: the score, how the game
-  // went, and Play again. The Leaderboard tab shows the top scorers and where this game would
-  // stand, with a box for your name in your own row; there the main button is "Add to the
-  // leaderboard", with Play again as a link under it. It is the game-over screen: it can't be
-  // closed, only left by playing again. Where there's no shared board, only Performance shows.
+  // Opens by itself a moment after a game ends: the score on top, then the Leaderboard tab (the
+  // top scorers, how many players are on the board, and where this game would stand, with a box
+  // for your name in your own row), and a Performance tab for how the game went. Adding your
+  // name is optional but in view: a gold "Add to leaderboard" button sits over Play again while
+  // the game can still be added. It is the game-over screen: it can't be closed, only left by
+  // playing again. Where there's no shared board, only Performance shows.
 
   const results = $('results');
   const resultsList = $('results-list');
@@ -557,21 +558,18 @@
   const rTabPerf = $('rtab-perf');
   const rTabBoard = $('rtab-board');
   const resultsPrimary = $('results-primary');
-  const resultsAgainLink = $('results-again-link');
+  const resultsAdd = $('results-add');
   const RESULTS_DELAY = 700; // ms after the game ends: a beat to see the final board and hear the sound
   const RESULTS_GUARD = 700; // ms in which a stray Space can't skip it
   let resultsOpenedAt = 0;
   let standingRequest = 0; // a newer request makes an older answer stale
   let resultsTracked = null; // the game id `results_shown` was last sent for
-  let resultsTab = 'perf';
+  let resultsTab = 'board';
   let youForm = null; // the name box's form, while this game can be added to the board
 
-  // The main button follows the tab: Play again, or "Add to the leaderboard" on the Leaderboard
-  // tab while this game can still be added (Play again then moves to a link under it).
+  // "Add to leaderboard" (gold, over Play again) shows while this game can still be added.
   function updateResultsButtons() {
-    const adding = resultsTab === 'board' && !!youForm;
-    resultsPrimary.textContent = adding ? 'Add to the leaderboard' : 'Play again';
-    resultsAgainLink.hidden = !adding;
+    resultsAdd.hidden = !youForm;
   }
 
   function selectResultsTab(name) {
@@ -588,7 +586,7 @@
   rTabBoard.addEventListener('click', () => {
     if (resultsTab === 'board') return;
     selectResultsTab('board');
-    trackEvent('results_leaderboard_opened', { game_id: game.sessionId || null, can_add: !!youForm });
+    trackEvent('results_leaderboard_opened', { game_id: game.sessionId || null, can_add: !!youForm, from: 'tab' });
   });
 
   // The Performance tab: the score, then plain numbers from the game (Game.stats in src/game.js).
@@ -625,7 +623,7 @@
     }
   }
 
-  // Your row before you've added this game: the name goes in a box. "Add to the leaderboard"
+  // Your row before you've added this game: the name goes in a box. "Add to leaderboard"
   // (or Enter in the box) sends it.
   function youRow(r, gameId) {
     const li = el('li', 'entry mine you');
@@ -656,7 +654,7 @@
         input.focus();
         return;
       }
-      input.disabled = resultsPrimary.disabled = true;
+      input.disabled = resultsAdd.disabled = true;
       say('Adding…');
       try {
         await postGame(gameId, nick);
@@ -664,7 +662,7 @@
         say(postError(err), true);
         return;
       } finally {
-        input.disabled = resultsPrimary.disabled = false;
+        input.disabled = resultsAdd.disabled = false;
       }
       // Draw the board again: your row is now a real one, with your name on it.
       focusCard(results); // the box is about to go; keep Space and Enter working
@@ -691,6 +689,11 @@
 
     const me = rows.find((r) => r.mine);
     $('rtab-rank').textContent = me ? ` · #${me.rank}` : '';
+    // How many players have put a score on the board (not counting this game, if it's not on yet).
+    const onBoard = rows.length ? rows[0].players - (youForm ? 1 : 0) : 0;
+    const countEl = $('results-count');
+    countEl.hidden = !onBoard;
+    countEl.textContent = `${fmt(onBoard)} ${onBoard === 1 ? 'player' : 'players'} on the leaderboard`;
     const mine = rows.find((r) => r.mine && r.kind !== 'you');
     if (!addable) setResultsNote('Make at least one word to get on the leaderboard.');
     else if (mine && mine.score > score) {
@@ -718,6 +721,7 @@
     setResultsNote('');
     youForm = null;
     updateResultsButtons();
+    $('results-count').hidden = true;
     resultsList.replaceChildren(note('Loading…'));
     let rows;
     try {
@@ -735,14 +739,14 @@
     if (request !== standingRequest || game.sessionId !== gameId) return;
     renderStanding(rows, gameId, score, addable);
   }
-  const RESULTS_TOP = 10; // top scorers on the Leaderboard tab, before the rows around yours
+  const RESULTS_TOP = 5; // top scorers on the Leaderboard tab, before the rows around yours (the Scoreboard has 20)
 
   function openResults() {
     showStats();
     youForm = null;
     $('rtab-rank').textContent = '';
     $('results-tabs').hidden = !board.enabled;
-    selectResultsTab('perf');
+    selectResultsTab(board.enabled ? 'board' : 'perf');
     resultsOpenedAt = Date.now();
     openSheet(results);
     focusCard(results); // no phone keyboard popping up over the stats
@@ -758,17 +762,25 @@
     ui.restart('play_again');
   }
 
-  resultsPrimary.addEventListener('click', () => {
-    if (resultsTab === 'board' && youForm) {
-      // First tap with an empty box: put the cursor there. With a name in it: add the game.
-      const input = youForm.querySelector('input');
-      if (!input.value.trim()) input.focus();
-      else youForm.requestSubmit();
+  resultsPrimary.addEventListener('click', playAgain);
+
+  // Add to leaderboard: on the Leaderboard tab with a name in the box, it adds the game. Otherwise
+  // it brings up the Leaderboard tab with the cursor in your name box.
+  resultsAdd.addEventListener('click', () => {
+    if (!youForm) return;
+    const input = youForm.querySelector('input');
+    if (resultsTab === 'board' && input.value.trim()) {
+      youForm.requestSubmit();
       return;
     }
-    playAgain();
+    if (resultsTab !== 'board') {
+      selectResultsTab('board');
+      trackEvent('results_leaderboard_opened', { game_id: game.sessionId || null, can_add: true, from: 'add_button' });
+    }
+    input.scrollIntoView({ block: 'center' });
+    input.focus({ preventScroll: true });
+    input.setSelectionRange(input.value.length, input.value.length);
   });
-  resultsAgainLink.addEventListener('click', playAgain);
 
   // Space or Enter plays again, unless a box or button has the focus (a name being typed, say).
   results.addEventListener('keydown', (e) => {

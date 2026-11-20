@@ -210,19 +210,26 @@
 </dialog>
 
 <!-- Results: the game-over screen. Opens by itself when a game ends; it can't be closed, only left
-     with Play again, since there is nothing behind it to go back to. Two tabs. Performance (first): the score, how the
-     game went, and Play again. Leaderboard: the top scorers and where this game would stand, with a
-     box for your name in your own row; there the main button is "Add to the leaderboard". -->
+     with Play again, since there is nothing behind it to go back to. The score on top, then two tabs:
+     Leaderboard (first): the top scorers and where this game would stand, with a box for your name in
+     your own row. Performance: how the game went. Adding your name is optional: a gold "Add to
+     leaderboard" button sits over Play again while the game can still be added. -->
 <dialog class="sheet" id="results" aria-labelledby="results-title">
   <div class="sheet-card results-card" tabindex="-1">
     <h2 class="sheet-title" id="results-title">Game over</h2>
+    <p class="results-score"><span class="results-score-label">Score</span><span class="score-num"><span id="perf-score">0</span><span class="new-best" id="results-new-best" hidden><svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="50.0,0.5 59.6,14.3 74.0,8.4 76.2,23.8 92.9,25.2 85.7,40.4 98.0,50.0 85.7,59.6 92.9,74.8 76.2,76.2 74.0,91.6 59.6,85.7 50.0,99.5 40.4,85.7 26.0,91.6 23.8,76.2 7.1,74.8 14.3,59.6 2.0,50.0 14.3,40.4 7.1,25.2 23.8,23.8 26.0,8.4 40.4,14.3"/></svg><span>New<br>best!</span></span></span></p>
     <div class="tabs results-tabs" role="tablist" id="results-tabs">
-      <button type="button" role="tab" id="rtab-perf" aria-controls="rpanel-perf" aria-selected="true">Performance</button>
-      <button type="button" role="tab" id="rtab-board" aria-controls="rpanel-board" aria-selected="false">Leaderboard<span id="rtab-rank"></span></button>
+      <button type="button" role="tab" id="rtab-board" aria-controls="rpanel-board" aria-selected="true">Leaderboard<span id="rtab-rank"></span></button>
+      <button type="button" role="tab" id="rtab-perf" aria-controls="rpanel-perf" aria-selected="false">Performance</button>
     </div>
     <div class="results-scroll" id="results-scroll">
-      <section class="results-panel" id="rpanel-perf" role="tabpanel" aria-labelledby="rtab-perf">
-        <p class="results-score"><span class="results-score-label">Score</span><span class="score-num"><span id="perf-score">0</span><span class="new-best" id="results-new-best" hidden><svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="50.0,0.5 59.6,14.3 74.0,8.4 76.2,23.8 92.9,25.2 85.7,40.4 98.0,50.0 85.7,59.6 92.9,74.8 76.2,76.2 74.0,91.6 59.6,85.7 50.0,99.5 40.4,85.7 26.0,91.6 23.8,76.2 7.1,74.8 14.3,59.6 2.0,50.0 14.3,40.4 7.1,25.2 23.8,23.8 26.0,8.4 40.4,14.3"/></svg><span>New<br>best!</span></span></span></p>
+      <section class="results-panel results-board" id="rpanel-board" role="tabpanel" aria-labelledby="rtab-board">
+        <p class="board-count" id="results-count" hidden></p>
+        <p class="posted" id="results-posted" hidden></p>
+        <ol class="board-list" id="results-list"></ol>
+        <p class="results-note" id="results-note" role="status" hidden></p>
+      </section>
+      <section class="results-panel" id="rpanel-perf" role="tabpanel" aria-labelledby="rtab-perf" hidden>
         <dl class="perf perf-grid">
           <div class="perf-stat" style="--i:0"><dt>Words</dt><dd id="perf-words">0</dd></div>
           <div class="perf-stat" style="--i:1"><dt>Level</dt><dd id="perf-level">1</dd></div>
@@ -231,15 +238,10 @@
           <div class="perf-stat perf-wide" style="--i:4"><dt>Best word</dt><dd id="perf-best">–</dd><small id="perf-best-sub" hidden></small></div>
         </dl>
       </section>
-      <section class="results-panel results-board" id="rpanel-board" role="tabpanel" aria-labelledby="rtab-board" hidden>
-        <p class="posted" id="results-posted" hidden></p>
-        <ol class="board-list" id="results-list"></ol>
-        <p class="results-note" id="results-note" role="status" hidden></p>
-      </section>
     </div>
     <div class="results-foot">
+      <button type="button" class="btn-primary btn-gold results-add" id="results-add" hidden>Add to leaderboard</button>
       <button type="button" class="btn-primary results-again" id="results-primary">Play again</button>
-      <button type="button" class="link-btn" id="results-again-link" hidden>Play again</button>
       <p class="key-tip" aria-hidden="true">or press <kbd>Space</kbd> to play again</p>
       <p id="save-status" class="save-status" role="status" hidden></p>
       <button type="button" id="results-log" class="link-btn" hidden>Copy game log</button>

@@ -94,7 +94,7 @@ It lists each player's best posted game, under their latest nickname, top 20. Yo
 **Your own games.** Every finished game with a score is still saved on the device (`localStorage alphaboom.games`, the 10 best, with date, level, words and best word), but nothing shows them now: the "My scores" tab was taken out of both the results and the Scoreboard, since right after a game it added little. It's kept for a start menu later.
 
 **Posting a score.**
-- After a game, the results screen opens by itself (see "Results screen" below). On its Leaderboard tab your row has a box for your name, and the main button is "Add to the leaderboard". The nickname is remembered on the device (`alphaboom.nickname`), so later posts are one tap.
+- After a game, the results screen opens by itself (see "Results screen" below). On its Leaderboard tab your row has a box for your name, and the main button is "Add to leaderboard". The nickname is remembered on the device (`alphaboom.nickname`), so later posts are one tap.
 - Posting happens only there; the Scoreboard dialog has no post form. 
 - Posting is optional, one game at a time. A player who never posts never appears.
 - Nicknames are 2–16 letters, numbers, spaces or `_ . ' -`. Both the page and the database check this.
@@ -105,13 +105,15 @@ It lists each player's best posted game, under their latest nickname, top 20. Yo
 
 ## Results screen
 
-Opens by itself after every game. Two tabs, in the scoreboard's pill style.
+Opens by itself after every game: the score, then two tabs in the scoreboard's pill style, Leaderboard (first) and Performance.
 
 **When.** It is the game-over screen. When a game ends the board stays in view for 0.7 seconds with nothing over it (the game-over sound plays), then the results open. There's no separate game-over card any more: it showed the score and Play again for a moment before the results covered it, which repeated itself. The results can't be closed (no close button; Escape and backdrop taps do nothing), only left with Play again, since there's nothing behind them to go back to. For the first 0.7 seconds after they open a Space press is ignored, so a player still pressing keys as the game ends doesn't skip them.
 
 The footer also has "This game is saved for review." and, on preview links and local copies only, the "Copy game log" link.
 
-**Performance (opens first).** Your score is the main information, so it comes first, big. The ribbon on top always says "Game over"; when the score beats this device's best, from the second game on (the first game on a device is always its best, so it never says so), a green starburst "New best!" sticker is slapped on right beside the number, on the same line: it lands 0.2 seconds after the card has bounced in, and the number jolts as it hits. With reduced motion it just appears. Then how the game went, then **Play again** as the main button.
+**The score, on top of both tabs.** It is the main information, so it comes first, big. The ribbon on top always says "Game over"; when the score beats this device's best, from the second game on (the first game on a device is always its best, so it never says so), a green starburst "New best!" sticker is slapped on right beside the number, on the same line: it lands 0.2 seconds after the card has bounced in, and the number jolts as it hits. With reduced motion it just appears.
+
+**Performance (second tab).** How the game went:
 
 | Tile | What it counts | Notes |
 |---|---|---|
@@ -123,22 +125,22 @@ The footer also has "This game is saved for review." and, on preview links and l
 
 The tiles sit on a dark panel, like a video game's end-of-match card, with plain numbers and no grades. Letter grades (S/A/B/C) were left out for now: thresholds need more real games to set fairly. If they come, `Game.stats()` already has what they'd use.
 
-**Leaderboard.** The top scorers, and where this game would stand. The main button is **Add to the leaderboard**, with Play again as a link under it.
-- The top 10, a "⋯" gap, then the row above yours, yours, and the row below. The gap closes when you're near the top. The tab's label shows your place ("Leaderboard · #12"), so there's a reason to open it.
+**Leaderboard (first tab, open by default).** The top scorers, how many players are on the board, and where this game would stand. Adding your name is optional, but it's the first thing you see: a gold **Add to leaderboard** button sits over the green **Play again** while the game can still be added. In early playtests nobody opened a Leaderboard tab on their own, so nobody posted; showing the board first also shows new players how many people have played ("19 players on the leaderboard").
+- "N players on the leaderboard" (players who have added a score, not counting this game until it's added), then the top 5, a "⋯" gap, then the row above yours, yours, and the row below. The gap closes when you're near the top. The tab's label shows your place ("Leaderboard · #12"), so there's a reason to open it.
 - Rows are one line: rank, name, date posted, score. The top 3 get gold, silver and bronze badges.
-- Your row, before you add it, is a box for your name (prefilled with the one remembered on the device) and your score. The box is never focused automatically, so a phone keyboard doesn't pop up. "Add to the leaderboard" with an empty box puts the cursor in it; with a name, it adds the game. Enter in the box does too.
-- Adding redraws the board: your row now has your name, under a green "Added as …: #12 of 20!" pill, and the main button turns back into Play again.
-- **When the game can't be added, there's no box and the main button stays Play again:**
+- Your row, before you add it, is a box for your name (prefilled with the one remembered on the device) and your score. The box is never focused automatically, so a phone keyboard doesn't pop up. "Add to leaderboard" with an empty box puts the cursor in it; with a name in it (typed, or remembered), it adds the game. Enter in the box does too. Tapped from the Performance tab, it opens the Leaderboard tab with the cursor in the box.
+- Adding redraws the board: your row now has your name, under a green "Added as …: #12 of 20!" pill, and the gold button goes away.
+- **When the game can't be added, there's no box and no gold button:**
   - a game with no words (its points all came from holding Down): "Make at least one word to get on the leaderboard."
   - a game that doesn't beat your posted best (the board keeps each player's best): your existing row shows, with "This game didn't beat your best (30,000), so you stay at #4."
 - If the board can't be loaded, it says so with "Try again".
-- The number of top rows is the `top` argument of `board.standing()` (`src/scores.js`).
+- The number of top rows is `RESULTS_TOP` in `src/screens.js` (5, so the score, the board and both buttons fit on a phone; the Scoreboard has the top 20).
 
 **Where the rank comes from.** `score_standing_v2` (`supabase/standing.sql`) takes the score the page has and returns the rows above. It only places the row: posting still takes the score from the saved game (`post_score_v2`), so a made-up score changes nothing but the preview. For a no-word game the page asks with a score of 0, so no row is placed. See "Hosting and saving".
 
 **Space or Enter** plays again from either tab, unless a box or button has the focus.
 
-**Why it's built this way.** In the first week, 11 games were finished on the live site and none were posted. The first version put the leaderboard first with the name box in your row. Playing it showed the score should come first: it's what a player looks at. Posting moved to its own tab with its own main button, so it's a clear choice rather than something in the way of Play again.
+**Why it's built this way.** In the first week, 11 games were finished on the live site and none were posted. The first version put the leaderboard first with the name box in your row. Playing it showed the score should come first: it's what a player looks at. Posting moved to its own tab with its own main button, so it's a clear choice rather than something in the way of Play again. Then a few playtesters finished games and none posted: on a second tab, the leaderboard went unseen. So the score now sits above the tabs, the Leaderboard tab opens first (it shows how many have played, which is also a reason to join), and Add to leaderboard is a separate gold button over Play again, so posting stays optional but hard to miss.
 
 ## Learning while playing: full rows and chains
 
@@ -389,7 +391,7 @@ Supabase keeps every game in full; PostHog (`src/analytics.js`) answers the ques
 | `tutorial_closed` | How to play closes | `auto` (opened by itself), `furthest_card`, `finished`, `first_visit` |
 | `tip_shown` | A first-time tip pops up | `tip` (word, chain, row, level, danger) |
 | `results_shown` | The results screen finds your place (once per game) | `score`, `rank`, `players`, `can_post` (it offered a name box), `has_board` |
-| `results_leaderboard_opened` | The Leaderboard tab on the results screen is opened | `game_id`, `can_add` (it offered a name box) |
+| `results_leaderboard_opened` | The Leaderboard tab on the results screen is opened | `game_id`, `can_add` (it offered a name box), `from` (`tab`, or `add_button` when Add to leaderboard was tapped on the Performance tab) |
 | `scoreboard_opened`, `score_posted` | The scoreboard opens; a score is posted (from the results screen) | `game_state`; `score`, `rank`, `players` |
 | `game_log_copied`, `sound_toggled` | | `on` |
 
