@@ -16,7 +16,7 @@ The owner reads everything in plain English. Write that way in chat, commit mess
 
 ## Hard rules
 
-1. **No dependencies, no framework, no required build step.** Write plain browser JavaScript and plain CSS. `package.json` has no dependencies and must stay that way. `index.html` has to keep working when opened straight from a file. Every source file is an IIFE that hangs its parts on the global `ST` namespace and also exports for Node (`if (typeof module !== 'undefined') module.exports = ST`), so the same code runs in the browser and under the tests.
+1. **No dependencies, no framework, no required build step.** Write plain browser JavaScript and plain CSS. `package.json` has no dependencies and must stay that way. `index.html` has to keep working when opened straight from a file. No modules or bundler: see "How the code fits together".
 2. **Phone first.** The game is built for phones and is headed for a phone app. Every change must work and fit on the phone layout: the score strip, the board and the control pad all on one screen, with no scrolling. The wide laptop layout (`min-width: 1000px` with `hover: hover` and `pointer: fine`, at the end of `style.css`) comes second. Touch tablets, including an iPad in landscape, keep the phone layout.
 3. **Update the docs in the same commit as the code.** Any change to a rule, a number, the UI, the backend or analytics updates DESIGN.md, and README.md too where it covers the same thing. Then add an entry to **memory.md** (see below).
 4. **The Sandbox stays sandboxed.** Only the live site (`ST.DEPLOY.env === 'production'`) may save to the live board, post to the live scoreboard or send PostHog events. Preview links and local copies use the sandbox board and send no analytics. Never weaken this rule. Test any change to saving, scores or analytics on a preview link first.
@@ -40,13 +40,23 @@ The Supabase project `alphaboom` (region ap-south-1, free plan) holds the saved 
 ## Commands
 
 ```sh
-npm test             # unit tests (Node 22+, node:test, no dependencies)
-npm run build:web    # dist/web, what Vercel serves
-npm run build        # dist/alphaboom.html, one self-contained page
-npm run benchmark    # a computer player measures how playable the rules are
+npm test                                                  # all unit tests (Node 22+, node:test, no dependencies)
+node --test test/words.test.js                            # one test file
+node --test --test-name-pattern="chain" test/*.test.js    # tests whose name matches
+npm run build:web                                         # dist/web, what Vercel serves
+npm run build                                             # dist/alphaboom.html, one self-contained page for the Claude page
+npm run benchmark -- --keep-gaps --games 20               # a computer player measures how playable the rules are
+npm run wordlist -- <enable1.txt> <scowl.tar.gz> <wndb.tgz>   # rebuild data/words.js and data/definitions.js (README has the download links)
 ```
 
-To play locally, open `index.html` in a browser. A local copy is a Sandbox. To see the wide layout, make the window at least 1000 px wide.
+There is no linter and no server. To play locally, open `index.html` in a browser. A local copy is a Sandbox. To see the wide layout, make the window at least 1000 px wide.
+
+## How the code fits together
+
+- **One global `ST` namespace, no modules.** Every `src/*.js` file is an IIFE that hangs its parts on `window.ST` (`globalThis.ST` under Node). `index.html` loads them in a fixed order: config, sound, tiles, pieces, words, board, game, `data/words.js`, `data/definitions.js`, deploy, backend-config, sessions, scores, analytics, ui, screens. **A new script must be added to that list in `index.html`.** `scripts/build-web.mjs` publishes whatever `index.html` references, and `scripts/build-artifact.mjs` inlines what sits between the `build:artifact-*` markers. Anything above those markers is website only.
+- **Rules files vs browser files.** `config`, `tiles`, `pieces`, `words`, `board` and `game` never touch the page and also export for Node, so they run under the tests: `test/helpers.js` loads exactly those plus `data/`. `sessions.js` and `analytics.js` are tested against a stub `window`. `ui.js`, `screens.js`, `scores.js` and `sound.js` are browser only and have no tests, so check changes to them in a browser, on both layouts.
+- **Rules code reads `cfg`**, never a hard-coded number, so the tests and the benchmark can pass different settings. Shelved rules (vertical words, letter cycling) are forced from the config in the `Game` constructor, so an old saved setting can't turn them back on.
+- **Game flow.** `Game` (`game.js`) moves through the states `ready → playing ↔ clearing → over`, and it can be paused from playing or clearing. It is seeded with `mulberry32`, so a seed always replays the same game. `TileDirector` (`tiles.js`) picks each piece's letters, `Dictionary` and the scoring live in `words.js`, and `Board` handles the grid and gravity.
 
 ## Where things are
 
